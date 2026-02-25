@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-25T20:04:01.807Z",
+  "generated_at": "2026-02-25T20:05:25.576Z",
   "tree": [
     {
       "id": 1,
@@ -627,16 +627,16 @@
               "title": "Replace monolithic MEMORY.md loading with on-demand reads",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "done",
               "value": 4000,
               "cost_estimate": 30,
-              "cost_actual": null,
+              "cost_actual": 15,
               "roi": 133.33333333333334,
               "effort_hours_estimate": 3,
-              "effort_hours_actual": null,
+              "effort_hours_actual": 0.25,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772049924,
               "progress": 0,
               "description": "Full MEMORY.md (23KB+) loaded into context every session — most irrelevant to current task. Target: agents load only recent daily notes + use memory_search for specific recalls. Reduces context noise. Aligns with Manus filesystem-as-memory pattern.",
               "notes": [],
