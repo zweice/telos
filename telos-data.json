@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-25T20:23:01.408Z",
+  "generated_at": "2026-02-25T20:32:47.270Z",
   "tree": [
     {
       "id": 1,
@@ -345,16 +345,16 @@
                   "title": "Telos: Visual & UI polish",
                   "type": "task",
                   "owner": "forge",
-                  "status": "open",
+                  "status": "done",
                   "value": 8000,
                   "cost_estimate": 50,
-                  "cost_actual": null,
+                  "cost_actual": 2,
                   "roi": 160,
                   "effort_hours_estimate": 4,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 2,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1772051565,
                   "progress": 5,
                   "description": "Polish the Telos dashboard UI. Priority items: (1) Auto-refresh: add setInterval polling every 30s so dashboard updates without manual button click — currently DB updates via CLI do not appear until user clicks Refresh. (2) Status color coding on tree nodes (done=grey, in_progress=blue, blocked=red, open=white). (3) Node detail panel: show progress as a visual bar not just %. (4) Filter state: persist across refreshes via localStorage. (5) Overall spacing, font sizes, make it feel like a product dashboard not a dev tool. Auto-refresh is highest priority — DB changes should reflect in browser within 30s automatically.",
                   "notes": [
