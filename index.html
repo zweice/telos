@@ -32,14 +32,14 @@
       --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
       --radius-sm: 8px;
       --radius-md: 12px;
-      --status-done: #34d399;
-      --status-progress: #60a5fa;
-      --status-open: #fbbf24;
-      --status-blocked: #f87171;
+      --status-done: #999999;
+      --status-progress: #4A90D9;
+      --status-open: #f5f5f5;
+      --status-blocked: #E05C5C;
       --status-refused: #9ca3af;
-      --status-shelved: #6b7280;
-      --status-rejected: #991b1b;
-      --status-question: #f59e0b;
+      --status-shelved: #cccccc;
+      --status-rejected: #777777;
+      --status-question: #F5C842;
       --transition-fast: 180ms cubic-bezier(0.4, 0, 0.2, 1);
       --transition-smooth: 350ms cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -85,6 +85,21 @@
     #controls {
       display: flex;
       gap: 6px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100%;
+      flex-shrink: 1;
+    }
+    #controls::-webkit-scrollbar {
+      height: 3px;
+    }
+    #controls::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    #controls::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
+      border-radius: 2px;
     }
 
     button {
@@ -168,15 +183,15 @@
     }
 
     /* ── Status colors ─────────────────────────── */
-    .status-done circle          { fill: var(--status-done);     stroke: rgba(52,211,153,0.4); }
-    .status-in_progress circle   { fill: var(--status-progress); stroke: rgba(96,165,250,0.4); }
-    .status-open circle          { fill: var(--status-open);     stroke: rgba(251,191,36,0.4); }
-    .status-blocked circle       { fill: var(--status-blocked);  stroke: rgba(248,113,113,0.4); }
-    .status-out_of_budget circle { fill: var(--status-blocked);  stroke: rgba(248,113,113,0.4); }
+    .status-done circle          { fill: var(--status-done);     stroke: rgba(153,153,153,0.4); }
+    .status-in_progress circle   { fill: var(--status-progress); stroke: rgba(74,144,217,0.4); }
+    .status-open circle          { fill: var(--status-open);     stroke: rgba(200,200,200,0.5); }
+    .status-blocked circle       { fill: var(--status-blocked);  stroke: rgba(224,92,92,0.4); }
+    .status-out_of_budget circle { fill: var(--status-blocked);  stroke: rgba(224,92,92,0.4); }
     .status-refused circle       { fill: var(--status-refused);  stroke: rgba(156,163,175,0.4); }
-    .status-shelved circle       { fill: var(--status-shelved);  stroke: rgba(107,114,128,0.4); opacity: 0.6; }
-    .status-rejected circle      { fill: var(--status-rejected); stroke: rgba(153,27,27,0.4);   text-decoration: line-through; }
-    .status-in_question circle   { fill: var(--status-question); stroke: rgba(245,158,11,0.4); }
+    .status-shelved circle       { fill: var(--status-shelved);  stroke: rgba(204,204,204,0.4); opacity: 0.6; }
+    .status-rejected circle      { fill: var(--status-rejected); stroke: rgba(119,119,119,0.4); }
+    .status-in_question circle   { fill: var(--status-question); stroke: rgba(245,200,66,0.4); }
 
     /* ── Tooltip ────────────────────────────────── */
     #tooltip {
@@ -220,7 +235,7 @@
 
     /* ── Legend ──────────────────────────────────── */
     #legend {
-      position: absolute;
+      position: fixed;
       bottom: 12px;
       left: 12px;
       background: var(--bg-glass);
@@ -233,6 +248,8 @@
       box-shadow: var(--shadow-md);
       transition: all var(--transition-smooth);
       overflow: hidden;
+      max-height: 60vh;
+      overflow-y: auto;
     }
 
     #legend .legend-inner {
@@ -613,7 +630,8 @@
       display: none;
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      height: 60px;
+      height: auto;
+      min-height: 60px;
       background: rgba(15, 15, 26, 0.96);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
@@ -622,24 +640,28 @@
       display: flex;
       align-items: center;
       justify-content: space-around;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      padding: 8px 0;
+      padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
     }
     .bnav-btn {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 2px;
+      justify-content: center;
+      gap: 3px;
       background: none;
       border: none;
       color: var(--text-secondary);
       font-size: 10px;
       cursor: pointer;
-      padding: 8px 4px;
+      padding: 8px;
       transition: color var(--transition-fast);
       -webkit-tap-highlight-color: transparent;
+      min-height: 44px;
+      min-width: 44px;
     }
-    .bnav-btn .bnav-icon { font-size: 20px; line-height: 1; }
+    .bnav-btn .bnav-icon { font-size: 22px; line-height: 1; display: flex; align-items: center; }
     .bnav-btn.active { color: var(--text-accent, #60a5fa); }
     .bnav-btn.active .bnav-icon { filter: drop-shadow(0 0 6px #60a5fa88); }
 
@@ -712,16 +734,43 @@
       /* Show bottom nav, hide top tabs */
       #bottom-nav { display: flex; }
       .tab-bar { display: none !important; }
-      /* Push content above bottom nav */
-      #container, #list-view, #ideas-panel { padding-bottom: 68px; }
+      /* Push content above bottom nav with safe area */
+      #container, #list-view, #ideas-panel { 
+        padding-bottom: max(76px, calc(68px + env(safe-area-inset-bottom, 0px))); 
+      }
       /* Slightly bigger tree circles for fat fingers */
       .node circle { stroke-width: 2px; }
-      /* Make header controls wrap better */
+      /* Make header controls wrap/scroll better */
       #topbar { flex-wrap: wrap; gap: 6px; }
-      #controls button { min-height: 36px; padding: 6px 10px; }
+      #controls { max-width: 100%; }
+      #controls button { min-height: 36px; padding: 6px 10px; font-size: 11px; }
       #done-filter { min-height: 36px; }
       /* Tooltip: position at bottom on mobile */
       #tooltip { max-width: calc(100vw - 24px); left: 12px !important; right: 12px !important; }
+      /* Legend improvements for mobile */
+      #legend { max-width: 85vw; right: auto; }
+      #legend-toggle { display: flex; }
+    }
+
+    @media (max-width: 600px) {
+      /* Smaller screens: make legend even smaller */
+      #legend .legend-inner { padding: 8px 10px; }
+      #legend .legend-item { margin: 3px 0; }
+      #legend .legend-dot { width: 7px; height: 7px; }
+      #legend .legend-label { font-size: 9px; }
+      /* Reduce header padding on very small screens */
+      #header { padding: 8px 12px; height: 40px; }
+      h1 { font-size: 14px; }
+      h1 span { font-size: 14px; }
+    }
+
+    @media (max-width: 400px) {
+      #legend { display: none; }
+      #legend.legend-expanded { display: block; max-width: 90vw; }
+      #legend-toggle { display: flex; }
+      /* Increase bottom nav on small screens for better usability */
+      .bnav-btn { min-height: 48px; min-width: 48px; }
+      .bnav-btn .bnav-icon { font-size: 24px; }
     }
 
     /* ── Skip-to-content for accessibility ──────── */
@@ -764,6 +813,7 @@
         <button onclick="expandAll()" aria-label="Expand all nodes">Expand</button>
         <button onclick="collapseAll()" aria-label="Collapse all nodes">Collapse</button>
         <button id="refresh-data-btn" onclick="refreshData()" aria-label="Reload goal tree data">↻</button>
+        <span id="last-updated" style="font-size:10px;color:var(--text-secondary);white-space:nowrap;padding:0 2px;"></span>
       </div>
     </div>
   </div>

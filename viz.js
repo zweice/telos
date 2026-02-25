@@ -3,8 +3,33 @@
   'use strict';
 
   // ── Config ────────────────────────────────────────────────────────────────
-  const NODE_RADIUS = { goal: 22, milestone: 16, task: 10 };
-  const NODE_LABEL_OFFSET = { goal: 30, milestone: 24, task: 16 };
+  // Responsive node sizing based on viewport
+  function getNodeConfig() {
+    const isMobile = window.innerWidth <= 768;
+    const isSmallMobile = window.innerWidth <= 600;
+    if (isSmallMobile) {
+      return {
+        radius: { goal: 14, milestone: 10, task: 7 },
+        labelOffset: { goal: 22, milestone: 18, task: 14 },
+        spacing: 180
+      };
+    } else if (isMobile) {
+      return {
+        radius: { goal: 18, milestone: 13, task: 8 },
+        labelOffset: { goal: 26, milestone: 21, task: 15 },
+        spacing: 200
+      };
+    }
+    return {
+      radius: { goal: 22, milestone: 16, task: 10 },
+      labelOffset: { goal: 30, milestone: 24, task: 16 },
+      spacing: 220
+    };
+  }
+  
+  let nodeConfig = getNodeConfig();
+  const NODE_RADIUS = nodeConfig.radius;
+  const NODE_LABEL_OFFSET = nodeConfig.labelOffset;
   const LINK_COLOR = 'rgba(255,255,255,0.1)';
   const COLLAPSED_SYMBOL = '+';
   const EXPANDED_SYMBOL = '−';
@@ -56,7 +81,18 @@
   // ── State ─────────────────────────────────────────────────────────────────
   let root, svg, gAll, gLinks, gNodes, treeLayout, width, height;
   let simulation = null;
+  let lastUpdatedTime = null;
   const tooltip = document.getElementById('tooltip');
+
+  function updateLastUpdatedDisplay() {
+    const el = document.getElementById('last-updated');
+    if (!el || !lastUpdatedTime) return;
+    const t = new Date(lastUpdatedTime);
+    const hh = String(t.getHours()).padStart(2, '0');
+    const mm = String(t.getMinutes()).padStart(2, '0');
+    const ss = String(t.getSeconds()).padStart(2, '0');
+    el.textContent = `${hh}:${mm}:${ss}`;
+  }
 
   // ── Bootstrap ─────────────────────────────────────────────────────────────
   // Fetch from API endpoint for live data (falls back to static file if API fails)
@@ -67,6 +103,7 @@
     })
     .then(data => {
       rawTreeData = data.tree[0];
+      lastUpdatedTime = Date.now();
       syncFilterSelect();
       init(JSON.parse(JSON.stringify(rawTreeData)));
     })
@@ -79,6 +116,7 @@
         })
         .then(data => {
           rawTreeData = data.tree[0];
+          lastUpdatedTime = Date.now();
           syncFilterSelect();
           init(JSON.parse(JSON.stringify(rawTreeData)));
         })
@@ -129,7 +167,7 @@
     gLinks = gAll.append('g').attr('class', 'links');
     gNodes = gAll.append('g').attr('class', 'nodes');
 
-    treeLayout = d3.tree().nodeSize([44, 220]);
+    treeLayout = d3.tree().nodeSize([44, nodeConfig.spacing]);
 
     update(root);
     resetView();
@@ -167,7 +205,22 @@
       width  = container.clientWidth;
       height = container.clientHeight;
       svg.attr('width', width).attr('height', height);
+      
+      // Update responsive node configuration on resize
+      const newConfig = getNodeConfig();
+      if (newConfig.spacing !== nodeConfig.spacing) {
+        nodeConfig = newConfig;
+        Object.assign(NODE_RADIUS, nodeConfig.radius);
+        Object.assign(NODE_LABEL_OFFSET, nodeConfig.labelOffset);
+        treeLayout.nodeSize([44, nodeConfig.spacing]);
+        update(root);
+        resetView();
+      }
     });
+
+    // Show initial timestamp and start 30-second auto-refresh
+    updateLastUpdatedDisplay();
+    setInterval(() => refreshData(true), 30000);
   }
 
   // ── Update / render ───────────────────────────────────────────────────────
@@ -751,12 +804,14 @@
   }
 
   // ── Live data refresh ─────────────────────────────────────────────────────
-  // Re-fetch /api/tree with cache-buster and re-init the tree
-  window.refreshData = function refreshData() {
+  // Re-fetch /api/tree with cache-buster and re-init the tree.
+  // Pass silent=true to skip the button spinner (used by auto-refresh interval).
+  window.refreshData = function refreshData(silent) {
     const btn = document.getElementById('refresh-data-btn');
-    const originalText = btn.innerText;
-    btn.innerText = '↺';
-    btn.disabled = true;
+    if (!silent) {
+      btn.innerText = '↺';
+      btn.disabled = true;
+    }
 
     const cacheBuster = Date.now();
     fetch(`http://localhost:8089/api/tree?_=${cacheBuster}`, { cache: 'no-store' })
@@ -767,6 +822,7 @@
       .then(data => {
         // Store raw data and apply filter
         rawTreeData = data.tree[0];
+        lastUpdatedTime = Date.now();
         const filtered = applyDoneFilter(JSON.parse(JSON.stringify(rawTreeData)), getCutoffSecs(doneFilterDays));
 
         // Replace root data
@@ -785,16 +841,24 @@
         gLinks.selectAll('.link').remove();
         gNodes.selectAll('.node').remove();
         update(root);
-        resetView();
+        if (!silent) resetView();
 
-        btn.innerText = '✓';
-        setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 1000);
+        updateLastUpdatedDisplay();
+
+        if (!silent) {
+          btn.innerText = '✓';
+          setTimeout(() => { btn.innerText = '↻'; btn.disabled = false; }, 1000);
+        }
       })
       .catch(err => {
-        document.getElementById('container').innerHTML =
-          `<div id="error">⚠️ Could not reload data<br><small>${err.message}</small></div>`;
-        btn.innerText = originalText;
-        btn.disabled = false;
+        if (!silent) {
+          document.getElementById('container').innerHTML =
+            `<div id="error">⚠️ Could not reload data<br><small>${err.message}</small></div>`;
+          btn.innerText = '↻';
+          btn.disabled = false;
+        }
+        // Silent failures are logged but don't disrupt the UI
+        if (silent) console.warn('Auto-refresh failed:', err.message);
       });
   };
 })();
