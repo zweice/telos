@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-25T20:05:25.576Z",
+  "generated_at": "2026-02-25T20:06:21.240Z",
   "tree": [
     {
       "id": 1,
@@ -547,16 +547,16 @@
               "title": "Monitor Claude Code usage by Forge",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "done",
               "value": 2000,
               "cost_estimate": 0,
-              "cost_actual": null,
+              "cost_actual": 20,
               "roi": 0,
               "effort_hours_estimate": 2,
-              "effort_hours_actual": null,
+              "effort_hours_actual": 0.5,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772049964,
               "progress": 0,
               "description": "Track how Forge uses Claude Code in practice: (1) Which tasks delegated to Claude Code vs done in-session? (2) Cost per task — is Claude Code cost-effective vs Forge doing it directly? (3) Optimization opportunities: caching, model selection (Haiku vs Sonnet for simple tasks), prompt efficiency. (4) Build a lightweight usage log or parse JSONL + claude-sessions to get per-task cost breakdown. Report findings to Andreas monthly.",
               "notes": [],
