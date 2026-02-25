@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-25T22:52:52.282Z",
+  "generated_at": "2026-02-25T23:00:36.870Z",
   "tree": [
     {
       "id": 1,
@@ -1640,5 +1640,72 @@
       "updated_at": 1771963394
     }
   ],
-  "dependencies": []
+  "dependencies": [
+    {
+      "id": 1,
+      "blocked_id": 39,
+      "blocker_id": 41,
+      "type": "hard"
+    },
+    {
+      "id": 2,
+      "blocked_id": 42,
+      "blocker_id": 39,
+      "type": "hard"
+    },
+    {
+      "id": 3,
+      "blocked_id": 43,
+      "blocker_id": 42,
+      "type": "hard"
+    },
+    {
+      "id": 4,
+      "blocked_id": 44,
+      "blocker_id": 43,
+      "type": "hard"
+    },
+    {
+      "id": 5,
+      "blocked_id": 61,
+      "blocker_id": 47,
+      "type": "hard"
+    },
+    {
+      "id": 6,
+      "blocked_id": 62,
+      "blocker_id": 61,
+      "type": "hard"
+    },
+    {
+      "id": 7,
+      "blocked_id": 63,
+      "blocker_id": 61,
+      "type": "soft"
+    },
+    {
+      "id": 8,
+      "blocked_id": 63,
+      "blocker_id": 68,
+      "type": "soft"
+    },
+    {
+      "id": 9,
+      "blocked_id": 21,
+      "blocker_id": 20,
+      "type": "hard"
+    },
+    {
+      "id": 10,
+      "blocked_id": 3,
+      "blocker_id": 37,
+      "type": "hard"
+    },
+    {
+      "id": 11,
+      "blocked_id": 5,
+      "blocker_id": 37,
+      "type": "hard"
+    }
+  ]
 }
