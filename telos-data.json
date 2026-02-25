@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-25T19:30:25.667Z",
+  "generated_at": "2026-02-25T20:04:01.807Z",
   "tree": [
     {
       "id": 1,
@@ -1159,7 +1159,12 @@
               "completed_at": null,
               "progress": 0,
               "description": "The entire BD outreach pipeline is built and ready. First wave: 8 companies with HOT triggers (actively hiring admin staff). Review bd-launch-brief.md in outreach/ folder. Decision needed: (1) Say 'send it' to approve, OR specify changes. Fax copy templates ready, phone scripts ready. All templates in outreach/shadow-pilot-sequence.md. Without this approval, the pipeline sits idle and HOT leads cool down.",
-              "notes": [],
+              "notes": [
+                {
+                  "ts": 1772049826,
+                  "text": "Wave 1 execution package created: outreach/WAVE-1-EXECUTION-PACKAGE.md. Waiting for Andreas approval to proceed. API key (task 46) already provisioned. Fax numbers and personalized materials ready to finalize."
+                }
+              ],
               "children": []
             },
             {
