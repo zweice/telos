@@ -82,9 +82,11 @@
   }
 
   // ── State ─────────────────────────────────────────────────────────────────
-  let root, svg, gAll, gLinks, gNodes, treeLayout, width, height;
+  let root, svg, gAll, gLinks, gNodes, gDepEdges, treeLayout, width, height;
   let simulation = null;
   let lastUpdatedTime = null;
+  let depsVisible = false;
+  let cachedDeps = null;
   const tooltip = document.getElementById('tooltip');
 
   function updateLastUpdatedDisplay() {
@@ -166,9 +168,17 @@
       .on('zoom', e => gAll.attr('transform', e.transform));
     svg.call(zoom);
 
-    gAll   = svg.append('g').attr('class', 'all');
-    gLinks = gAll.append('g').attr('class', 'links');
-    gNodes = gAll.append('g').attr('class', 'nodes');
+    gAll      = svg.append('g').attr('class', 'all');
+    gLinks    = gAll.append('g').attr('class', 'links');
+    gDepEdges = gAll.append('g').attr('id', 'dep-edges');
+    gNodes    = gAll.append('g').attr('class', 'nodes');
+
+    // Arrowhead marker for dependency edges
+    svg.append('defs').html(
+      '<marker id="dep-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">' +
+      '<path d="M 0 0 L 0 6 L 8 3 z" fill="#F5A623"/>' +
+      '</marker>'
+    );
 
     treeLayout = d3.tree().nodeSize([44, nodeConfig.spacing]);
 
@@ -180,6 +190,7 @@
     window.expandAll    = expandAll;
     window.collapseAll  = collapseAll;
     window.toggleLegend = toggleLegend;
+    window.toggleDeps   = toggleDeps;
 
     // Done-filter setter (called by the <select> onchange)
     window.setDoneFilter = function setDoneFilter(days) {
@@ -278,7 +289,15 @@
 
     const r = d => NODE_RADIUS[d.data.type] || 10;
 
-    nodeEnter.append('circle').attr('r', 0);
+    // Bottleneck ring — behind the main circle (appended first)
+    nodeEnter.append('circle')
+      .attr('class', 'bottleneck-ring')
+      .attr('fill', 'none')
+      .attr('stroke', '#ff4444')
+      .attr('stroke-width', 2)
+      .attr('r', 0);
+
+    nodeEnter.append('circle').attr('class', 'node-circle').attr('r', 0);
 
     // Label
     nodeEnter.append('text')
@@ -320,9 +339,15 @@
       .attr('transform', d => `translate(${d.y},${d.x})`)
       .attr('class', d => `node status-${d.data.status}`);
 
-    nodeMerge.select('circle')
+    nodeMerge.select('.node-circle')
       .transition(t)
       .attr('r', r);
+
+    // Bottleneck ring: show pulsing red ring on bottleneck nodes
+    nodeMerge.select('.bottleneck-ring')
+      .classed('bottleneck-pulse', d => !!d.data.is_bottleneck)
+      .transition(t)
+      .attr('r', d => d.data.is_bottleneck ? r(d) + 3 : 0);
 
     nodeMerge.select('text.label')
       .attr('dy', d => -(NODE_LABEL_OFFSET[d.data.type] || 14))
@@ -351,10 +376,13 @@
       .transition(t)
       .attr('transform', `translate(${source.y},${source.x})`)
       .remove()
-      .select('circle').attr('r', 0);
+      .select('.node-circle').attr('r', 0);
 
     // Save positions
     root.descendants().forEach(d => { d.x0 = d.x; d.y0 = d.y; });
+
+    // Redraw dep edges after tree update (node positions may have changed)
+    if (depsVisible && cachedDeps) drawDepEdges(cachedDeps);
   }
 
   // ── Toggle collapse/expand ────────────────────────────────────────────────
@@ -721,6 +749,66 @@
     if (!window._telosRoot) return;
     const desc = window._telosRoot.descendants().find(d => d.data.id === id);
     if (desc) showDetailPanel(desc);
+  };
+
+  // ── Dependency edges ──────────────────────────────────────────────────────
+  function drawDepEdges(deps) {
+    cachedDeps = deps;
+    gDepEdges.selectAll('path').remove();
+    if (!deps || !deps.length || !root) return;
+
+    const nodeMap = new Map(root.descendants().map(d => [d.data.id, d]));
+
+    deps.forEach(dep => {
+      const blocker = nodeMap.get(dep.blocker_id);
+      const blocked = nodeMap.get(dep.blocked_id);
+      if (!blocker || !blocked) return;
+
+      // Nodes are positioned at translate(d.y, d.x) in SVG space
+      const sx = blocker.y, sy = blocker.x;
+      const dx = blocked.y, dy = blocked.x;
+
+      // Quadratic bezier — arc upward (-60px) for visual separation from tree links
+      const mx = (sx + dx) / 2;
+      const my = (sy + dy) / 2 - 60;
+
+      gDepEdges.append('path')
+        .attr('d', `M ${sx} ${sy} Q ${mx} ${my} ${dx} ${dy}`)
+        .attr('fill', 'none')
+        .attr('stroke', '#F5A623')
+        .attr('stroke-width', 1.5)
+        .attr('stroke-dasharray', '5,3')
+        .attr('opacity', 0.7)
+        .attr('marker-end', 'url(#dep-arrow)');
+    });
+  }
+
+  window.toggleDeps = function toggleDeps() {
+    const btn = document.getElementById('deps-btn');
+    depsVisible = !depsVisible;
+
+    if (!depsVisible) {
+      gDepEdges.selectAll('path').remove();
+      if (btn) { btn.classList.remove('btn-active'); btn.setAttribute('aria-pressed', 'false'); }
+      return;
+    }
+
+    if (btn) { btn.classList.add('btn-active'); btn.setAttribute('aria-pressed', 'true'); }
+
+    const cacheBuster = Date.now();
+    fetch(`http://localhost:8089/api/dependencies?_=${cacheBuster}`, { cache: 'no-store' })
+      .then(r => {
+        if (!r.ok) throw new Error(`API error: ${r.status}`);
+        return r.json();
+      })
+      .then(data => drawDepEdges(Array.isArray(data) ? data : (data.dependencies || [])))
+      .catch(() => {
+        // GitHub Pages fallback: read from telos-data.json
+        fetch('telos-data.json')
+          .then(r => r.json())
+          .then(data => drawDepEdges(data.dependencies || []))
+          .catch(err => console.warn('Could not load dependencies:', err));
+      });
   };
 
   function loadIdeas() {

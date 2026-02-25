@@ -831,6 +831,26 @@
       .bnav-btn .bnav-icon { font-size: 24px; }
     }
 
+    /* ── Bottleneck pulse ───────────────────────── */
+    @keyframes bottleneck-pulse {
+      0%   { transform: scale(1.0); opacity: 1; }
+      50%  { transform: scale(1.4); opacity: 0; }
+      100% { transform: scale(1.0); opacity: 1; }
+    }
+
+    .bottleneck-ring.bottleneck-pulse {
+      animation: bottleneck-pulse 2s ease-in-out infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    /* Active state for toggle buttons (e.g. Deps) */
+    button.btn-active {
+      background: rgba(245, 166, 35, 0.18);
+      border-color: rgba(245, 166, 35, 0.5);
+      color: #F5A623;
+    }
+
     /* ── Skip-to-content for accessibility ──────── */
     .sr-only {
       position: absolute;
@@ -870,6 +890,7 @@
         <button onclick="resetView()" aria-label="Reset view to fit all nodes">Reset</button>
         <button onclick="expandAll()" aria-label="Expand all nodes">Expand</button>
         <button onclick="collapseAll()" aria-label="Collapse all nodes">Collapse</button>
+        <button id="deps-btn" onclick="toggleDeps()" aria-label="Toggle dependency edges" aria-pressed="false">Deps</button>
         <button id="refresh-data-btn" onclick="refreshData()" aria-label="Reload goal tree data">↻</button>
         <span id="last-updated" style="font-size:10px;color:var(--text-secondary);white-space:nowrap;padding:0 2px;"></span>
       </div>
@@ -943,6 +964,10 @@
       <div class="legend-item">
         <div class="legend-dot" style="background: var(--status-refused);"></div>
         <span class="legend-label">Refused</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:none;border:2px solid #ff4444;box-shadow:0 0 4px rgba(255,68,68,0.5);"></div>
+        <span class="legend-label">Bottleneck</span>
       </div>
     </div>
   </div>
