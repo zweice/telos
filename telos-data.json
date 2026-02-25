@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-25T20:06:21.240Z",
+  "generated_at": "2026-02-25T20:23:01.408Z",
   "tree": [
     {
       "id": 1,
@@ -339,6 +339,32 @@
                   "description": "Make the Telos dashboard reachable from the internet so Andreas can access it from his phone anywhere. Options to evaluate: (1) Nginx reverse proxy on the host machine with a subdomain (e.g. telos.pyfio.de or telos.macrohard.ai) + Let's Encrypt SSL. (2) Expose via existing tunneling setup if available. (3) Static export deployed to Vercel/Netlify (simpler, no server needed — but loses live DB connection). Recommended: nginx reverse proxy on the machine with SSL. The Telos HTTP server is already persistent (task #12 done). Just needs to be proxied and secured. Must be password-protected or IP-restricted — this has internal business data.",
                   "notes": [],
                   "children": []
+                },
+                {
+                  "id": 72,
+                  "title": "Telos: Visual & UI polish",
+                  "type": "task",
+                  "owner": "forge",
+                  "status": "open",
+                  "value": 8000,
+                  "cost_estimate": 50,
+                  "cost_actual": null,
+                  "roi": 160,
+                  "effort_hours_estimate": 4,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 5,
+                  "description": "Polish the Telos dashboard UI. Priority items: (1) Auto-refresh: add setInterval polling every 30s so dashboard updates without manual button click — currently DB updates via CLI do not appear until user clicks Refresh. (2) Status color coding on tree nodes (done=grey, in_progress=blue, blocked=red, open=white). (3) Node detail panel: show progress as a visual bar not just %. (4) Filter state: persist across refreshes via localStorage. (5) Overall spacing, font sizes, make it feel like a product dashboard not a dev tool. Auto-refresh is highest priority — DB changes should reflect in browser within 30s automatically.",
+                  "notes": [
+                    {
+                      "ts": 1772050919,
+                      "text": "Mobile screenshot feedback from Andreas (Feb 25):\n1. Top navbar buttons cut off on right (Collapse + more hidden) — needs scroll or wrap\n2. Massive blank space below tree before bottom nav\n3. Status legend overlaps tree and clips text\n4. Node labels too small and truncated on mobile\n5. Tree too wide — right-side nodes overflow screen\n6. Bottom nav tap targets small\nPriority: navbar + overflow + blank space are the most jarring. Address in next Claude Code pass after auto-refresh task completes.",
+                      "progress": 5
+                    }
+                  ],
+                  "children": []
                 }
               ]
             },
@@ -447,7 +473,7 @@
               "title": "Configure Google AI Pro (Antigravity) provider",
               "type": "task",
               "owner": "conductor",
-              "status": "blocked",
+              "status": "rejected",
               "value": 2000,
               "cost_estimate": 0,
               "cost_actual": null,
@@ -659,6 +685,26 @@
               "completed_at": 1772047825,
               "progress": 0,
               "description": "No recovery layer exists. When a work-cycle cron errors (e.g. conductor-work-cycle timed out Feb 25), nothing retries. Add cron that checks consecutiveErrors > 0 and triggers respawn. Also auto-clears stuck sessions (>500KB, >2h, stopReason=toolUse). Mirrors OpenAI Codex recovery tier.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 73,
+              "title": "Improve daily cost report: include all sources (Claude Code, Jared/main, subagents)",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 5000,
+              "cost_estimate": 20,
+              "cost_actual": null,
+              "roi": 250,
+              "effort_hours_estimate": 1,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Current 24h cost report only covers Atlas, Conductor, Forge session spend. Missing: (1) Jared/main agent spend, (2) Claude Code subagent sessions spawned by Forge, (3) any other isolated/subagent sessions. Update the cost monitoring to capture ALL spend sources and include them in the daily report. The report should show total + per-agent breakdown including Claude Code. Check how OpenClaw tracks token usage across sessions and build a complete picture. Report format: total 24h spend + breakdown by agent/source.",
               "notes": [],
               "children": []
             }
