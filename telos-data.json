@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-25T13:45:18.043Z",
+  "generated_at": "2026-02-25T17:04:20.649Z",
   "tree": [
     {
       "id": 1,
@@ -104,7 +104,7 @@
                   "title": "Telos: Add Idea Backlog Feature",
                   "type": "task",
                   "owner": "forge",
-                  "status": "open",
+                  "status": "in_progress",
                   "value": 30,
                   "cost_estimate": 0,
                   "cost_actual": 0,
@@ -1185,6 +1185,46 @@
                   "text": "Onboarding guide written: outreach/customer-onboarding.md — DE+EN, covers: folder setup (inbox/delivered/archive per client), supported doc types, DPI requirements, delivery SLAs (24/48/72h by batch size), Excel output structure per doc type, exception flagging, pricing table, support contact. Ready to attach to first invoice."
                 }
               ],
+              "children": []
+            },
+            {
+              "id": 67,
+              "title": "Sammelaufstellung: digitize + searchable archive (idea)",
+              "type": "task",
+              "owner": "atlas",
+              "status": "shelved",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "IDEA (not backlog). Pain discovered 2026-02-25 via logistics industry contact. Truck delivers to 20 customers, driver signs Sammelaufstellung. Physical folder only. Pain: Reklamation requires manual folder search — major time sink. Solution: scan + OCR + embeddings, searchable by customer/date/driver/load. Different from freight parser — this is archival + retrieval. Add to backlog after v1 validated.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 68,
+              "title": "Follow up with Kiril — warm logistics lead",
+              "type": "task",
+              "owner": "andreas",
+              "status": "open",
+              "value": 50000,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": 1,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Kiril (+49 152 21913739) — logistics industry, Andreas's brother's best friend. Confirmed pain: paper digitization is a real problem in logistics. He works at a large company (IT security hurdle = not a direct prospect) but likely knows smaller logistics companies/customers who fit our ICP (50-200 employees, no big IT dept). Action: call or WhatsApp Kiril. Ask: which of his customers or contacts are smaller logistics operations who deal with paper chaos on invoices, BOLs, delivery sheets? Get 2-3 names + intros. A warm intro from an industry insider = highest conversion path we have.",
+              "notes": [],
               "children": []
             }
           ]
