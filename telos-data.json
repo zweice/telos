@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-25T17:04:20.649Z",
+  "generated_at": "2026-02-25T17:06:33.074Z",
   "tree": [
     {
       "id": 1,
@@ -507,16 +507,16 @@
               "title": "Install ClawVault (structured memory layer)",
               "type": "task",
               "owner": "conductor",
-              "status": "in_progress",
+              "status": "done",
               "value": 5000,
               "cost_estimate": 0,
-              "cost_actual": null,
+              "cost_actual": 0,
               "roi": 0,
               "effort_hours_estimate": 2,
-              "effort_hours_actual": null,
+              "effort_hours_actual": 2,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772039192,
               "progress": 0,
               "description": "QMD is live. Next: install ClawVault. Steps: (1) npm install -g clawvault (2) Read hook source code at ~/.npm-global/lib/node_modules/clawvault/hooks/ — security review before enabling (3) openclaw hooks install clawvault (4) openclaw hooks enable clawvault only if code review passes (5) openclaw hooks init clawvault to create vault (6) Test that task/decision primitives work. Eval report: /home/jared/.openclaw/agents/conductor/memory/qmd-clawvault-eval.md",
               "notes": [],
@@ -587,16 +587,16 @@
               "title": "Propagate Drive-as-artifacts rule to all agents",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "done",
               "value": 5000,
               "cost_estimate": 10,
-              "cost_actual": null,
+              "cost_actual": 0,
               "roi": 500,
               "effort_hours_estimate": 1,
-              "effort_hours_actual": null,
+              "effort_hours_actual": 1,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772039179,
               "progress": 0,
               "description": "Andreas has mandated: Google Drive is the single source of truth for all artifacts (except code). Add this rule to AGENTS.md and/or MEMORY.md for Forge, Conductor, and Jared. Rule: any file produced as a deliverable (docs, CSVs, reports, templates, guides) must be uploaded to the appropriate MacroHard Drive folder on task completion. Folder structure: Leads/ (lead lists, outreach), Deliverables/ (parser output, exports), Shared/ (client-facing), Internal/ (research, agent outputs), Finance/ (invoices, costs). Access via gog CLI. Atlas already does this — other agents must adopt the same practice.",
               "notes": [],
@@ -779,13 +779,18 @@
               "start_date": 1771977600,
               "end_date": 1772841600,
               "completed_at": null,
-              "progress": 5,
+              "progress": 15,
               "description": "Run 3-5 shadow pilots for interested prospects. Each pilot: receive their 50 worst freight PDFs, run through the document parser, QA output, return clean Excel within 48h. Track: accuracy rate, processing time, cost per document, any edge cases or failures. This is both a sales activity and a product validation step.\n\nDEPENDENCY: Blocked on ID 15 (Freight Document Parser MVP) complete and validated. Also blocked on Anthropic API key being provisioned.\n\nCoordinate with Andreas for client communication and file transfer.",
               "notes": [
                 {
                   "ts": 1771969611,
                   "text": "Unblocked — API key confirmed, #15 complete. Awaiting client PDFs for pilot runs.",
                   "progress": 5
+                },
+                {
+                  "ts": 1772039089,
+                  "text": "Accuracy test suite rebuilt and committed (830cbd2 → github.com/zweice/freight-parser). 88.9% accuracy on 16/18 fields — core fields (shipper, consignee, invoice no., date, total, currency, incoterms, country of origin) all 100%. Port of loading/discharge not extracted by commercial invoice schema — known gap. Still awaiting client PDFs to run pilot.",
+                  "progress": 15
                 }
               ],
               "children": []
