@@ -11,19 +11,22 @@
       return {
         radius: { goal: 14, milestone: 10, task: 7 },
         labelOffset: { goal: 22, milestone: 18, task: 14 },
-        spacing: 180
+        spacing: 160,
+        fontSize: { goal: 13, milestone: 12, task: 11 }
       };
     } else if (isMobile) {
       return {
         radius: { goal: 18, milestone: 13, task: 8 },
         labelOffset: { goal: 26, milestone: 21, task: 15 },
-        spacing: 200
+        spacing: 200,
+        fontSize: { goal: 13, milestone: 12, task: 11 }
       };
     }
     return {
       radius: { goal: 22, milestone: 16, task: 10 },
       labelOffset: { goal: 30, milestone: 24, task: 16 },
-      spacing: 220
+      spacing: 220,
+      fontSize: { goal: 13, milestone: 11, task: 9 }
     };
   }
   
@@ -281,7 +284,7 @@
     nodeEnter.append('text')
       .attr('class', 'label')
       .attr('dy', d => -(NODE_LABEL_OFFSET[d.data.type] || 14))
-      .attr('font-size', d => d.data.type === 'goal' ? 13 : d.data.type === 'milestone' ? 11 : 9)
+      .attr('font-size', d => nodeConfig.fontSize[d.data.type] || 11)
       .text(d => truncate(d.data.title, d.data.type === 'goal' ? 36 : d.data.type === 'milestone' ? 30 : 24));
 
     // Expand indicator
@@ -320,6 +323,10 @@
     nodeMerge.select('circle')
       .transition(t)
       .attr('r', r);
+
+    nodeMerge.select('text.label')
+      .attr('dy', d => -(NODE_LABEL_OFFSET[d.data.type] || 14))
+      .attr('font-size', d => nodeConfig.fontSize[d.data.type] || 11);
 
     nodeMerge.select('.indicator')
       .text(d => {

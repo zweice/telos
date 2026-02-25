@@ -135,7 +135,7 @@
       position: relative;
     }
 
-    #container svg { display: block; }
+    #container svg { display: block; overflow: visible; }
 
     /* ── Nodes ──────────────────────────────────── */
     .node { cursor: pointer; }
@@ -613,12 +613,7 @@
       padding: 8px 0;
     }
 
-    /* ── Responsive: narrow viewports ───────────── */
-    @media (max-width: 400px) {
-      #legend { display: none; }
-      #legend.legend-expanded { display: block; }
-      #legend-toggle { display: flex; }
-    }
+    /* ── Responsive: narrow viewports (handled in mobile overrides below) ─── */
 
     @media (max-width: 640px) {
       #detail-panel { width: 100%; right: -100%; }
@@ -731,44 +726,107 @@
 
     /* ── Mobile overrides ────────────────────────── */
     @media (max-width: 768px) {
-      /* Show bottom nav, hide top tabs */
+      /* Show bottom nav, hide top-bar tabs (bottom nav replaces them) */
       #bottom-nav { display: flex; }
-      .tab-bar { display: none !important; }
-      /* Push content above bottom nav with safe area */
-      #container, #list-view, #ideas-panel { 
-        padding-bottom: max(76px, calc(68px + env(safe-area-inset-bottom, 0px))); 
+      #tab-bar { display: none !important; }
+      /* Container: subtract header (44px) + bottom nav (~60px) */
+      #container {
+        height: calc(100vh - 44px - 60px);
+        height: calc(100dvh - 44px - 60px);
+      }
+      /* Scrollable content: pad above bottom nav */
+      #list-view, #ideas-panel {
+        padding-bottom: max(76px, calc(68px + env(safe-area-inset-bottom, 0px)));
       }
       /* Slightly bigger tree circles for fat fingers */
       .node circle { stroke-width: 2px; }
-      /* Make header controls wrap/scroll better */
-      #topbar { flex-wrap: wrap; gap: 6px; }
-      #controls { max-width: 100%; }
+      /* Larger button hit targets */
       #controls button { min-height: 36px; padding: 6px 10px; font-size: 11px; }
       #done-filter { min-height: 36px; }
-      /* Tooltip: position at bottom on mobile */
+      /* Tooltip: full-width at bottom */
       #tooltip { max-width: calc(100vw - 24px); left: 12px !important; right: 12px !important; }
-      /* Legend improvements for mobile */
-      #legend { max-width: 85vw; right: auto; }
+      /* Legend: always hidden on mobile — toggle reveals it */
+      #legend { display: none; }
       #legend-toggle { display: flex; }
     }
 
     @media (max-width: 600px) {
-      /* Smaller screens: make legend even smaller */
-      #legend .legend-inner { padding: 8px 10px; }
-      #legend .legend-item { margin: 3px 0; }
-      #legend .legend-dot { width: 7px; height: 7px; }
-      #legend .legend-label { font-size: 9px; }
-      /* Reduce header padding on very small screens */
-      #header { padding: 8px 12px; height: 40px; }
+      /* ── Two-row header: title row + scrollable controls row ── */
+      #header {
+        height: auto !important;
+        min-height: 44px;
+        padding: 6px 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+      }
+      /* Controls row fills full width and scrolls horizontally */
+      #header-right {
+        flex: 0 0 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 6px !important;
+        flex-wrap: nowrap !important;
+        align-items: center;
+        padding-bottom: 2px;
+      }
+      #header-right::-webkit-scrollbar { display: none; }
+      /* Don't let #controls create a nested scroll */
+      #controls { overflow: visible !important; flex-shrink: 0; }
+      /* Container: 2-row header ~78px + bottom nav ~60px */
+      #container {
+        height: calc(100vh - 80px - 60px);
+        height: calc(100dvh - 80px - 60px);
+      }
+      #ideas-panel {
+        height: calc(100vh - 80px);
+        height: calc(100dvh - 80px);
+      }
+      /* ── Legend: horizontal scrollable strip above bottom nav ── */
+      #legend {
+        position: fixed;
+        bottom: max(60px, calc(60px + env(safe-area-inset-bottom, 0px)));
+        left: 0;
+        right: 0;
+        max-width: 100%;
+        max-height: none;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        overflow: visible;
+        z-index: 150;
+      }
+      #legend.legend-expanded { display: block; }
+      #legend .legend-inner {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 10px;
+        align-items: center;
+        padding: 8px 12px;
+      }
+      #legend .legend-inner::-webkit-scrollbar { display: none; }
+      #legend .legend-title { flex-shrink: 0; margin-bottom: 0; }
+      #legend .legend-item { flex-shrink: 0; margin: 0; }
+      #legend .legend-label { font-size: 9px; white-space: nowrap; }
+      /* Legend toggle: fixed bottom-right, above nav */
+      #legend-toggle {
+        position: fixed;
+        bottom: max(68px, calc(68px + env(safe-area-inset-bottom, 0px)));
+        right: 12px;
+        left: auto;
+        display: flex;
+      }
       h1 { font-size: 14px; }
       h1 span { font-size: 14px; }
     }
 
     @media (max-width: 400px) {
-      #legend { display: none; }
-      #legend.legend-expanded { display: block; max-width: 90vw; }
-      #legend-toggle { display: flex; }
-      /* Increase bottom nav on small screens for better usability */
+      /* Larger bottom nav tap targets */
       .bnav-btn { min-height: 48px; min-width: 48px; }
       .bnav-btn .bnav-icon { font-size: 24px; }
     }
@@ -792,7 +850,7 @@
 
   <div id="header" role="banner">
     <h1><span>🌍</span> Telos</h1>
-    <div style="display:flex;align-items:center;gap:12px;">
+    <div id="header-right" style="display:flex;align-items:center;gap:12px;">
       <div id="tab-bar" role="tablist" aria-label="View tabs">
         <button class="tab-btn active" id="tab-tree"  onclick="switchTab('tree')"  role="tab" aria-selected="true">🌳 Tree</button>
         <button class="tab-btn"        id="tab-ideas" onclick="switchTab('ideas')" role="tab" aria-selected="false">💡 Ideas</button>
