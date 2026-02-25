@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-25T20:32:47.270Z",
+  "generated_at": "2026-02-25T21:19:40.877Z",
   "tree": [
     {
       "id": 1,
@@ -365,6 +365,26 @@
                     }
                   ],
                   "children": []
+                },
+                {
+                  "id": 74,
+                  "title": "Claude Code: Best practices, tooling optimization + commit discipline",
+                  "type": "task",
+                  "owner": "forge",
+                  "status": "open",
+                  "value": 15000,
+                  "cost_estimate": 20,
+                  "cost_actual": null,
+                  "roi": 750,
+                  "effort_hours_estimate": 3,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Establish and enforce best practices for Forge's use of Claude Code. Covers: (1) Hard commit rule — every CC session MUST commit+push ALL changed files before exit, not just data files. Claude Code prompt templates must include explicit 'git add -A' (not cherry-picked files). (2) Unit test conventions — every feature task must include tests; CC prompts must ask for them by default. (3) Prompt templates — standardised task prompt format stored in TOOLS.md/SOUL.md with non-negotiable final steps. (4) Session verification — after each CC task, Forge must check git status in ALL relevant repos (including nested repos like web/) before marking done. (5) Cost tracking — always capture cost from CC output JSON and include in task notes. Outcome: a Claude Code prompt template and checklist that makes lost-work incidents structurally impossible.",
+                  "notes": [],
+                  "children": []
                 }
               ]
             },
@@ -705,6 +725,46 @@
               "completed_at": null,
               "progress": 0,
               "description": "Current 24h cost report only covers Atlas, Conductor, Forge session spend. Missing: (1) Jared/main agent spend, (2) Claude Code subagent sessions spawned by Forge, (3) any other isolated/subagent sessions. Update the cost monitoring to capture ALL spend sources and include them in the daily report. The report should show total + per-agent breakdown including Claude Code. Check how OpenClaw tracks token usage across sessions and build a complete picture. Report format: total 24h spend + breakdown by agent/source.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 75,
+              "title": "Stale session cost reporting: archive instead of delete",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 2000,
+              "cost_estimate": 5,
+              "cost_actual": null,
+              "roi": 400,
+              "effort_hours_estimate": 1,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Recovery script currently deletes stuck sessions — tokens burned in tool loops are lost from cost tracking. Fix: (1) Archive to agents/<id>/sessions/archive/stale_<ts>_<id>.jsonl instead of rm. (2) cost-report.py already updated to scan archive/ and report stale sessions separately with warning about wasted cost. DONE as of 2026-02-25 — just needs validation over next few recovery events.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 76,
+              "title": "Research: how to prevent agent tool loops",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 4000,
+              "cost_estimate": 30,
+              "cost_actual": null,
+              "roi": 133.33333333333334,
+              "effort_hours_estimate": 3,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Tool loops cause stuck sessions, wasted tokens, and silent agent failures (Atlas stuck 21:07–22:15 CET Feb 25 @ unknown cost). Research prevention angles: (1) Stronger prompting — explicit loop detection instructions in SOUL.md / system prompt; (2) Tool design — better descriptions, clearer error returns, idempotency signals; (3) Timeout at tool level — max retries per tool call per session; (4) Gateway-level circuit breaker — detect >N same tool calls in N turns and abort; (5) Model choice — does Sonnet loop less than Haiku on ambiguous tool results? Produce concrete recommendations with implementation path.",
               "notes": [],
               "children": []
             }
@@ -1340,7 +1400,12 @@
               "completed_at": null,
               "progress": 0,
               "description": "Kiril (+49 152 21913739) — logistics industry, Andreas's brother's best friend. Confirmed pain: paper digitization is a real problem in logistics. He works at a large company (IT security hurdle = not a direct prospect) but likely knows smaller logistics companies/customers who fit our ICP (50-200 employees, no big IT dept). Action: call or WhatsApp Kiril. Ask: which of his customers or contacts are smaller logistics operations who deal with paper chaos on invoices, BOLs, delivery sheets? Get 2-3 names + intros. A warm intro from an industry insider = highest conversion path we have.",
-              "notes": [],
+              "notes": [
+                {
+                  "ts": 1772053596,
+                  "text": "Strategy update 2026-02-25: Do cold calls/mails FIRST before approaching Kiril. Refine pitch on cold contacts who don't matter, then come to Kiril's warm intros with a proven message. Don't spend warm capital on untested pitch."
+                }
+              ],
               "children": []
             }
           ]
