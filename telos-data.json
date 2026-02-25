@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-25T13:44:59.471Z",
+  "generated_at": "2026-02-25T13:45:18.043Z",
   "tree": [
     {
       "id": 1,
@@ -325,7 +325,7 @@
                   "title": "Deploy Telos web app publicly (internet-accessible)",
                   "type": "task",
                   "owner": "forge",
-                  "status": "open",
+                  "status": "done",
                   "value": 15000,
                   "cost_estimate": 50,
                   "cost_actual": null,
@@ -334,7 +334,7 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1772027117,
                   "progress": 0,
                   "description": "Make the Telos dashboard reachable from the internet so Andreas can access it from his phone anywhere. Options to evaluate: (1) Nginx reverse proxy on the host machine with a subdomain (e.g. telos.pyfio.de or telos.macrohard.ai) + Let's Encrypt SSL. (2) Expose via existing tunneling setup if available. (3) Static export deployed to Vercel/Netlify (simpler, no server needed — but loses live DB connection). Recommended: nginx reverse proxy on the machine with SSL. The Telos HTTP server is already persistent (task #12 done). Just needs to be proxied and secured. Must be password-protected or IP-restricted — this has internal business data.",
                   "notes": [],
