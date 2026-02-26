@@ -29,20 +29,20 @@
       --bg-secondary: var(--bg-surface);
 
       /* ── Node fills + borders by status ── */
-      --node-open:        #1f2d3d; --border-open:        #3b82f6;
-      --node-in_progress: #1a2f1a; --border-in_progress: #22c55e;
-      --node-done:        #1a2614; --border-done:        #4ade80;
-      --node-blocked:     #2d1515; --border-blocked:     #ef4444;
-      --node-shelved:     #1e1e2e; --border-shelved:     #475569;
-      --node-rejected:    #141414; --border-rejected:    #374151;
-      --node-refused:     #141414; --border-refused:     #374151;
-      --node-in_question: #2d2a10; --border-in_question: #eab308;
+      --node-open:          #1e1e2e; --border-open:          #6366f1;
+      --node-in_progress:   #1e3a5f; --border-in_progress:   #3b82f6;
+      --node-done:          #0d2818; --border-done:          #4ade80;
+      --node-blocked:       #2d1515; --border-blocked:       #ef4444;
+      --node-shelved:       #1c1c1c; --border-shelved:       #475569;
+      --node-rejected:      #111111; --border-rejected:      #374151;
+      --node-refused:       #111111; --border-refused:       #374151;
+      --node-in_question:   #2a2200; --border-in_question:   #eab308;
       --node-out_of_budget: #2d1515; --border-out_of_budget: #ef4444;
 
       /* ── Edges ── */
-      --edge-default: rgba(99, 120, 150, 0.45);
+      --edge-default: rgba(99, 120, 150, 0.35);
       --edge-hover:   rgba(148, 163, 184, 0.9);
-      --edge-dep:     rgba(99, 120, 150, 0.6);
+      --edge-dep:     #f97316;
 
       /* ── Text ── */
       --text-primary:   #e6edf3;
@@ -67,6 +67,41 @@
       /* ── Transitions ── */
       --transition-fast:   180ms cubic-bezier(0.4, 0, 0.2, 1);
       --transition-smooth: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ── Light mode overrides ─────────────────────────── */
+    [data-theme="light"] {
+      --bg-primary:  #f6f8fa;
+      --bg-surface:  #ffffff;
+      --bg-panel:    #f0f2f4;
+      --bg-glass:    rgba(246, 248, 250, 0.92);
+      --bg-secondary: var(--bg-surface);
+
+      --text-primary:   #1f2328;
+      --text-muted:     #57606a;
+      --text-secondary: var(--text-muted);
+      --text-accent:    #0969da;
+      --highlight:      rgba(9, 105, 218, 0.12);
+
+      --border-subtle: rgba(0, 0, 0, 0.10);
+      --border-hover:  rgba(0, 0, 0, 0.20);
+
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.18);
+
+      /* Node fills in light mode — same borders */
+      --node-open:          #eef2ff; --border-open:          #6366f1;
+      --node-in_progress:   #dbeafe; --border-in_progress:   #3b82f6;
+      --node-done:          #dcfce7; --border-done:          #4ade80;
+      --node-blocked:       #fee2e2; --border-blocked:       #ef4444;
+      --node-shelved:       #f1f5f9; --border-shelved:       #475569;
+      --node-rejected:      #f9fafb; --border-rejected:      #374151;
+      --node-refused:       #f9fafb; --border-refused:       #374151;
+      --node-in_question:   #fefce8; --border-in_question:   #eab308;
+      --node-out_of_budget: #fee2e2; --border-out_of_budget: #ef4444;
+
+      --edge-default: rgba(99, 120, 150, 0.50);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -193,11 +228,11 @@
       pointer-events: none;
     }
 
-    /* ── Links ────────────────────────────────────── */
+    /* ── Tree links: thin, no arrowhead ─────────── */
     .link {
       fill: none;
       stroke: var(--edge-default);
-      stroke-width: 1.5px;
+      stroke-width: 1px;
     }
 
     /* ── Tooltip ──────────────────────────────────── */
@@ -623,7 +658,7 @@
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-top: 1px solid var(--border-subtle);
-      z-index: 800;
+      z-index: 300;
       display: flex;
       align-items: center;
       justify-content: space-around;
@@ -722,8 +757,8 @@
       #bottom-nav { display: flex; }
       #tab-bar    { display: none !important; }
       #container {
-        height: calc(100vh - 44px - 60px);
-        height: calc(100dvh - 44px - 60px);
+        height: calc(100vh - 44px - 48px);
+        height: calc(100dvh - 44px - 48px);
       }
       #list-view, #ideas-panel {
         padding-bottom: max(76px, calc(68px + env(safe-area-inset-bottom, 0px)));
@@ -758,8 +793,8 @@
       #header-right::-webkit-scrollbar { display: none; }
       #controls { overflow: visible !important; flex-shrink: 0; }
       #container {
-        height: calc(100vh - 80px - 60px);
-        height: calc(100dvh - 80px - 60px);
+        height: calc(100vh - 80px - 48px);
+        height: calc(100dvh - 80px - 48px);
       }
       #ideas-panel {
         height: calc(100vh - 80px);
@@ -865,6 +900,7 @@
         <button onclick="collapseAll()" aria-label="Collapse all nodes">Collapse</button>
         <button id="deps-btn" onclick="toggleDeps()" aria-label="Toggle dependency edges" aria-pressed="false">Deps</button>
         <button id="refresh-data-btn" onclick="refreshData()" aria-label="Reload goal tree data">↻</button>
+        <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode" style="padding:5px 8px;font-size:14px;">🌙</button>
         <span id="last-updated" style="font-size:10px;color:var(--text-muted);white-space:nowrap;padding:0 2px;"></span>
       </div>
     </div>
@@ -905,27 +941,23 @@
     <div class="legend-inner">
       <div class="legend-title">Status</div>
       <div class="legend-item">
-        <div class="legend-dot" style="background:var(--node-done);border-color:var(--border-done);"></div>
-        <span class="legend-label">Done</span>
+        <div class="legend-dot" style="background:var(--node-open);border-color:var(--border-open);"></div>
+        <span class="legend-label">Open</span>
       </div>
       <div class="legend-item">
         <div class="legend-dot" style="background:var(--node-in_progress);border-color:var(--border-in_progress);"></div>
         <span class="legend-label">In Progress</span>
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background:var(--node-open);border-color:var(--border-open);"></div>
-        <span class="legend-label">Open</span>
+        <div class="legend-dot" style="background:var(--node-done);border-color:var(--border-done);"></div>
+        <span class="legend-label">Done</span>
       </div>
       <div class="legend-item">
         <div class="legend-dot" style="background:var(--node-blocked);border-color:var(--border-blocked);"></div>
         <span class="legend-label">Blocked</span>
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background:var(--node-in_question);border-color:var(--border-in_question);"></div>
-        <span class="legend-label">In Question</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:var(--node-shelved);border-color:var(--border-shelved);opacity:0.7;"></div>
+        <div class="legend-dot" style="background:var(--node-shelved);border-color:var(--border-shelved);"></div>
         <span class="legend-label">Shelved</span>
       </div>
       <div class="legend-item">
@@ -933,12 +965,8 @@
         <span class="legend-label">Rejected</span>
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background:var(--node-refused);border-color:var(--border-refused);"></div>
-        <span class="legend-label">Refused</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:none;border-color:#ff4444;box-shadow:0 0 4px rgba(255,68,68,0.5);"></div>
-        <span class="legend-label">Bottleneck</span>
+        <div class="legend-dot" style="background:var(--node-in_question);border-color:var(--border-in_question);"></div>
+        <span class="legend-label">In Question</span>
       </div>
     </div>
   </div>

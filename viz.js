@@ -1,23 +1,23 @@
-/* Telos — D3 tree visualization */
+/* Telos — D3 force visualization */
 (function () {
   'use strict';
 
-  // ── Edge colors (used in JS since SVG attrs can't read CSS vars) ─────────
-  const EDGE_DEP        = 'rgba(99, 120, 150, 0.6)';
-  const EDGE_DEP_HOVER  = 'rgba(148, 163, 184, 0.9)';
-  const EDGE_DIM_OPACITY = 0.1;
+  // ── Constants ────────────────────────────────────────────────────────────
+  const EDGE_TREE_STROKE  = 'rgba(99,120,150,0.35)';
+  const EDGE_DEP_COLOR    = '#f97316';
+  const EDGE_DIM_OPACITY  = 0.15;
 
-  // Border colors per status (for glow effects)
+  // Border glow colors per status
   const BORDER_COLORS = {
-    open:        '#3b82f6',
-    in_progress: '#22c55e',
-    done:        '#4ade80',
-    blocked:     '#ef4444',
+    open:          '#6366f1',
+    in_progress:   '#3b82f6',
+    done:          '#4ade80',
+    blocked:       '#ef4444',
     out_of_budget: '#ef4444',
-    shelved:     '#475569',
-    rejected:    '#374151',
-    refused:     '#374151',
-    in_question: '#eab308',
+    shelved:       '#475569',
+    rejected:      '#374151',
+    refused:       '#374151',
+    in_question:   '#eab308',
   };
 
   // ── Dynamic node sizing ──────────────────────────────────────────────────
@@ -30,10 +30,6 @@
     };
   }
 
-  function nodeFontSize(r) {
-    return Math.max(7, Math.min(Math.round(r * 0.32), 13));
-  }
-
   // ── Done-filter state ────────────────────────────────────────────────────
   const LS_FILTER_KEY = 'telos_done_filter_days';
   let doneFilterDays = (() => {
@@ -41,7 +37,6 @@
     return v !== null ? parseInt(v, 10) : 1;
   })();
 
-  /** Raw tree data from last API fetch */
   let rawTreeData = null;
 
   function getCutoffSecs(days) {
@@ -72,12 +67,14 @@
   }
 
   // ── State ────────────────────────────────────────────────────────────────
-  let root, svg, gAll, gLinks, gNodes, gDepEdges, treeLayout, width, height;
-  let simulation = null;
+  let root, svg, gAll, gLinks, gNodes, gDepEdges, width, height;
+  let zoomBehavior  = null;
+  let simulation    = null;
+  let currentZoom   = 1;
   let lastUpdatedTime = null;
-  let depsVisible = false;
-  let cachedDeps = null;
-  const tooltip = document.getElementById('tooltip');
+  let depsVisible   = false;
+  let cachedDeps    = null;
+  const tooltip     = document.getElementById('tooltip');
 
   const COLLAPSED_SYMBOL = '+';
   const EXPANDED_SYMBOL  = '−';
@@ -85,12 +82,31 @@
   function updateLastUpdatedDisplay() {
     const el = document.getElementById('last-updated');
     if (!el || !lastUpdatedTime) return;
-    const t = new Date(lastUpdatedTime);
+    const t  = new Date(lastUpdatedTime);
     const hh = String(t.getHours()).padStart(2, '0');
     const mm = String(t.getMinutes()).padStart(2, '0');
     const ss = String(t.getSeconds()).padStart(2, '0');
     el.textContent = `${hh}:${mm}:${ss}`;
   }
+
+  // ── Theme ────────────────────────────────────────────────────────────────
+  (function initTheme() {
+    const saved      = localStorage.getItem('telos_theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme      = saved || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    const btn = document.getElementById('theme-toggle');
+    if (btn) btn.textContent = theme === 'dark' ? '☀' : '🌙';
+  })();
+
+  window.toggleTheme = function () {
+    const cur  = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('telos_theme', next);
+    const btn = document.getElementById('theme-toggle');
+    if (btn) btn.textContent = next === 'dark' ? '☀' : '🌙';
+  };
 
   // ── Bootstrap ────────────────────────────────────────────────────────────
   fetch('http://localhost:8089/api/tree', { cache: 'no-store' })
@@ -132,8 +148,8 @@
     if (cutoff > 0) applyDoneFilter(treeData, cutoff);
 
     root = d3.hierarchy(treeData, d => d.children && d.children.length ? d.children : null);
-    root.x0 = height / 2;
-    root.y0 = 0;
+    root.x0 = width  / 2;
+    root.y0 = height / 2;
     window._telosRoot = root;
 
     root.descendants().forEach(d => {
@@ -146,43 +162,38 @@
     svg = d3.select('#container')
       .append('svg')
       .attr('viewBox', `0 0 ${width} ${height}`)
-      .attr('width', width)
+      .attr('width',  width)
       .attr('height', height)
-      .attr('role', 'img')
+      .attr('role',   'img')
       .attr('aria-label', 'Telos goal tree');
 
-    // Zoom with touch (pinch + pan)
-    const zoom = d3.zoom()
+    // Zoom — tracks currentZoom for label scaling
+    zoomBehavior = d3.zoom()
       .scaleExtent([0.05, 6])
-      .on('zoom', e => gAll.attr('transform', e.transform));
-    svg.call(zoom);
+      .on('zoom', e => {
+        gAll.attr('transform', e.transform);
+        currentZoom = e.transform.k;
+        updateLabels();
+      });
+    svg.call(zoomBehavior);
 
     gAll      = svg.append('g').attr('class', 'all');
     gLinks    = gAll.append('g').attr('class', 'links');
     gDepEdges = gAll.append('g').attr('id', 'dep-edges');
     gNodes    = gAll.append('g').attr('class', 'nodes');
 
-    // Arrowhead markers for dep edges
+    // Dep arrow marker — orange, 10×7
     const defs = svg.append('defs');
     defs.append('marker')
-      .attr('id', 'dep-arrow')
-      .attr('markerWidth', 8).attr('markerHeight', 6)
-      .attr('refX', 8).attr('refY', 3)
-      .attr('orient', 'auto')
+      .attr('id',          'dep-arrow')
+      .attr('markerWidth', 10)
+      .attr('markerHeight', 7)
+      .attr('refX',        9)
+      .attr('refY',        3.5)
+      .attr('orient',      'auto')
       .append('path')
-        .attr('d', 'M 0 0 L 0 6 L 8 3 z')
-        .attr('fill', 'rgba(99,120,150,0.8)');
-
-    defs.append('marker')
-      .attr('id', 'dep-arrow-hover')
-      .attr('markerWidth', 8).attr('markerHeight', 6)
-      .attr('refX', 8).attr('refY', 3)
-      .attr('orient', 'auto')
-      .append('path')
-        .attr('d', 'M 0 0 L 0 6 L 8 3 z')
-        .attr('fill', 'rgba(148,163,184,0.9)');
-
-    treeLayout = d3.tree().nodeSize([60, 240]);
+        .attr('d',    'M 0 0 L 0 7 L 10 3.5 z')
+        .attr('fill', EDGE_DEP_COLOR);
 
     update(root);
     resetView();
@@ -197,10 +208,13 @@
       doneFilterDays = isNaN(days) ? 0 : days;
       localStorage.setItem(LS_FILTER_KEY, doneFilterDays);
       if (!rawTreeData) return;
-      const filtered = applyDoneFilter(JSON.parse(JSON.stringify(rawTreeData)), getCutoffSecs(doneFilterDays));
+      const filtered = applyDoneFilter(
+        JSON.parse(JSON.stringify(rawTreeData)),
+        getCutoffSecs(doneFilterDays)
+      );
       const newRoot = d3.hierarchy(filtered, d => d.children && d.children.length ? d.children : null);
-      newRoot.x0 = height / 2;
-      newRoot.y0 = 0;
+      newRoot.x0 = width  / 2;
+      newRoot.y0 = height / 2;
       newRoot.descendants().forEach(d => {
         if (d.depth > 1) { d._children = d.children; d.children = null; }
       });
@@ -213,64 +227,104 @@
     };
 
     window.addEventListener('resize', resize);
-
     updateLastUpdatedDisplay();
     setInterval(() => refreshData(true), 30000);
   }
 
-  // ── Resize handler ───────────────────────────────────────────────────────
+  // ── Resize ───────────────────────────────────────────────────────────────
   function resize() {
     const container = document.getElementById('container');
     width  = container.clientWidth;
     height = container.clientHeight;
     svg.attr('viewBox', `0 0 ${width} ${height}`)
-       .attr('width', width).attr('height', height);
-    if (simulation) {
-      let strength = -(120 + (width * height) / 8000);
-      if (width > 2560) strength *= 2;
-      simulation.force('charge', d3.forceManyBody().strength(strength));
-      simulation.alpha(0.3).restart();
-    }
-    if (root) {
-      update(root);
-    }
+       .attr('width',  width)
+       .attr('height', height);
+    if (root) update(root);
+  }
+
+  // ── Force layout ─────────────────────────────────────────────────────────
+  function runForceLayout(nodes, links) {
+    const radii    = computeNodeRadius(nodes.length);
+    const maxDepth = d3.max(nodes, d => d.depth) || 1;
+    const isMobile = width < 768;
+
+    // Seed positions for nodes that don't have them yet
+    nodes.forEach(d => {
+      if (d.x == null || d.y == null) {
+        d.x = width  * (0.15 + d.depth / maxDepth * 0.7) + (Math.random() - 0.5) * 80;
+        d.y = height / 2 + (Math.random() - 0.5) * 80;
+      }
+    });
+
+    if (simulation) simulation.stop();
+
+    simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links)
+        .id(d => d.data.id)
+        .distance(d => isMobile ? 40 : 80 + d.target.depth * 20)
+        .strength(0.4))
+      .force('charge', d3.forceManyBody()
+        .strength(d => {
+          const kids = (d.children || []).length + (d._children || []).length;
+          return isMobile ? -80 : -(200 + kids * 30 + width * height / 12000);
+        }))
+      .force('center',  d3.forceCenter(width / 2, height / 2))
+      .force('collide', d3.forceCollide(d => {
+        const base = radii[d.data.type] || radii.task;
+        return isMobile ? base + 8 : base + 12;
+      }))
+      .force('x', d3.forceX(d => width * (0.15 + d.depth / maxDepth * 0.7))
+        .strength(isMobile ? 0.2 : 0.12))
+      .force('y', d3.forceY(height / 2).strength(0.03))
+      .alphaDecay(0.03)
+      .stop();
+
+    // Run synchronously to convergence
+    const n = Math.ceil(Math.log(simulation.alphaMin()) / Math.log(1 - simulation.alphaDecay()));
+    for (let i = 0; i < n; i++) simulation.tick();
+  }
+
+  // ── Bezier path for links (standard x,y SVG coordinates) ─────────────────
+  function bezier(s, d) {
+    const mx = (s.x + d.x) / 2;
+    return `M ${s.x} ${s.y} C ${mx} ${s.y}, ${mx} ${d.y}, ${d.x} ${d.y}`;
   }
 
   // ── Update / render ──────────────────────────────────────────────────────
   function update(source) {
-    const nodes    = root.descendants();
-    const radii    = computeNodeRadius(nodes.length);
-    const maxR     = Math.max(radii.goal, radii.milestone, radii.task);
-    const vSpacing = Math.max(50, maxR * 2 + 12);
-    const hSpacing = Math.max(200, maxR * 3.8);
-    treeLayout.nodeSize([vSpacing, hSpacing]);
-    treeLayout(root);
-
+    const nodes = root.descendants();
     const links = root.links();
-    const t = d3.transition().duration(350).ease(d3.easeCubicInOut);
+    const radii = computeNodeRadius(nodes.length);
+    const t     = d3.transition().duration(350).ease(d3.easeCubicInOut);
+    const r     = d => radii[d.data.type] || radii.task;
 
-    const r  = d => radii[d.data.type] || radii.task;
-    const fs = d => nodeFontSize(r(d));
+    // Position nodes via force simulation
+    runForceLayout(nodes, links);
 
-    // ── Links ──
+    // ── Tree links: thin, no arrowhead ──
     const link = gLinks.selectAll('.link').data(links, d => d.target.data.id);
 
     const linkEnter = link.enter().append('path')
       .attr('class', 'link')
+      .attr('fill',         'none')
+      .attr('stroke',       EDGE_TREE_STROKE)
+      .attr('stroke-width', '1px')
       .attr('d', () => {
         const o = { x: source.x0 ?? source.x, y: source.y0 ?? source.y };
-        return diagonal(o, o);
+        return bezier(o, o);
       });
 
     link.merge(linkEnter)
       .transition(t)
-      .attr('d', d => diagonal(d.source, d.target));
+      .attr('stroke',       EDGE_TREE_STROKE)
+      .attr('stroke-width', '1px')
+      .attr('d', d => bezier(d.source, d.target));
 
     link.exit()
       .transition(t)
       .attr('d', () => {
         const o = { x: source.x, y: source.y };
-        return diagonal(o, o);
+        return bezier(o, o);
       })
       .remove();
 
@@ -278,130 +332,99 @@
     const node = gNodes.selectAll('.node').data(nodes, d => d.data.id);
 
     const nodeEnter = node.enter().append('g')
-      .attr('class', d => `node status-${d.data.status}`)
-      .attr('transform', () => `translate(${source.y0 ?? source.y},${source.x0 ?? source.x})`)
-      .attr('tabindex', 0)
-      .attr('role', 'treeitem')
+      .attr('class',      d => `node status-${d.data.status}`)
+      .attr('transform',  () => `translate(${source.x0 ?? source.x},${source.y0 ?? source.y})`)
+      .attr('tabindex',   0)
+      .attr('role',       'treeitem')
       .attr('aria-label', d => `#${d.data.id} ${d.data.title}`)
-      .on('click', (e, d) => { e.stopPropagation(); showDetailPanel(d); })
-      .on('dblclick', (e, d) => { e.stopPropagation(); toggle(d); })
-      .on('keydown', (e, d) => {
+      .on('click',     (e, d) => { e.stopPropagation(); showDetailPanel(d); })
+      .on('dblclick',  (e, d) => { e.stopPropagation(); toggle(d); })
+      .on('keydown',   (e, d) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showDetailPanel(d); }
         if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); toggle(d); }
       })
       .on('mouseenter', (e, d) => onNodeHover(e, d))
-      .on('mousemove',  moveTooltip)
-      .on('mouseleave', (e, d) => onNodeHoverEnd(e, d));
+      .on('mousemove',   moveTooltip)
+      .on('mouseleave',  (e, d) => onNodeHoverEnd(e, d));
 
-    // Invisible hit-target for mobile (min 44px radius)
+    // Invisible hit-target (min 44px for mobile)
     nodeEnter.append('circle')
-      .attr('class', 'hit-target')
-      .attr('fill', 'transparent')
+      .attr('class',  'hit-target')
+      .attr('fill',   'transparent')
       .attr('stroke', 'none')
-      .attr('r', d => Math.max(r(d), 22));
+      .attr('r',      d => Math.max(r(d), 22));
 
     // Bottleneck ring (behind main circle)
     nodeEnter.append('circle')
-      .attr('class', 'bottleneck-ring')
-      .attr('fill', 'none')
-      .attr('stroke', '#ff4444')
+      .attr('class',        'bottleneck-ring')
+      .attr('fill',         'none')
+      .attr('stroke',       '#ff4444')
       .attr('stroke-width', 2)
       .attr('r', 0);
 
     // Main circle
     nodeEnter.append('circle').attr('class', 'node-circle').attr('r', 0);
 
-    // Node label: #ID + title inside circle
+    // Label
     nodeEnter.append('text')
-      .attr('class', 'label')
-      .attr('text-anchor', 'middle')
+      .attr('class',             'label')
+      .attr('text-anchor',       'middle')
       .attr('dominant-baseline', 'central')
-      .attr('pointer-events', 'none');
+      .attr('pointer-events',    'none');
 
     // Expand/collapse indicator
     nodeEnter.append('text')
-      .attr('class', 'indicator')
+      .attr('class',             'indicator')
       .attr('dominant-baseline', 'central')
-      .attr('text-anchor', 'middle');
+      .attr('text-anchor',       'middle');
 
     // Progress bar below node
-    const progG = nodeEnter.append('g')
-      .attr('class', 'progress-bar');
+    const progG = nodeEnter.append('g').attr('class', 'progress-bar');
     progG.append('rect')
-      .attr('class', 'progress-bg')
+      .attr('class',  'progress-bg')
       .attr('height', 3)
-      .attr('rx', 1.5)
-      .attr('fill', 'rgba(255,255,255,0.12)');
+      .attr('rx',     1.5)
+      .attr('fill',   'rgba(255,255,255,0.12)');
     progG.append('rect')
-      .attr('class', 'progress-fill')
+      .attr('class',  'progress-fill')
       .attr('height', 3)
-      .attr('rx', 1.5)
-      .attr('fill', '#4ade80')
-      .attr('width', 0);
+      .attr('rx',     1.5)
+      .attr('fill',   '#4ade80')
+      .attr('width',  0);
 
     // ── Merged update ──
     const nodeMerge = node.merge(nodeEnter);
 
     nodeMerge
       .transition(t)
-      .attr('transform', d => `translate(${d.y},${d.x})`)
-      .attr('class', d => `node status-${d.data.status}`);
+      .attr('transform', d => `translate(${d.x},${d.y})`)
+      .attr('class',     d => `node status-${d.data.status}`);
 
-    // Hit target
-    nodeMerge.select('.hit-target')
-      .attr('r', d => Math.max(r(d), 22));
+    nodeMerge.select('.hit-target').attr('r', d => Math.max(r(d), 22));
 
-    // Main circle
     nodeMerge.select('.node-circle')
       .transition(t)
       .attr('r', r);
 
-    // Bottleneck ring
     nodeMerge.select('.bottleneck-ring')
       .classed('bottleneck-pulse', d => !!d.data.is_bottleneck)
       .transition(t)
       .attr('r', d => d.data.is_bottleneck ? r(d) + 4 : 0);
 
-    // Label: rebuild tspans each update (handles radius changes on expand/collapse)
+    // Seed label content — updateLabels() will refine on zoom
     nodeMerge.select('text.label').each(function(d) {
-      const el       = d3.select(this);
-      const rr       = r(d);
-      const fontSize = fs(d);
-      const id       = d.data.id;
-      const title    = d.data.title || '';
-      el.attr('font-size', fontSize).selectAll('tspan').remove();
-
-      if (rr >= 18) {
-        const charsPerLine = Math.max(4, Math.floor((rr * 1.7) / (fontSize * 0.58)));
-        const shortTitle   = title.length > charsPerLine
-          ? title.slice(0, charsPerLine - 1) + '…'
-          : title;
-        el.append('tspan')
-          .attr('x', 0)
-          .attr('dy', '-0.52em')
-          .attr('fill', '#58a6ff')
-          .attr('font-size', Math.max(fontSize - 1, 7))
-          .attr('font-weight', 700)
-          .text(`#${id}`);
-        el.append('tspan')
-          .attr('x', 0)
-          .attr('dy', '1.1em')
-          .attr('fill', '#e6edf3')
-          .text(shortTitle);
-      } else {
-        el.append('tspan')
-          .attr('x', 0)
-          .attr('dy', 0)
-          .attr('fill', '#58a6ff')
-          .attr('font-size', Math.max(fontSize - 1, 7))
-          .text(`#${id}`);
-      }
+      const el = d3.select(this);
+      el.selectAll('tspan').remove();
+      el.append('tspan')
+        .attr('x',  0)
+        .attr('dy', 0)
+        .text(`#${d.data.id} ${d.data.title || ''}`);
     });
 
     // Expand/collapse indicator
     nodeMerge.select('text.indicator')
       .attr('font-size', d => Math.max(r(d) * 0.55, 7))
-      .attr('dy', d => r(d) + 12)
+      .attr('dy',        d => r(d) + 12)
       .text(d => {
         if (!d._children && !d.children) return '';
         return d.children ? EXPANDED_SYMBOL : COLLAPSED_SYMBOL;
@@ -419,13 +442,45 @@
 
     node.exit()
       .transition(t)
-      .attr('transform', `translate(${source.y},${source.x})`)
+      .attr('transform', `translate(${source.x},${source.y})`)
       .remove()
       .select('.node-circle').attr('r', 0);
 
     root.descendants().forEach(d => { d.x0 = d.x; d.y0 = d.y; });
 
     if (depsVisible && cachedDeps) drawDepEdges(cachedDeps);
+
+    updateLabels();
+  }
+
+  // ── Zoom-invariant labels ────────────────────────────────────────────────
+  function updateLabels() {
+    const zoom     = currentZoom;
+    const maxChars = Math.floor(10 + zoom * 12);
+    const fontSize = (11 / zoom) + 'px';
+
+    gNodes.selectAll('text.label').each(function(d) {
+      const el   = d3.select(this);
+      const kids = (d.children || []).length + (d._children || []).length;
+      const isImportant = d.data.type === 'goal' || d.data.type === 'milestone' || kids >= 3;
+
+      if (zoom < 0.5 && !isImportant) {
+        el.style('display', 'none');
+        return;
+      }
+      el.style('display', null);
+      el.attr('font-size', fontSize);
+
+      const raw   = `#${d.data.id} ${d.data.title || ''}`;
+      const label = raw.length > maxChars ? raw.slice(0, maxChars - 1) + '…' : raw;
+
+      el.selectAll('tspan').remove();
+      el.append('tspan')
+        .attr('x',  0)
+        .attr('dy', 0)
+        .attr('fill', 'var(--text-primary, #e6edf3)')
+        .text(label);
+    });
   }
 
   // ── Toggle collapse/expand ───────────────────────────────────────────────
@@ -460,8 +515,8 @@
   function resetView() {
     const padding = 60;
     const nodes   = root.descendants();
-    const xs = nodes.map(d => d.y);
-    const ys = nodes.map(d => d.x);
+    const xs      = nodes.map(d => d.x);
+    const ys      = nodes.map(d => d.y);
     const minX = Math.min(...xs), maxX = Math.max(...xs);
     const minY = Math.min(...ys), maxY = Math.max(...ys);
     const treeW = maxX - minX || 1;
@@ -474,19 +529,18 @@
     const tx = padding - minX * scale + (width  - padding * 2 - treeW * scale) / 2;
     const ty = padding - minY * scale + (height - padding * 2 - treeH * scale) / 2;
 
+    currentZoom = scale;
     svg.transition().duration(500).ease(d3.easeCubicInOut)
-      .call(
-        d3.zoom().scaleExtent([0.05, 6]).on('zoom', e => gAll.attr('transform', e.transform))
-          .transform,
-        d3.zoomIdentity.translate(tx, ty).scale(scale)
-      );
+      .call(zoomBehavior.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+
+    setTimeout(updateLabels, 520);
   }
 
   function toggleLegend() {
     document.getElementById('legend').classList.toggle('legend-expanded');
   }
 
-  // ── Hover dim effect ─────────────────────────────────────────────────────
+  // ── Hover: dim unrelated nodes/links, highlight dep edges of hovered node ─
   function getConnectedNodeIds(d) {
     const ids = new Set([d.data.id]);
     if (d.parent) ids.add(d.parent.data.id);
@@ -503,66 +557,52 @@
   function onNodeHover(event, d) {
     showTooltip(event, d);
 
-    const connected  = getConnectedNodeIds(d);
-    const glowColor  = BORDER_COLORS[d.data.status] || '#3b82f6';
+    const connected = getConnectedNodeIds(d);
+    const glowColor = BORDER_COLORS[d.data.status] || '#3b82f6';
 
-    // Glow on hovered node
     d3.select(event.currentTarget).select('.node-circle')
       .attr('filter', `drop-shadow(0 0 10px ${glowColor})`);
 
-    // Dim unconnected nodes
     gNodes.selectAll('.node').each(function(nd) {
       d3.select(this).style('opacity', connected.has(nd.data.id) ? 1.0 : 0.2);
     });
 
-    // Dim unconnected tree links
     gLinks.selectAll('.link').each(function(ld) {
       const inv = connected.has(ld.source.data.id) || connected.has(ld.target.data.id);
       d3.select(this).style('opacity', inv ? 1.0 : EDGE_DIM_OPACITY);
     });
 
-    // Highlight/dim dep edges
     if (depsVisible) {
       gDepEdges.selectAll('path').each(function() {
-        const src = +d3.select(this).attr('data-src');
-        const tgt = +d3.select(this).attr('data-tgt');
-        const inv = connected.has(src) || connected.has(tgt);
-        d3.select(this)
-          .attr('stroke', inv ? EDGE_DEP_HOVER : EDGE_DEP)
-          .style('opacity', inv ? 1.0 : EDGE_DIM_OPACITY)
-          .attr('marker-end', inv ? 'url(#dep-arrow-hover)' : 'url(#dep-arrow)');
+        const src    = +d3.select(this).attr('data-src');
+        const tgt    = +d3.select(this).attr('data-tgt');
+        const isConn = connected.has(src) || connected.has(tgt);
+        d3.select(this).style('opacity', isConn ? 1.0 : EDGE_DIM_OPACITY);
       });
     }
   }
 
   function onNodeHoverEnd(event, d) {
     hideTooltip();
-
-    d3.select(event.currentTarget).select('.node-circle')
-      .attr('filter', null);
-
+    d3.select(event.currentTarget).select('.node-circle').attr('filter', null);
     gNodes.selectAll('.node').style('opacity', null);
     gLinks.selectAll('.link').style('opacity', null);
-
     if (depsVisible) {
-      gDepEdges.selectAll('path')
-        .attr('stroke', EDGE_DEP)
-        .style('opacity', null)
-        .attr('marker-end', 'url(#dep-arrow)');
+      gDepEdges.selectAll('path').style('opacity', null);
     }
   }
 
   // ── Detail Panel ─────────────────────────────────────────────────────────
   function showDetailPanel(d) {
-    const nd     = d.data;
-    const panel  = document.getElementById('detail-panel');
+    const nd      = d.data;
+    const panel   = document.getElementById('detail-panel');
     const titleEl = document.getElementById('detail-panel-title');
-    const body   = document.getElementById('detail-panel-body');
+    const body    = document.getElementById('detail-panel-body');
 
-    // #ID prominently before title
+    // Fix 8: #ID in accent color before title
     titleEl.innerHTML =
-      `<span style="color:#58a6ff;font-weight:800;font-size:16px">#${nd.id}</span>` +
-      ` <span style="color:#7d8590;font-weight:400">—</span> ` +
+      `<span style="color:var(--text-accent);font-weight:800;font-size:16px">#${nd.id}</span>` +
+      ` <span style="color:var(--text-muted);font-weight:400">—</span> ` +
       `${escHtml(nd.title)}`;
 
     const roi      = nd.roi != null ? parseFloat(nd.roi).toFixed(2) : '—';
@@ -571,11 +611,11 @@
     const badgeClass  = `badge-${nd.status}`;
     const statusLabel = nd.status.replace(/_/g, ' ');
 
-    const desc     = nd.description || '';
+    const desc       = nd.description || '';
     const PREVIEW_LEN = 150;
-    const hasMore  = desc.length > PREVIEW_LEN;
-    const preview  = hasMore ? desc.slice(0, PREVIEW_LEN).trimEnd() + '…' : desc;
-    const descHTML = desc
+    const hasMore    = desc.length > PREVIEW_LEN;
+    const preview    = hasMore ? desc.slice(0, PREVIEW_LEN).trimEnd() + '…' : desc;
+    const descHTML   = desc
       ? `<div class="dp-description-box dp-desc-collapsed" id="dp-desc-box">
            <span class="dp-desc-preview">${escHtml(preview)}</span>
            <span class="dp-desc-full">${escHtml(desc)}</span>
@@ -590,7 +630,7 @@
       </div>
       <div style="font-size:10px;color:var(--text-muted);margin-top:4px">${pct}% complete</div>`;
 
-    const notes    = (nd.notes || []).slice(-5);
+    const notes     = (nd.notes || []).slice(-5);
     const notesHTML = notes.length
       ? notes.map(n => {
           const ts     = new Date(n.ts * 1000).toLocaleString();
@@ -599,7 +639,6 @@
         }).join('')
       : `<div style="font-size:10px;color:rgba(255,255,255,0.3)">No step notes yet</div>`;
 
-    // Depends-on / blocked-by info
     const depsInfo = nd.depends_on && nd.depends_on.length
       ? `<div class="dp-row"><span class="dp-label">Depends on</span><span class="dp-value">${nd.depends_on.map(id => `#${id}`).join(', ')}</span></div>`
       : '';
@@ -609,7 +648,7 @@
         <div class="dp-section-title">Identity</div>
         <div class="dp-row">
           <span class="dp-label">ID</span>
-          <span class="dp-value" style="color:#58a6ff;font-weight:700">#${nd.id}</span>
+          <span class="dp-value" style="color:var(--text-accent);font-weight:700">#${nd.id}</span>
         </div>
         <div class="dp-row"><span class="dp-label">Type</span><span class="dp-value">${nd.type}</span></div>
         <div class="dp-row"><span class="dp-label">Owner</span><span class="dp-value">${nd.owner || '—'}</span></div>
@@ -664,7 +703,7 @@
     if (!box) return;
     const isCollapsed = box.classList.contains('dp-desc-collapsed');
     box.classList.toggle('dp-desc-collapsed', !isCollapsed);
-    box.classList.toggle('dp-desc-expanded',  isCollapsed);
+    box.classList.toggle('dp-desc-expanded',   isCollapsed);
     if (btn) btn.textContent = isCollapsed ? '▲ Show less' : '▼ Show more';
   }
 
@@ -681,48 +720,35 @@
   window.closeDetailPanel = closeDetailPanel;
   window.toggleDesc = toggleDesc;
 
-  // ── Diagonal path ────────────────────────────────────────────────────────
-  function diagonal(s, d) {
-    return `M ${s.y} ${s.x}
-            C ${(s.y + d.y) / 2} ${s.x},
-              ${(s.y + d.y) / 2} ${d.x},
-              ${d.y} ${d.x}`;
-  }
-
   // ── Tooltip ──────────────────────────────────────────────────────────────
   function fmtVal(n) {
     if (n == null) return '—';
-    if (n >= 1_000_000) return `€${(n/1_000_000).toFixed(1)}M`;
-    if (n >= 1_000)     return `€${(n/1_000).toFixed(0)}K`;
+    if (n >= 1_000_000) return `€${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000)     return `€${(n / 1_000).toFixed(0)}K`;
     return `€${n}`;
   }
 
+  // Fix 8: Tooltip format "#ID — Title / Status | Type | Owner"
   function showTooltip(event, d) {
     const nd     = d.data;
-    const roi    = nd.roi != null ? parseFloat(nd.roi).toFixed(2) : '—';
     const status = nd.status.replace(/_/g, ' ');
     tooltip.innerHTML = `
       <div class="title">
-        <span style="color:#58a6ff;font-weight:800">#${nd.id}</span>
-        <span style="color:#7d8590"> — </span>${escHtml(nd.title)}
+        <span style="color:var(--text-accent);font-weight:800">#${nd.id}</span>
+        <span style="color:var(--text-muted)"> — </span>${escHtml(nd.title)}
       </div>
       <div class="row">
-        <span class="label">Status</span>
-        <span class="value">${status}</span>
-        <span style="color:#7d8590;margin-left:8px">|</span>
-        <span class="label" style="margin-left:8px">Type</span>
-        <span class="value">${nd.type}</span>
-        <span style="color:#7d8590;margin-left:8px">|</span>
-        <span class="label" style="margin-left:8px">Owner</span>
-        <span class="value">${nd.owner || '—'}</span>
+        <span class="label">Status</span><span class="value">${status}</span>
+        <span style="color:var(--text-muted);margin-left:8px">|</span>
+        <span class="label" style="margin-left:8px">Type</span><span class="value">${nd.type}</span>
+        <span style="color:var(--text-muted);margin-left:8px">|</span>
+        <span class="label" style="margin-left:8px">Owner</span><span class="value">${nd.owner || '—'}</span>
       </div>
       ${nd.value != null || nd.cost_estimate != null ? `
       <div class="row">
-        <span class="label">Value</span> <span class="value">${fmtVal(nd.value)}</span>
+        <span class="label">Value</span><span class="value">${fmtVal(nd.value)}</span>
         &nbsp;&nbsp;
-        <span class="label">Cost</span> <span class="value">${fmtVal(nd.cost_estimate)}</span>
-        &nbsp;&nbsp;
-        <span class="label">ROI</span> <span class="value">${roi}</span>
+        <span class="label">Cost</span><span class="value">${fmtVal(nd.cost_estimate)}</span>
       </div>` : ''}
       ${nd.progress > 0 ? `<div class="row"><span class="label">Progress</span><span class="value">${nd.progress}%</span></div>` : ''}
     `;
@@ -741,9 +767,7 @@
     tooltip.style.top  = `${top}px`;
   }
 
-  function hideTooltip() {
-    tooltip.classList.remove('visible');
-  }
+  function hideTooltip() { tooltip.classList.remove('visible'); }
 
   // ── Tab switching ────────────────────────────────────────────────────────
   window.switchTab = function switchTab(tab) {
@@ -763,10 +787,10 @@
     [treeBtn, ideasBtn].forEach(b => {
       if (b) { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); }
     });
-    if (controls)     controls.style.display = 'none';
-    if (legend)       legend.style.display   = 'none';
-    if (legendToggle) legendToggle.style.display = 'none';
-    if (filterWrap)   filterWrap.style.display   = 'none';
+    if (controls)     controls.style.display     = 'none';
+    if (legend)       legend.style.display        = 'none';
+    if (legendToggle) legendToggle.style.display   = 'none';
+    if (filterWrap)   filterWrap.style.display     = 'none';
 
     ['tree','list','ideas'].forEach(t => {
       const b = document.getElementById(`bnav-${t}`);
@@ -777,9 +801,9 @@
       container.style.display = '';
       if (treeBtn) { treeBtn.classList.add('active'); treeBtn.setAttribute('aria-selected', 'true'); }
       if (controls)     controls.style.display     = '';
-      if (legend)       legend.style.display       = '';
-      if (legendToggle) legendToggle.style.display = '';
-      if (filterWrap)   filterWrap.style.display   = '';
+      if (legend)       legend.style.display        = '';
+      if (legendToggle) legendToggle.style.display  = '';
+      if (filterWrap)   filterWrap.style.display    = '';
     } else if (tab === 'list') {
       if (listView) { listView.classList.add('active'); renderListView(); }
     } else {
@@ -797,7 +821,7 @@
     function flatten(nodes) {
       nodes.forEach(n => {
         allNodes.push(n);
-        if (n.children && n.children.length) flatten(n.children);
+        if (n.children  && n.children.length)  flatten(n.children);
         if (n._children && n._children.length) flatten(n._children);
       });
     }
@@ -809,7 +833,10 @@
       return;
     }
 
-    const STATUS_ORDER = { in_progress: 0, blocked: 1, in_question: 2, open: 3, done: 4, shelved: 5, refused: 6, rejected: 7, out_of_budget: 8 };
+    const STATUS_ORDER = {
+      in_progress: 0, blocked: 1, in_question: 2, open: 3,
+      done: 4, shelved: 5, refused: 6, rejected: 7, out_of_budget: 8
+    };
     const statusGroups = {};
     allNodes
       .filter(n => n.type === 'task' || n.type === 'milestone')
@@ -824,7 +851,7 @@
         statusGroups[g].push(n);
       });
 
-    const groupOrder = ['in_progress','blocked','in_question','open','done','shelved','rejected','refused','out_of_budget'];
+    const groupOrder  = ['in_progress','blocked','in_question','open','done','shelved','rejected','refused','out_of_budget'];
     const groupLabels = {
       in_progress:   '🔵 In Progress',
       blocked:       '🔴 Blocked',
@@ -852,7 +879,7 @@
         html += `<div class="lv-card" onclick="openNodeDetail(${n.id})" role="listitem">
           <div class="lv-card-top">
             <div class="lv-card-title">
-              <span style="color:#58a6ff;font-weight:700">#${n.id}</span> ${escHtml(n.title)}
+              <span style="color:var(--text-accent);font-weight:700">#${n.id}</span> ${escHtml(n.title)}
             </div>
             <span class="dp-badge ${badgeClass}">${n.type}</span>
           </div>
@@ -866,7 +893,6 @@
       }
       html += '</div>';
     }
-
     el.innerHTML = html || '<p style="color:var(--text-muted);padding:16px;font-size:12px">No tasks found.</p>';
   }
 
@@ -877,7 +903,7 @@
   };
 
   // ── Dependency edges ─────────────────────────────────────────────────────
-  // Direction: arrow FROM blocked node TO its blocker (A → B means "A needs B")
+  // Arrow FROM blocked node TO its blocker (A → B means "A needs B")
   function drawDepEdges(deps) {
     cachedDeps = deps;
     gDepEdges.selectAll('path').remove();
@@ -892,36 +918,33 @@
       const blocked = nodeMap.get(dep.blocked_id);
       if (!blocker || !blocked) return;
 
-      // Source = blocked (the dependent), target = blocker (what it needs)
-      const sx = blocked.y, sy = blocked.x;
-      const dx = blocker.y, dy = blocker.x;
-
-      const mx  = (sx + dx) / 2;
-      const my  = (sy + dy) / 2 - 60;
+      // Force layout uses standard SVG x,y
+      const sx = blocked.x, sy = blocked.y;
+      const dx = blocker.x, dy = blocker.y;
+      const mx = (sx + dx) / 2;
+      const my = (sy + dy) / 2 - 60;
 
       const srcR = (radii[blocked.data.type] || radii.task) + 2;
       const tgtR = (radii[blocker.data.type] || radii.task) + 2;
 
-      // Offset start from source circle edge
-      const s2mx = mx - sx, s2my = my - sy;
+      const s2mx   = mx - sx, s2my = my - sy;
       const s2mLen = Math.sqrt(s2mx * s2mx + s2my * s2my) || 1;
-      const ssx = sx + (s2mx / s2mLen) * srcR;
-      const ssy = sy + (s2my / s2mLen) * srcR;
+      const ssx    = sx + (s2mx / s2mLen) * srcR;
+      const ssy    = sy + (s2my / s2mLen) * srcR;
 
-      // Offset end to target circle edge
-      const m2dx = dx - mx, m2dy = dy - my;
+      const m2dx   = dx - mx, m2dy = dy - my;
       const m2dLen = Math.sqrt(m2dx * m2dx + m2dy * m2dy) || 1;
-      const ddx = dx - (m2dx / m2dLen) * tgtR;
-      const ddy = dy - (m2dy / m2dLen) * tgtR;
+      const ddx    = dx - (m2dx / m2dLen) * tgtR;
+      const ddy    = dy - (m2dy / m2dLen) * tgtR;
 
       gDepEdges.append('path')
-        .attr('d', `M ${ssx} ${ssy} Q ${mx} ${my} ${ddx} ${ddy}`)
-        .attr('fill', 'none')
-        .attr('stroke', EDGE_DEP)
-        .attr('stroke-width', 1.8)
-        .attr('marker-end', 'url(#dep-arrow)')
-        .attr('data-src', dep.blocked_id)
-        .attr('data-tgt', dep.blocker_id);
+        .attr('d',           `M ${ssx} ${ssy} Q ${mx} ${my} ${ddx} ${ddy}`)
+        .attr('fill',        'none')
+        .attr('stroke',      EDGE_DEP_COLOR)
+        .attr('stroke-width', 2.5)
+        .attr('marker-end',  'url(#dep-arrow)')
+        .attr('data-src',    dep.blocked_id)
+        .attr('data-tgt',    dep.blocker_id);
     });
   }
 
@@ -994,9 +1017,9 @@
     ideas.forEach(i => { (grouped[i.status] || grouped.active).push(i); });
 
     const sections = [
-      { key: 'active',   label: '🟢 Active',   desc: 'Worth pursuing now' },
-      { key: 'parked',   label: '🟡 Parked',   desc: 'Good ideas, not now' },
-      { key: 'rejected', label: '⬜ Rejected',  desc: 'Decided against' }
+      { key: 'active',   label: '🟢 Active',  desc: 'Worth pursuing now' },
+      { key: 'parked',   label: '🟡 Parked',  desc: 'Good ideas, not now' },
+      { key: 'rejected', label: '⬜ Rejected', desc: 'Decided against' }
     ];
 
     let html = '';
@@ -1030,12 +1053,10 @@
           tags.forEach(t => { html += `<span class="idea-tag">${esc(t)}</span>`; });
           html += '</div>';
         }
-
         html += '</div>';
       }
       html += '</div>';
     }
-
     panel.innerHTML = html;
   }
 
@@ -1044,7 +1065,7 @@
     const btn = document.getElementById('refresh-data-btn');
     if (!silent) {
       btn.innerText = '↺';
-      btn.disabled = true;
+      btn.disabled  = true;
     }
 
     const cacheBuster = Date.now();
@@ -1054,13 +1075,16 @@
         return r.json();
       })
       .then(data => {
-        rawTreeData = data.tree[0];
+        rawTreeData     = data.tree[0];
         lastUpdatedTime = Date.now();
-        const filtered = applyDoneFilter(JSON.parse(JSON.stringify(rawTreeData)), getCutoffSecs(doneFilterDays));
+        const filtered  = applyDoneFilter(
+          JSON.parse(JSON.stringify(rawTreeData)),
+          getCutoffSecs(doneFilterDays)
+        );
 
         root = d3.hierarchy(filtered, d => d.children && d.children.length ? d.children : null);
-        root.x0 = height / 2;
-        root.y0 = 0;
+        root.x0 = width  / 2;
+        root.y0 = height / 2;
         root.descendants().forEach(d => {
           if (d.depth > 1) { d._children = d.children; d.children = null; }
         });
