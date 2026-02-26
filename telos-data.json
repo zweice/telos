@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-25T23:00:36.870Z",
+  "generated_at": "2026-02-26T00:03:55.707Z",
   "tree": [
     {
       "id": 1,
@@ -786,6 +786,31 @@
               "progress": 0,
               "description": "Tool loops cause stuck sessions, wasted tokens, and silent agent failures (Atlas stuck 21:07–22:15 CET Feb 25 @ unknown cost). Research prevention angles: (1) Stronger prompting — explicit loop detection instructions in SOUL.md / system prompt; (2) Tool design — better descriptions, clearer error returns, idempotency signals; (3) Timeout at tool level — max retries per tool call per session; (4) Gateway-level circuit breaker — detect >N same tool calls in N turns and abort; (5) Model choice — does Sonnet loop less than Haiku on ambiguous tool results? Produce concrete recommendations with implementation path.",
               "notes": [],
+              "children": []
+            },
+            {
+              "id": 78,
+              "title": "Self-healing systemd watchdog for OpenClaw",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 8000,
+              "cost_estimate": 50,
+              "cost_actual": null,
+              "roi": 160,
+              "effort_hours_estimate": 4,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": null,
+              "notes": [
+                {
+                  "ts": 1772064233,
+                  "text": "Spec: systemd timer (every 60s) checks OpenClaw process alive + responsive. Heal sequence: (1) openclaw doctor --fix, (2) restart service, (3) restore from latest known-good openclaw.json backup + restart. Backup mgmt: timestamped snapshots of openclaw.json on every clean startup/config change, keep last 7. Telegram alert if all heal attempts fail. Smart extras: check port/API health not just process existence, log heal events."
+                }
+              ],
               "children": []
             }
           ]
