@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T11:19:05.812Z",
+  "generated_at": "2026-02-26T11:30:04.084Z",
   "tree": [
     {
       "id": 1,
@@ -486,16 +486,16 @@
                   "title": "Telos UI: layout options, settings overlay, node interactions",
                   "type": "task",
                   "owner": "forge",
-                  "status": "in_progress",
+                  "status": "done",
                   "value": 20000,
                   "cost_estimate": 80,
-                  "cost_actual": null,
+                  "cost_actual": 10,
                   "roi": 250,
                   "effort_hours_estimate": 6,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 3,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1772105403,
                   "progress": 0,
                   "description": null,
                   "notes": [
