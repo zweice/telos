@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T10:13:39.196Z",
+  "generated_at": "2026-02-26T10:39:21.234Z",
   "tree": [
     {
       "id": 1,
@@ -477,6 +477,31 @@
                     {
                       "ts": 1772100210,
                       "text": "Two resilience bugs from #81:\n1. fetch('http://localhost:8089/api/tree') has no timeout — add AbortSignal.timeout(3000) so it fails fast and falls through to the static file fallback\n2. serviceWorker.register('/sw.js') should be './sw.js' — fails on /telos/ subpath deployment\nBoth are small fixes."
+                    }
+                  ],
+                  "children": []
+                },
+                {
+                  "id": 83,
+                  "title": "Telos UI: layout options, settings overlay, node interactions",
+                  "type": "task",
+                  "owner": "forge",
+                  "status": "open",
+                  "value": 20000,
+                  "cost_estimate": 80,
+                  "cost_actual": null,
+                  "roi": 250,
+                  "effort_hours_estimate": 6,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": null,
+                  "notes": [
+                    {
+                      "ts": 1772102357,
+                      "text": "INTENT: Andreas uses this daily. It must feel like his tool. All parameters should be his to tune.\n\n## 1. Layout options (selector in toolbar or settings)\nMultiple placement algorithms to choose from:\n- Tidy tree (top-down) — the OLD layout, which was preferred. Make this the default.\n- Radial tree (nodes around center)\n- Horizontal tree (left-to-right)\n- Force-directed (free-floating, good for dense graphs)\nSelection persists in settings/cookie.\n\n## 2. Settings overlay panel\nTogglable panel (button in toolbar, keyboard shortcut too). Stays on screen until hidden.\nParameters to expose (at minimum):\n- Text size (global font scale)\n- Label hide threshold: zoom level below which node labels disappear (0 = always show)\n- Node spacing (horizontal + vertical independently)\n- Level spacing (depth distance between tree levels)\n- Node size multiplier (global scale on top of dynamic sizing)\n- Edge thickness\n- Edge opacity\n- Animation speed / disable animations toggle\n- Layout algorithm selector (from #1 above)\n\n## 3. Settings persistence\n- Save ALL settings to localStorage (not cookie — localStorage is better for JSON)\n- Export button: downloads settings as settings.json\n- Import button: load from a settings.json file (so Andreas can paste his config back to Forge)\n- Reset to defaults button\n\n## 4. Node click interactions\n- Single click → expand / collapse children (NOT open detail panel)\n- Double click → open detail panel (current single-click behavior)\n- Right-click or long-press (mobile) → context menu: Open details / Expand all children / Collapse all children\n\n## QUALITY GATE\nBefore done: test with 10 nodes AND 80 nodes — layout must work at both scales. Test on mobile (touch interactions). Export/import settings round-trip must work cleanly."
                     }
                   ],
                   "children": []
