@@ -196,6 +196,7 @@
     .node .node-rect {
       stroke-width: 2px;
       transition: filter var(--transition-fast);
+      pointer-events: none;
     }
     /* circle-only radius transition */
     .node .node-circle { transition: r var(--transition-smooth), filter var(--transition-fast); }
@@ -225,11 +226,6 @@
       transition: opacity var(--transition-fast);
     }
 
-    .node .indicator {
-      fill: var(--text-muted);
-      font-weight: 700;
-      pointer-events: none;
-    }
 
     /* ── Tree links: thin, no arrowhead ─────────── */
     .link {

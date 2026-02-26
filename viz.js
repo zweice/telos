@@ -106,7 +106,7 @@
     return { w, h };
   }
 
-  // Bottom half-height (for indicator and progress-bar placement)
+  // Bottom half-height (for progress-bar placement)
   function nodeBottom(d, radii, s) {
     if (s.nodeShape === 'circle') return radii[d.data.type] || radii.task;
     return nodeRectDims(d, s).h / 2;
@@ -137,9 +137,8 @@
   }
 
   // ── Done-filter state ────────────────────────────────────────────────────
-  const LS_FILTER_KEY = 'telos_done_filter_days';
   let doneFilterDays = (() => {
-    const v = localStorage.getItem(LS_FILTER_KEY);
+    const v = loadCookie('telos_done_filter_days', null);
     return v !== null ? parseInt(v, 10) : 1;
   })();
 
@@ -268,8 +267,6 @@
   let cachedDeps      = null;
   const tooltip       = document.getElementById('tooltip');
 
-  const COLLAPSED_SYMBOL = '+';
-  const EXPANDED_SYMBOL  = '−';
 
   function updateLastUpdatedDisplay() {
     const el = document.getElementById('last-updated');
@@ -413,7 +410,7 @@
 
     window.setDoneFilter = function setDoneFilter(days) {
       doneFilterDays = isNaN(days) ? 0 : days;
-      localStorage.setItem(LS_FILTER_KEY, doneFilterDays);
+      saveCookie('telos_done_filter_days', doneFilterDays);
       if (!rawTreeData) return;
       let filtered = applyDoneFilter(
         JSON.parse(JSON.stringify(rawTreeData)),
@@ -544,7 +541,7 @@
   function runHorizontalLayout() {
     if (simulation) { simulation.stop(); simulation = null; }
     d3.tree()
-      .nodeSize([settings.spacingV, settings.spacingH])
+      .nodeSize([settings.spacingV, settings.levelSpacing])
       .separation((a, b) => a.parent === b.parent ? 1 : 1.2)
       (root);
     // Swap x ↔ y for left-to-right orientation
@@ -558,8 +555,8 @@
   // ── Layout: Radial ────────────────────────────────────────────────────────
   function runRadialLayout() {
     if (simulation) { simulation.stop(); simulation = null; }
-    const radius = Math.min(width, height) / 2 * 0.82;
-    d3.cluster().size([2 * Math.PI, radius])(root);
+    const maxDepth = d3.max(root.descendants(), d => d.depth) || 1;
+    d3.tree().size([2 * Math.PI, settings.levelSpacing * maxDepth])(root);
     // Convert polar (angle, radius) → cartesian (x, y) centered on canvas
     root.descendants().forEach(d => {
       const [cx, cy] = d3.pointRadial(d.x, d.y);
@@ -795,11 +792,6 @@
       .attr('pointer-events',    'none')
       .style('display',          'none');
 
-    // Expand/collapse indicator
-    nodeEnter.append('text')
-      .attr('class',             'indicator')
-      .attr('dominant-baseline', 'central')
-      .attr('text-anchor',       'middle');
 
     // Progress bar below node
     const progG = nodeEnter.append('g').attr('class', 'progress-bar');
@@ -846,15 +838,7 @@
         return Math.sqrt(w * w + h * h) / 2 + 4;
       });
 
-    // Indicator + progress bar positioning
-    nodeMerge.select('text.indicator')
-      .attr('font-size', d => Math.max(nodeBottom(d, radii, settings) * 0.55, 7))
-      .attr('dy',        d => nodeBottom(d, radii, settings) + 12)
-      .text(d => {
-        if (!d._children && !d.children) return '';
-        return d.children ? EXPANDED_SYMBOL : COLLAPSED_SYMBOL;
-      });
-
+    // Progress bar positioning
     nodeMerge.select('.progress-bar')
       .attr('transform', d => {
         const hw  = nodeHalfWidth(d, radii, settings);
@@ -1034,7 +1018,7 @@
     const connected = getConnectedNodeIds(d);
     const glowColor = BORDER_COLORS[d.data.status] || '#3b82f6';
 
-    d3.select(event.currentTarget).select('.node-circle')
+    d3.select(event.currentTarget).select('.node-shape')
       .attr('filter', `drop-shadow(0 0 10px ${glowColor})`);
 
     gNodes.selectAll('.node').each(function (nd) {
@@ -1058,7 +1042,7 @@
 
   function onNodeHoverEnd(event, d) {
     hideTooltip();
-    d3.select(event.currentTarget).select('.node-circle').attr('filter', null);
+    d3.select(event.currentTarget).select('.node-shape').attr('filter', null);
     gNodes.selectAll('.node').style('opacity', null);
     gLinks.selectAll('.link').style('opacity', null);
     if (depsVisible) {
