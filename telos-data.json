@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T10:06:56.138Z",
+  "generated_at": "2026-02-26T10:13:39.196Z",
   "tree": [
     {
       "id": 1,
@@ -461,16 +461,16 @@
                   "title": "Telos: fetch timeout + sw.js path fix",
                   "type": "task",
                   "owner": "forge",
-                  "status": "open",
+                  "status": "done",
                   "value": 1000,
                   "cost_estimate": 5,
-                  "cost_actual": null,
+                  "cost_actual": 2,
                   "roi": 200,
                   "effort_hours_estimate": 1,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 0.1,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1772100817,
                   "progress": 0,
                   "description": null,
                   "notes": [
