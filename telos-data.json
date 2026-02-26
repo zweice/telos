@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T10:00:18.410Z",
+  "generated_at": "2026-02-26T10:06:56.138Z",
   "tree": [
     {
       "id": 1,
@@ -452,6 +452,31 @@
                     {
                       "ts": 1772074186,
                       "text": "INTENT: Telos is Andreas's daily command center. It must be beautiful and functional — not a prototype. This is Forge's chance to demonstrate CC quality standards.\n\nBEFORE STARTING: Acquire UI builder skills for the Claude Code instance — research best-practice D3/graph UI patterns, responsive design at 4K and mobile, and apply them. Do not start without this.\n\nSPECIFIC ISSUES TO FIX:\n1. Node sizing: must be dynamic — fewer nodes = larger nodes with more text, more nodes = compact. Text must never be ugly-truncated.\n2. Color palette: full redesign. Current colors are not pleasing. Pick a coherent, professional palette.\n3. Node ID visible: #ID must show on hover AND in the detail panel when clicking a node. Atlas always refers to nodes by ID — it must be cross-referenceable.\n4. Dep arrows: (a) color — not orange/dashed; use something elegant. (b) DIRECTION — currently counterintuitive. Arrow must point FROM blocked node TO its blocker (reads as: 'this node needs that one done first'). Reverse if currently backwards.\n5. Space efficiency: use the canvas intelligently. On 43-inch 4K, nodes should use the space. On mobile, it must be touch-friendly and work without wasted whitespace.\n6. General: the whole UI should feel like a tool someone wants to open. Not a D3 demo.\n\nQUALITY GATE: Before marking done — open it on mobile, open it on a wide viewport, verify all 6 points above. Run /review."
+                    }
+                  ],
+                  "children": []
+                },
+                {
+                  "id": 82,
+                  "title": "Telos: fetch timeout + sw.js path fix",
+                  "type": "task",
+                  "owner": "forge",
+                  "status": "open",
+                  "value": 1000,
+                  "cost_estimate": 5,
+                  "cost_actual": null,
+                  "roi": 200,
+                  "effort_hours_estimate": 1,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": null,
+                  "notes": [
+                    {
+                      "ts": 1772100210,
+                      "text": "Two resilience bugs from #81:\n1. fetch('http://localhost:8089/api/tree') has no timeout — add AbortSignal.timeout(3000) so it fails fast and falls through to the static file fallback\n2. serviceWorker.register('/sw.js') should be './sw.js' — fails on /telos/ subpath deployment\nBoth are small fixes."
                     }
                   ],
                   "children": []
