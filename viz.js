@@ -2,70 +2,60 @@
 (function () {
   'use strict';
 
-  // ── Config ────────────────────────────────────────────────────────────────
-  // Responsive node sizing based on viewport
-  function getNodeConfig() {
-    const isMobile = window.innerWidth <= 768;
-    const isSmallMobile = window.innerWidth <= 600;
-    if (isSmallMobile) {
-      return {
-        radius: { goal: 14, milestone: 10, task: 7 },
-        labelOffset: { goal: 22, milestone: 18, task: 14 },
-        spacing: 160,
-        fontSize: { goal: 13, milestone: 12, task: 11 }
-      };
-    } else if (isMobile) {
-      return {
-        radius: { goal: 18, milestone: 13, task: 8 },
-        labelOffset: { goal: 26, milestone: 21, task: 15 },
-        spacing: 200,
-        fontSize: { goal: 13, milestone: 12, task: 11 }
-      };
-    }
+  // ── Edge colors (used in JS since SVG attrs can't read CSS vars) ─────────
+  const EDGE_DEP        = 'rgba(99, 120, 150, 0.6)';
+  const EDGE_DEP_HOVER  = 'rgba(148, 163, 184, 0.9)';
+  const EDGE_DIM_OPACITY = 0.1;
+
+  // Border colors per status (for glow effects)
+  const BORDER_COLORS = {
+    open:        '#3b82f6',
+    in_progress: '#22c55e',
+    done:        '#4ade80',
+    blocked:     '#ef4444',
+    out_of_budget: '#ef4444',
+    shelved:     '#475569',
+    rejected:    '#374151',
+    refused:     '#374151',
+    in_question: '#eab308',
+  };
+
+  // ── Dynamic node sizing ──────────────────────────────────────────────────
+  function computeNodeRadius(count) {
+    const base = Math.min(width, height) / Math.sqrt(Math.max(count, 1)) * 0.38;
     return {
-      radius: { goal: 22, milestone: 16, task: 10 },
-      labelOffset: { goal: 30, milestone: 24, task: 16 },
-      spacing: 220,
-      fontSize: { goal: 13, milestone: 11, task: 9 }
+      goal:      Math.max(24, Math.min(base * 1.4, 72)),
+      milestone: Math.max(18, Math.min(base,       54)),
+      task:      Math.max(12, Math.min(base * 0.7, 38))
     };
   }
-  
-  let nodeConfig = getNodeConfig();
-  const NODE_RADIUS = nodeConfig.radius;
-  const NODE_LABEL_OFFSET = nodeConfig.labelOffset;
-  const LINK_COLOR = 'rgba(255,255,255,0.1)';
-  const COLLAPSED_SYMBOL = '+';
-  const EXPANDED_SYMBOL = '−';
 
-  // ── Done-filter state ─────────────────────────────────────────────────────
+  function nodeFontSize(r) {
+    return Math.max(7, Math.min(Math.round(r * 0.32), 13));
+  }
+
+  // ── Done-filter state ────────────────────────────────────────────────────
   const LS_FILTER_KEY = 'telos_done_filter_days';
   let doneFilterDays = (() => {
     const v = localStorage.getItem(LS_FILTER_KEY);
-    return v !== null ? parseInt(v, 10) : 1; // default: 1 day
+    return v !== null ? parseInt(v, 10) : 1;
   })();
 
-  /** Raw tree data from last API fetch — preserved so filter can be re-applied
-   *  without a network round-trip. */
+  /** Raw tree data from last API fetch */
   let rawTreeData = null;
 
-  /** Return seconds cutoff: nodes completed before this timestamp are hidden.
-   *  Returns 0 when filtering is off (days === 0).
-   *  Returns Infinity when days === -1 (hide ALL done regardless of age). */
   function getCutoffSecs(days) {
     if (days === -1) return Infinity;
     if (!days || days <= 0) return 0;
     return Math.floor(Date.now() / 1000) - days * 86400;
   }
 
-  /** Deep-clone + prune done nodes whose completed_at < cutoffSecs.
-   *  Operates on plain JS objects (before D3 hierarchy wrapping). */
   function applyDoneFilter(node, cutoffSecs) {
     if (!node) return node;
     if (!node.children || node.children.length === 0) return node;
     node.children = node.children
       .filter(c => {
         if (c.status === 'done' && cutoffSecs > 0) {
-          // Hide if completed before cutoff (or never recorded → hide conservatively)
           if (!c.completed_at || c.completed_at < cutoffSecs) return false;
         }
         return true;
@@ -74,22 +64,23 @@
     return node;
   }
 
-  /** Sync the <select> element to the current doneFilterDays value. */
   function syncFilterSelect() {
     const sel = document.getElementById('done-filter');
     if (!sel) return;
-    // Find closest matching option; fall back to first
     const opt = Array.from(sel.options).find(o => parseInt(o.value, 10) === doneFilterDays);
     sel.value = opt ? opt.value : String(doneFilterDays);
   }
 
-  // ── State ─────────────────────────────────────────────────────────────────
+  // ── State ────────────────────────────────────────────────────────────────
   let root, svg, gAll, gLinks, gNodes, gDepEdges, treeLayout, width, height;
   let simulation = null;
   let lastUpdatedTime = null;
   let depsVisible = false;
   let cachedDeps = null;
   const tooltip = document.getElementById('tooltip');
+
+  const COLLAPSED_SYMBOL = '+';
+  const EXPANDED_SYMBOL  = '−';
 
   function updateLastUpdatedDisplay() {
     const el = document.getElementById('last-updated');
@@ -101,8 +92,7 @@
     el.textContent = `${hh}:${mm}:${ss}`;
   }
 
-  // ── Bootstrap ─────────────────────────────────────────────────────────────
-  // Fetch from API endpoint for live data (falls back to static file if API fails)
+  // ── Bootstrap ────────────────────────────────────────────────────────────
   fetch('http://localhost:8089/api/tree', { cache: 'no-store' })
     .then(r => {
       if (!r.ok) throw new Error(`API error: ${r.status}`);
@@ -138,35 +128,32 @@
     width  = container.clientWidth;
     height = container.clientHeight;
 
-    // Apply done-task filter before building hierarchy
     const cutoff = getCutoffSecs(doneFilterDays);
     if (cutoff > 0) applyDoneFilter(treeData, cutoff);
 
-    // Build hierarchy
     root = d3.hierarchy(treeData, d => d.children && d.children.length ? d.children : null);
     root.x0 = height / 2;
     root.y0 = 0;
-    window._telosRoot = root; // expose for list view
+    window._telosRoot = root;
 
-    // Collapse everything beyond depth 1 by default
     root.descendants().forEach(d => {
       if (d.depth > 1) {
         d._children = d.children;
-        d.children = null;
+        d.children  = null;
       }
     });
 
-    // SVG
     svg = d3.select('#container')
       .append('svg')
+      .attr('viewBox', `0 0 ${width} ${height}`)
       .attr('width', width)
       .attr('height', height)
       .attr('role', 'img')
       .attr('aria-label', 'Telos goal tree');
 
-    // Zoom
+    // Zoom with touch (pinch + pan)
     const zoom = d3.zoom()
-      .scaleExtent([0.1, 3])
+      .scaleExtent([0.05, 6])
       .on('zoom', e => gAll.attr('transform', e.transform));
     svg.call(zoom);
 
@@ -175,33 +162,42 @@
     gDepEdges = gAll.append('g').attr('id', 'dep-edges');
     gNodes    = gAll.append('g').attr('class', 'nodes');
 
-    // Arrowhead marker for dependency edges
-    svg.append('defs').html(
-      '<marker id="dep-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">' +
-      '<path d="M 0 0 L 0 6 L 8 3 z" fill="#F5A623"/>' +
-      '</marker>'
-    );
+    // Arrowhead markers for dep edges
+    const defs = svg.append('defs');
+    defs.append('marker')
+      .attr('id', 'dep-arrow')
+      .attr('markerWidth', 8).attr('markerHeight', 6)
+      .attr('refX', 8).attr('refY', 3)
+      .attr('orient', 'auto')
+      .append('path')
+        .attr('d', 'M 0 0 L 0 6 L 8 3 z')
+        .attr('fill', 'rgba(99,120,150,0.8)');
 
-    treeLayout = d3.tree().nodeSize([44, nodeConfig.spacing]);
+    defs.append('marker')
+      .attr('id', 'dep-arrow-hover')
+      .attr('markerWidth', 8).attr('markerHeight', 6)
+      .attr('refX', 8).attr('refY', 3)
+      .attr('orient', 'auto')
+      .append('path')
+        .attr('d', 'M 0 0 L 0 6 L 8 3 z')
+        .attr('fill', 'rgba(148,163,184,0.9)');
+
+    treeLayout = d3.tree().nodeSize([60, 240]);
 
     update(root);
     resetView();
 
-    // Expose globals for buttons
     window.resetView    = resetView;
     window.expandAll    = expandAll;
     window.collapseAll  = collapseAll;
     window.toggleLegend = toggleLegend;
     window.toggleDeps   = toggleDeps;
 
-    // Done-filter setter (called by the <select> onchange)
     window.setDoneFilter = function setDoneFilter(days) {
       doneFilterDays = isNaN(days) ? 0 : days;
       localStorage.setItem(LS_FILTER_KEY, doneFilterDays);
       if (!rawTreeData) return;
-      // Re-apply filter from stored raw data and re-render
       const filtered = applyDoneFilter(JSON.parse(JSON.stringify(rawTreeData)), getCutoffSecs(doneFilterDays));
-      // Rebuild hierarchy in place
       const newRoot = d3.hierarchy(filtered, d => d.children && d.children.length ? d.children : null);
       newRoot.x0 = height / 2;
       newRoot.y0 = 0;
@@ -216,37 +212,45 @@
       setTimeout(resetView, 400);
     };
 
-    // Resize
-    window.addEventListener('resize', () => {
-      width  = container.clientWidth;
-      height = container.clientHeight;
-      svg.attr('width', width).attr('height', height);
-      
-      // Update responsive node configuration on resize
-      const newConfig = getNodeConfig();
-      if (newConfig.spacing !== nodeConfig.spacing) {
-        nodeConfig = newConfig;
-        Object.assign(NODE_RADIUS, nodeConfig.radius);
-        Object.assign(NODE_LABEL_OFFSET, nodeConfig.labelOffset);
-        treeLayout.nodeSize([44, nodeConfig.spacing]);
-        update(root);
-        resetView();
-      }
-    });
+    window.addEventListener('resize', resize);
 
-    // Show initial timestamp and start 30-second auto-refresh
     updateLastUpdatedDisplay();
     setInterval(() => refreshData(true), 30000);
   }
 
-  // ── Update / render ───────────────────────────────────────────────────────
+  // ── Resize handler ───────────────────────────────────────────────────────
+  function resize() {
+    const container = document.getElementById('container');
+    width  = container.clientWidth;
+    height = container.clientHeight;
+    svg.attr('viewBox', `0 0 ${width} ${height}`)
+       .attr('width', width).attr('height', height);
+    if (simulation) {
+      let strength = -(120 + (width * height) / 8000);
+      if (width > 2560) strength *= 2;
+      simulation.force('charge', d3.forceManyBody().strength(strength));
+      simulation.alpha(0.3).restart();
+    }
+    if (root) {
+      update(root);
+    }
+  }
+
+  // ── Update / render ──────────────────────────────────────────────────────
   function update(source) {
+    const nodes    = root.descendants();
+    const radii    = computeNodeRadius(nodes.length);
+    const maxR     = Math.max(radii.goal, radii.milestone, radii.task);
+    const vSpacing = Math.max(50, maxR * 2 + 12);
+    const hSpacing = Math.max(200, maxR * 3.8);
+    treeLayout.nodeSize([vSpacing, hSpacing]);
     treeLayout(root);
 
-    const nodes = root.descendants();
     const links = root.links();
-
     const t = d3.transition().duration(350).ease(d3.easeCubicInOut);
+
+    const r  = d => radii[d.data.type] || radii.task;
+    const fs = d => nodeFontSize(r(d));
 
     // ── Links ──
     const link = gLinks.selectAll('.link').data(links, d => d.target.data.id);
@@ -278,20 +282,25 @@
       .attr('transform', () => `translate(${source.y0 ?? source.y},${source.x0 ?? source.x})`)
       .attr('tabindex', 0)
       .attr('role', 'treeitem')
-      .attr('aria-label', d => d.data.title)
+      .attr('aria-label', d => `#${d.data.id} ${d.data.title}`)
       .on('click', (e, d) => { e.stopPropagation(); showDetailPanel(d); })
       .on('dblclick', (e, d) => { e.stopPropagation(); toggle(d); })
       .on('keydown', (e, d) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showDetailPanel(d); }
         if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); toggle(d); }
       })
-      .on('mouseenter', showTooltip)
+      .on('mouseenter', (e, d) => onNodeHover(e, d))
       .on('mousemove',  moveTooltip)
-      .on('mouseleave', hideTooltip);
+      .on('mouseleave', (e, d) => onNodeHoverEnd(e, d));
 
-    const r = d => NODE_RADIUS[d.data.type] || 10;
+    // Invisible hit-target for mobile (min 44px radius)
+    nodeEnter.append('circle')
+      .attr('class', 'hit-target')
+      .attr('fill', 'transparent')
+      .attr('stroke', 'none')
+      .attr('r', d => Math.max(r(d), 22));
 
-    // Bottleneck ring — behind the main circle (appended first)
+    // Bottleneck ring (behind main circle)
     nodeEnter.append('circle')
       .attr('class', 'bottleneck-ring')
       .attr('fill', 'none')
@@ -299,31 +308,30 @@
       .attr('stroke-width', 2)
       .attr('r', 0);
 
+    // Main circle
     nodeEnter.append('circle').attr('class', 'node-circle').attr('r', 0);
 
-    // Label
+    // Node label: #ID + title inside circle
     nodeEnter.append('text')
       .attr('class', 'label')
-      .attr('dy', d => -(NODE_LABEL_OFFSET[d.data.type] || 14))
-      .attr('font-size', d => nodeConfig.fontSize[d.data.type] || 11)
-      .text(d => truncate(d.data.title, d.data.type === 'goal' ? 36 : d.data.type === 'milestone' ? 30 : 24));
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+      .attr('pointer-events', 'none');
 
-    // Expand indicator
+    // Expand/collapse indicator
     nodeEnter.append('text')
       .attr('class', 'indicator')
-      .attr('font-size', d => Math.max(r(d) * 0.7, 7));
-    // Progress bar (in_progress nodes only)
-    const progG = nodeEnter.append('g')
-      .attr('class', 'progress-bar')
-      .attr('transform', d => `translate(${-r(d)}, ${r(d) + 4})`);
+      .attr('dominant-baseline', 'central')
+      .attr('text-anchor', 'middle');
 
+    // Progress bar below node
+    const progG = nodeEnter.append('g')
+      .attr('class', 'progress-bar');
     progG.append('rect')
       .attr('class', 'progress-bg')
-      .attr('width', d => r(d) * 2)
       .attr('height', 3)
       .attr('rx', 1.5)
-      .attr('fill', 'rgba(255,255,255,0.15)');
-
+      .attr('fill', 'rgba(255,255,255,0.12)');
     progG.append('rect')
       .attr('class', 'progress-fill')
       .attr('height', 3)
@@ -331,9 +339,7 @@
       .attr('fill', '#4ade80')
       .attr('width', 0);
 
-
-
-    // Merged update
+    // ── Merged update ──
     const nodeMerge = node.merge(nodeEnter);
 
     nodeMerge
@@ -341,35 +347,72 @@
       .attr('transform', d => `translate(${d.y},${d.x})`)
       .attr('class', d => `node status-${d.data.status}`);
 
+    // Hit target
+    nodeMerge.select('.hit-target')
+      .attr('r', d => Math.max(r(d), 22));
+
+    // Main circle
     nodeMerge.select('.node-circle')
       .transition(t)
       .attr('r', r);
 
-    // Bottleneck ring: show pulsing red ring on bottleneck nodes
+    // Bottleneck ring
     nodeMerge.select('.bottleneck-ring')
       .classed('bottleneck-pulse', d => !!d.data.is_bottleneck)
       .transition(t)
-      .attr('r', d => d.data.is_bottleneck ? r(d) + 3 : 0);
+      .attr('r', d => d.data.is_bottleneck ? r(d) + 4 : 0);
 
-    nodeMerge.select('text.label')
-      .attr('dy', d => -(NODE_LABEL_OFFSET[d.data.type] || 14))
-      .attr('font-size', d => nodeConfig.fontSize[d.data.type] || 11);
+    // Label: rebuild tspans each update (handles radius changes on expand/collapse)
+    nodeMerge.select('text.label').each(function(d) {
+      const el       = d3.select(this);
+      const rr       = r(d);
+      const fontSize = fs(d);
+      const id       = d.data.id;
+      const title    = d.data.title || '';
+      el.attr('font-size', fontSize).selectAll('tspan').remove();
 
-    nodeMerge.select('.indicator')
+      if (rr >= 18) {
+        const charsPerLine = Math.max(4, Math.floor((rr * 1.7) / (fontSize * 0.58)));
+        const shortTitle   = title.length > charsPerLine
+          ? title.slice(0, charsPerLine - 1) + '…'
+          : title;
+        el.append('tspan')
+          .attr('x', 0)
+          .attr('dy', '-0.52em')
+          .attr('fill', '#58a6ff')
+          .attr('font-size', Math.max(fontSize - 1, 7))
+          .attr('font-weight', 700)
+          .text(`#${id}`);
+        el.append('tspan')
+          .attr('x', 0)
+          .attr('dy', '1.1em')
+          .attr('fill', '#e6edf3')
+          .text(shortTitle);
+      } else {
+        el.append('tspan')
+          .attr('x', 0)
+          .attr('dy', 0)
+          .attr('fill', '#58a6ff')
+          .attr('font-size', Math.max(fontSize - 1, 7))
+          .text(`#${id}`);
+      }
+    });
+
+    // Expand/collapse indicator
+    nodeMerge.select('text.indicator')
+      .attr('font-size', d => Math.max(r(d) * 0.55, 7))
+      .attr('dy', d => r(d) + 12)
       .text(d => {
         if (!d._children && !d.children) return '';
         return d.children ? EXPANDED_SYMBOL : COLLAPSED_SYMBOL;
       });
 
-
-    // Update progress bars
+    // Progress bars
     nodeMerge.select('.progress-bar')
-      .attr('transform', d => `translate(${-r(d)}, ${r(d) + 4})`)
+      .attr('transform', d => `translate(${-r(d)}, ${r(d) + 5})`)
       .attr('display', d => (d.data.status === 'in_progress' && d.data.progress > 0) ? null : 'none');
-
     nodeMerge.select('.progress-bar rect.progress-bg')
       .attr('width', d => r(d) * 2);
-
     nodeMerge.select('.progress-bar rect.progress-fill')
       .transition(t)
       .attr('width', d => r(d) * 2 * ((d.data.progress || 0) / 100));
@@ -380,14 +423,12 @@
       .remove()
       .select('.node-circle').attr('r', 0);
 
-    // Save positions
     root.descendants().forEach(d => { d.x0 = d.x; d.y0 = d.y; });
 
-    // Redraw dep edges after tree update (node positions may have changed)
     if (depsVisible && cachedDeps) drawDepEdges(cachedDeps);
   }
 
-  // ── Toggle collapse/expand ────────────────────────────────────────────────
+  // ── Toggle collapse/expand ───────────────────────────────────────────────
   function toggle(d) {
     if (d.children) {
       d._children = d.children;
@@ -399,7 +440,7 @@
     update(d);
   }
 
-  // ── Global controls ───────────────────────────────────────────────────────
+  // ── Global controls ──────────────────────────────────────────────────────
   function expandAll() {
     root.descendants().forEach(d => {
       if (d._children) { d.children = d._children; d._children = null; }
@@ -418,7 +459,7 @@
 
   function resetView() {
     const padding = 60;
-    const nodes = root.descendants();
+    const nodes   = root.descendants();
     const xs = nodes.map(d => d.y);
     const ys = nodes.map(d => d.x);
     const minX = Math.min(...xs), maxX = Math.max(...xs);
@@ -435,37 +476,105 @@
 
     svg.transition().duration(500).ease(d3.easeCubicInOut)
       .call(
-        d3.zoom().scaleExtent([0.1, 3]).on('zoom', e => gAll.attr('transform', e.transform))
+        d3.zoom().scaleExtent([0.05, 6]).on('zoom', e => gAll.attr('transform', e.transform))
           .transform,
         d3.zoomIdentity.translate(tx, ty).scale(scale)
       );
   }
 
   function toggleLegend() {
-    const legend = document.getElementById('legend');
-    legend.classList.toggle('legend-expanded');
+    document.getElementById('legend').classList.toggle('legend-expanded');
   }
 
-  // ── Detail Panel ──────────────────────────────────────────────────────────
+  // ── Hover dim effect ─────────────────────────────────────────────────────
+  function getConnectedNodeIds(d) {
+    const ids = new Set([d.data.id]);
+    if (d.parent) ids.add(d.parent.data.id);
+    [...(d.children || []), ...(d._children || [])].forEach(c => ids.add(c.data.id));
+    if (cachedDeps) {
+      cachedDeps.forEach(dep => {
+        if (dep.blocker_id === d.data.id) ids.add(dep.blocked_id);
+        if (dep.blocked_id === d.data.id) ids.add(dep.blocker_id);
+      });
+    }
+    return ids;
+  }
+
+  function onNodeHover(event, d) {
+    showTooltip(event, d);
+
+    const connected  = getConnectedNodeIds(d);
+    const glowColor  = BORDER_COLORS[d.data.status] || '#3b82f6';
+
+    // Glow on hovered node
+    d3.select(event.currentTarget).select('.node-circle')
+      .attr('filter', `drop-shadow(0 0 10px ${glowColor})`);
+
+    // Dim unconnected nodes
+    gNodes.selectAll('.node').each(function(nd) {
+      d3.select(this).style('opacity', connected.has(nd.data.id) ? 1.0 : 0.2);
+    });
+
+    // Dim unconnected tree links
+    gLinks.selectAll('.link').each(function(ld) {
+      const inv = connected.has(ld.source.data.id) || connected.has(ld.target.data.id);
+      d3.select(this).style('opacity', inv ? 1.0 : EDGE_DIM_OPACITY);
+    });
+
+    // Highlight/dim dep edges
+    if (depsVisible) {
+      gDepEdges.selectAll('path').each(function() {
+        const src = +d3.select(this).attr('data-src');
+        const tgt = +d3.select(this).attr('data-tgt');
+        const inv = connected.has(src) || connected.has(tgt);
+        d3.select(this)
+          .attr('stroke', inv ? EDGE_DEP_HOVER : EDGE_DEP)
+          .style('opacity', inv ? 1.0 : EDGE_DIM_OPACITY)
+          .attr('marker-end', inv ? 'url(#dep-arrow-hover)' : 'url(#dep-arrow)');
+      });
+    }
+  }
+
+  function onNodeHoverEnd(event, d) {
+    hideTooltip();
+
+    d3.select(event.currentTarget).select('.node-circle')
+      .attr('filter', null);
+
+    gNodes.selectAll('.node').style('opacity', null);
+    gLinks.selectAll('.link').style('opacity', null);
+
+    if (depsVisible) {
+      gDepEdges.selectAll('path')
+        .attr('stroke', EDGE_DEP)
+        .style('opacity', null)
+        .attr('marker-end', 'url(#dep-arrow)');
+    }
+  }
+
+  // ── Detail Panel ─────────────────────────────────────────────────────────
   function showDetailPanel(d) {
-    const nd = d.data;
-    const panel = document.getElementById('detail-panel');
+    const nd     = d.data;
+    const panel  = document.getElementById('detail-panel');
     const titleEl = document.getElementById('detail-panel-title');
-    const body = document.getElementById('detail-panel-body');
+    const body   = document.getElementById('detail-panel-body');
 
-    titleEl.textContent = nd.title;
+    // #ID prominently before title
+    titleEl.innerHTML =
+      `<span style="color:#58a6ff;font-weight:800;font-size:16px">#${nd.id}</span>` +
+      ` <span style="color:#7d8590;font-weight:400">—</span> ` +
+      `${escHtml(nd.title)}`;
 
-    const roi = nd.roi != null ? parseFloat(nd.roi).toFixed(2) : '—';
-    const fmt2 = v => v != null ? '€' + Number(v).toLocaleString() : '—';
-    const fmtDate = ts => ts ? new Date(ts * 1000).toLocaleDateString() : '—';
-    const badgeClass = `badge-${nd.status}`;
-    const statusLabel = nd.status.replace('_', ' ');
+    const roi      = nd.roi != null ? parseFloat(nd.roi).toFixed(2) : '—';
+    const fmt2     = v => v != null ? '€' + Number(v).toLocaleString() : '—';
+    const fmtDate  = ts => ts ? new Date(ts * 1000).toLocaleDateString() : '—';
+    const badgeClass  = `badge-${nd.status}`;
+    const statusLabel = nd.status.replace(/_/g, ' ');
 
-    // Description handling
-    const desc = nd.description || '';
+    const desc     = nd.description || '';
     const PREVIEW_LEN = 150;
-    const hasMore = desc.length > PREVIEW_LEN;
-    const preview = hasMore ? desc.slice(0, PREVIEW_LEN).trimEnd() + '…' : desc;
+    const hasMore  = desc.length > PREVIEW_LEN;
+    const preview  = hasMore ? desc.slice(0, PREVIEW_LEN).trimEnd() + '…' : desc;
     const descHTML = desc
       ? `<div class="dp-description-box dp-desc-collapsed" id="dp-desc-box">
            <span class="dp-desc-preview">${escHtml(preview)}</span>
@@ -474,29 +583,42 @@
          </div>`
       : `<div class="dp-description-box" style="color:rgba(255,255,255,0.3);font-style:italic">No description</div>`;
 
-    // Progress
-    const pct = nd.progress || 0;
+    const pct          = nd.progress || 0;
     const progressHTML = `
       <div class="dp-progress-bar-bg">
         <div class="dp-progress-bar-fill" style="width:${pct}%"></div>
       </div>
-      <div style="font-size:10px;color:var(--text-secondary);margin-top:4px">${pct}% complete</div>`;
+      <div style="font-size:10px;color:var(--text-muted);margin-top:4px">${pct}% complete</div>`;
 
-    // Notes (from metadata - not always in exported viz data, so guard)
-    const notes = (nd.notes || []).slice(-5);
+    const notes    = (nd.notes || []).slice(-5);
     const notesHTML = notes.length
       ? notes.map(n => {
-          const ts = new Date(n.ts * 1000).toLocaleString();
+          const ts     = new Date(n.ts * 1000).toLocaleString();
           const pctStr = n.progress != null ? `<span class="dp-note-pct"> [${n.progress}%]</span>` : '';
           return `<div class="dp-note"><span class="dp-note-ts">${ts}</span>${pctStr}<br>${escHtml(n.text)}</div>`;
         }).join('')
       : `<div style="font-size:10px;color:rgba(255,255,255,0.3)">No step notes yet</div>`;
 
+    // Depends-on / blocked-by info
+    const depsInfo = nd.depends_on && nd.depends_on.length
+      ? `<div class="dp-row"><span class="dp-label">Depends on</span><span class="dp-value">${nd.depends_on.map(id => `#${id}`).join(', ')}</span></div>`
+      : '';
+
     body.innerHTML = `
+      <div class="dp-section">
+        <div class="dp-section-title">Identity</div>
+        <div class="dp-row">
+          <span class="dp-label">ID</span>
+          <span class="dp-value" style="color:#58a6ff;font-weight:700">#${nd.id}</span>
+        </div>
+        <div class="dp-row"><span class="dp-label">Type</span><span class="dp-value">${nd.type}</span></div>
+        <div class="dp-row"><span class="dp-label">Owner</span><span class="dp-value">${nd.owner || '—'}</span></div>
+      </div>
+
       <div class="dp-section">
         <div class="dp-section-title">Status</div>
         <span class="dp-badge ${badgeClass}">${statusLabel}</span>
-        &nbsp;<span style="font-size:10px;color:var(--text-secondary)">${nd.type} · ${nd.owner || '—'}</span>
+        ${depsInfo ? `<div style="margin-top:8px">${depsInfo}</div>` : ''}
       </div>
 
       <div class="dp-section">
@@ -538,11 +660,11 @@
 
   function toggleDesc() {
     const box = document.getElementById('dp-desc-box');
-    const btn = box.querySelector('.dp-desc-toggle');
+    const btn = box && box.querySelector('.dp-desc-toggle');
     if (!box) return;
     const isCollapsed = box.classList.contains('dp-desc-collapsed');
     box.classList.toggle('dp-desc-collapsed', !isCollapsed);
-    box.classList.toggle('dp-desc-expanded', isCollapsed);
+    box.classList.toggle('dp-desc-expanded',  isCollapsed);
     if (btn) btn.textContent = isCollapsed ? '▲ Show less' : '▼ Show more';
   }
 
@@ -555,15 +677,11 @@
       .replace(/\n/g, '<br>');
   }
 
-  // Close panel when clicking background
-  document.getElementById('container').addEventListener('click', () => {
-    closeDetailPanel();
-  });
-
+  document.getElementById('container').addEventListener('click', () => closeDetailPanel());
   window.closeDetailPanel = closeDetailPanel;
   window.toggleDesc = toggleDesc;
 
-  // ── Diagonal path ─────────────────────────────────────────────────────────
+  // ── Diagonal path ────────────────────────────────────────────────────────
   function diagonal(s, d) {
     return `M ${s.y} ${s.x}
             C ${(s.y + d.y) / 2} ${s.x},
@@ -571,8 +689,8 @@
               ${d.y} ${d.x}`;
   }
 
-  // ── Tooltip ───────────────────────────────────────────────────────────────
-  function fmt(n) {
+  // ── Tooltip ──────────────────────────────────────────────────────────────
+  function fmtVal(n) {
     if (n == null) return '—';
     if (n >= 1_000_000) return `€${(n/1_000_000).toFixed(1)}M`;
     if (n >= 1_000)     return `€${(n/1_000).toFixed(0)}K`;
@@ -580,17 +698,32 @@
   }
 
   function showTooltip(event, d) {
-    const nd = d.data;
-    const roi = nd.roi != null ? parseFloat(nd.roi).toFixed(2) : '—';
+    const nd     = d.data;
+    const roi    = nd.roi != null ? parseFloat(nd.roi).toFixed(2) : '—';
+    const status = nd.status.replace(/_/g, ' ');
     tooltip.innerHTML = `
-      <div class="title">${nd.title}</div>
-      <div class="row"><span class="label">Type</span>   <span class="value">${nd.type}</span></div>
-      <div class="row"><span class="label">Status</span> <span class="value">${nd.status.replace('_',' ')}</span></div>
-      <div class="row"><span class="label">Owner</span>  <span class="value">${nd.owner}</span></div>
-      <div class="row"><span class="label">Value</span>  <span class="value">${fmt(nd.value)}</span></div>
-      <div class="row"><span class="label">Cost</span>   <span class="value">${fmt(nd.cost_estimate)}</span></div>
-      <div class="row"><span class="label">ROI</span>    <span class="value">${roi}</span></div>
-      ${nd.effort_hours_estimate != null ? `<div class="row"><span class="label">Effort</span><span class="value">${nd.effort_hours_estimate}h</span></div>` : ''}
+      <div class="title">
+        <span style="color:#58a6ff;font-weight:800">#${nd.id}</span>
+        <span style="color:#7d8590"> — </span>${escHtml(nd.title)}
+      </div>
+      <div class="row">
+        <span class="label">Status</span>
+        <span class="value">${status}</span>
+        <span style="color:#7d8590;margin-left:8px">|</span>
+        <span class="label" style="margin-left:8px">Type</span>
+        <span class="value">${nd.type}</span>
+        <span style="color:#7d8590;margin-left:8px">|</span>
+        <span class="label" style="margin-left:8px">Owner</span>
+        <span class="value">${nd.owner || '—'}</span>
+      </div>
+      ${nd.value != null || nd.cost_estimate != null ? `
+      <div class="row">
+        <span class="label">Value</span> <span class="value">${fmtVal(nd.value)}</span>
+        &nbsp;&nbsp;
+        <span class="label">Cost</span> <span class="value">${fmtVal(nd.cost_estimate)}</span>
+        &nbsp;&nbsp;
+        <span class="label">ROI</span> <span class="value">${roi}</span>
+      </div>` : ''}
       ${nd.progress > 0 ? `<div class="row"><span class="label">Progress</span><span class="value">${nd.progress}%</span></div>` : ''}
     `;
     tooltip.classList.add('visible');
@@ -598,10 +731,10 @@
   }
 
   function moveTooltip(event) {
-    const margin = 12;
-    const tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
-    let left = event.clientX + margin;
-    let top  = event.clientY + margin;
+    const margin = 14;
+    const tw     = tooltip.offsetWidth, th = tooltip.offsetHeight;
+    let left     = event.clientX + margin;
+    let top      = event.clientY + margin;
     if (left + tw > window.innerWidth)  left = event.clientX - tw - margin;
     if (top  + th > window.innerHeight) top  = event.clientY - th - margin;
     tooltip.style.left = `${left}px`;
@@ -612,37 +745,29 @@
     tooltip.classList.remove('visible');
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  function truncate(str, max) {
-    return str.length > max ? str.slice(0, max - 1) + '…' : str;
-  }
-
-  // ── Tab switching ─────────────────────────────────────────────────────────
-  let currentTab = 'tree';
-
+  // ── Tab switching ────────────────────────────────────────────────────────
   window.switchTab = function switchTab(tab) {
-    currentTab = tab;
-    const container   = document.getElementById('container');
-    const listView    = document.getElementById('list-view');
-    const ideasPanel  = document.getElementById('ideas-panel');
-    const treeBtn     = document.getElementById('tab-tree');
-    const ideasBtn    = document.getElementById('tab-ideas');
-    const controls    = document.getElementById('controls');
-    const legend      = document.getElementById('legend');
+    const container    = document.getElementById('container');
+    const listView     = document.getElementById('list-view');
+    const ideasPanel   = document.getElementById('ideas-panel');
+    const treeBtn      = document.getElementById('tab-tree');
+    const ideasBtn     = document.getElementById('tab-ideas');
+    const controls     = document.getElementById('controls');
+    const legend       = document.getElementById('legend');
     const legendToggle = document.getElementById('legend-toggle');
-    const filterWrap  = document.getElementById('done-filter-wrap');
+    const filterWrap   = document.getElementById('done-filter-wrap');
 
-    // Reset all
     container.style.display = 'none';
     if (listView) listView.classList.remove('active');
     ideasPanel.classList.remove('visible');
-    [treeBtn, ideasBtn].forEach(b => { if (b) { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); } });
-    if (controls) controls.style.display = 'none';
-    if (legend) legend.style.display = 'none';
+    [treeBtn, ideasBtn].forEach(b => {
+      if (b) { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); }
+    });
+    if (controls)     controls.style.display = 'none';
+    if (legend)       legend.style.display   = 'none';
     if (legendToggle) legendToggle.style.display = 'none';
-    if (filterWrap) filterWrap.style.display = 'none';
+    if (filterWrap)   filterWrap.style.display   = 'none';
 
-    // Update bottom nav
     ['tree','list','ideas'].forEach(t => {
       const b = document.getElementById(`bnav-${t}`);
       if (b) b.classList.toggle('active', t === tab);
@@ -651,10 +776,10 @@
     if (tab === 'tree') {
       container.style.display = '';
       if (treeBtn) { treeBtn.classList.add('active'); treeBtn.setAttribute('aria-selected', 'true'); }
-      if (controls) controls.style.display = '';
-      if (legend) legend.style.display = '';
+      if (controls)     controls.style.display     = '';
+      if (legend)       legend.style.display       = '';
       if (legendToggle) legendToggle.style.display = '';
-      if (filterWrap) filterWrap.style.display = '';
+      if (filterWrap)   filterWrap.style.display   = '';
     } else if (tab === 'list') {
       if (listView) { listView.classList.add('active'); renderListView(); }
     } else {
@@ -668,7 +793,6 @@
     const el = document.getElementById('list-view');
     if (!el) return;
 
-    // Flatten all nodes from the loaded tree data
     const allNodes = [];
     function flatten(nodes) {
       nodes.forEach(n => {
@@ -678,11 +802,10 @@
       });
     }
 
-    // Use the D3 root if available
     if (window._telosRoot) {
       flatten(window._telosRoot.descendants().map(d => d.data));
     } else {
-      el.innerHTML = '<p style="color:var(--text-secondary);padding:16px;font-size:12px">Load the tree first to use list view.</p>';
+      el.innerHTML = '<p style="color:var(--text-muted);padding:16px;font-size:12px">Load the tree first.</p>';
       return;
     }
 
@@ -701,35 +824,36 @@
         statusGroups[g].push(n);
       });
 
-    const groupOrder = ['in_progress', 'blocked', 'in_question', 'open', 'done', 'shelved', 'rejected', 'refused', 'out_of_budget'];
+    const groupOrder = ['in_progress','blocked','in_question','open','done','shelved','rejected','refused','out_of_budget'];
     const groupLabels = {
-      in_progress:  '🔵 In Progress',
-      blocked:      '🔴 Blocked',
-      in_question:  '🟠 In Question',
-      open:         '🟡 Open',
-      done:         '✅ Done',
-      shelved:      '⬜ Shelved',
-      rejected:     '🚫 Rejected',
-      refused:      '⚫ Refused',
+      in_progress:   '🔵 In Progress',
+      blocked:       '🔴 Blocked',
+      in_question:   '🟠 In Question',
+      open:          '🟡 Open',
+      done:          '✅ Done',
+      shelved:       '⬜ Shelved',
+      rejected:      '🚫 Rejected',
+      refused:       '⚫ Refused',
       out_of_budget: '💸 Out of Budget'
     };
 
     let html = '';
     for (const g of groupOrder) {
-      const nodes = statusGroups[g];
-      if (!nodes || !nodes.length) continue;
-      html += `<div class="lv-group">
-        <div class="lv-group-title">${groupLabels[g] || g} (${nodes.length})</div>`;
-      for (const n of nodes) {
-        const roi = n.roi != null ? `ROI ${parseFloat(n.roi).toFixed(0)}` : '';
-        const owner = n.owner ? `· ${n.owner}` : '';
-        const pct = n.progress || 0;
+      const gnodes = statusGroups[g];
+      if (!gnodes || !gnodes.length) continue;
+      html += `<div class="lv-group"><div class="lv-group-title">${groupLabels[g] || g} (${gnodes.length})</div>`;
+      for (const n of gnodes) {
+        const roi    = n.roi != null ? `ROI ${parseFloat(n.roi).toFixed(0)}` : '';
+        const owner  = n.owner ? `· ${n.owner}` : '';
+        const pct    = n.progress || 0;
         const progressBar = pct > 0
           ? `<div class="lv-card-progress"><div class="lv-card-progress-fill" style="width:${pct}%"></div></div>` : '';
         const badgeClass = `badge-${n.status}`;
         html += `<div class="lv-card" onclick="openNodeDetail(${n.id})" role="listitem">
           <div class="lv-card-top">
-            <div class="lv-card-title">${escHtml(n.title)}</div>
+            <div class="lv-card-title">
+              <span style="color:#58a6ff;font-weight:700">#${n.id}</span> ${escHtml(n.title)}
+            </div>
             <span class="dp-badge ${badgeClass}">${n.type}</span>
           </div>
           <div class="lv-card-meta">
@@ -743,48 +867,48 @@
       html += '</div>';
     }
 
-    el.innerHTML = html || '<p style="color:var(--text-secondary);padding:16px;font-size:12px">No tasks found.</p>';
+    el.innerHTML = html || '<p style="color:var(--text-muted);padding:16px;font-size:12px">No tasks found.</p>';
   }
 
   window.openNodeDetail = function(id) {
-    // Find node in D3 root and open detail panel
     if (!window._telosRoot) return;
     const desc = window._telosRoot.descendants().find(d => d.data.id === id);
     if (desc) showDetailPanel(desc);
   };
 
-  // ── Dependency edges ──────────────────────────────────────────────────────
+  // ── Dependency edges ─────────────────────────────────────────────────────
+  // Direction: arrow FROM blocked node TO its blocker (A → B means "A needs B")
   function drawDepEdges(deps) {
     cachedDeps = deps;
     gDepEdges.selectAll('path').remove();
     if (!deps || !deps.length || !root) return;
 
-    const nodeMap = new Map(root.descendants().map(d => [d.data.id, d]));
+    const nodeMap  = new Map(root.descendants().map(d => [d.data.id, d]));
+    const allNodes = root.descendants();
+    const radii    = computeNodeRadius(allNodes.length);
 
     deps.forEach(dep => {
       const blocker = nodeMap.get(dep.blocker_id);
       const blocked = nodeMap.get(dep.blocked_id);
       if (!blocker || !blocked) return;
 
-      // Nodes are positioned at translate(d.y, d.x) in SVG space
-      const sx = blocker.y, sy = blocker.x;
-      const dx = blocked.y, dy = blocked.x;
+      // Source = blocked (the dependent), target = blocker (what it needs)
+      const sx = blocked.y, sy = blocked.x;
+      const dx = blocker.y, dy = blocker.x;
 
-      // Quadratic bezier control point — arc upward for visual separation
-      const mx = (sx + dx) / 2;
-      const my = (sy + dy) / 2 - 60;
+      const mx  = (sx + dx) / 2;
+      const my  = (sy + dy) / 2 - 60;
 
-      // Offset endpoints so arrow starts/ends at circle edge, not center
-      const srcR = (NODE_RADIUS[blocker.data.type] || NODE_RADIUS.task) + 2;
-      const tgtR = (NODE_RADIUS[blocked.data.type] || NODE_RADIUS.task) + 2;
+      const srcR = (radii[blocked.data.type] || radii.task) + 2;
+      const tgtR = (radii[blocker.data.type] || radii.task) + 2;
 
-      // Tangent at t=0: direction from source toward control point
+      // Offset start from source circle edge
       const s2mx = mx - sx, s2my = my - sy;
       const s2mLen = Math.sqrt(s2mx * s2mx + s2my * s2my) || 1;
       const ssx = sx + (s2mx / s2mLen) * srcR;
       const ssy = sy + (s2my / s2mLen) * srcR;
 
-      // Tangent at t=1: direction from control point toward target
+      // Offset end to target circle edge
       const m2dx = dx - mx, m2dy = dy - my;
       const m2dLen = Math.sqrt(m2dx * m2dx + m2dy * m2dy) || 1;
       const ddx = dx - (m2dx / m2dLen) * tgtR;
@@ -793,10 +917,11 @@
       gDepEdges.append('path')
         .attr('d', `M ${ssx} ${ssy} Q ${mx} ${my} ${ddx} ${ddy}`)
         .attr('fill', 'none')
-        .attr('stroke', '#F5A623')
-        .attr('stroke-width', 1.5)
-        .attr('opacity', 0.7)
-        .attr('marker-end', 'url(#dep-arrow)');
+        .attr('stroke', EDGE_DEP)
+        .attr('stroke-width', 1.8)
+        .attr('marker-end', 'url(#dep-arrow)')
+        .attr('data-src', dep.blocked_id)
+        .attr('data-tgt', dep.blocker_id);
     });
   }
 
@@ -820,7 +945,6 @@
       })
       .then(data => drawDepEdges(Array.isArray(data) ? data : (data.dependencies || [])))
       .catch(() => {
-        // GitHub Pages fallback: read from telos-data.json
         fetch('telos-data.json')
           .then(r => r.json())
           .then(data => drawDepEdges(data.dependencies || []))
@@ -828,9 +952,10 @@
       });
   };
 
+  // ── Ideas panel ──────────────────────────────────────────────────────────
   function loadIdeas() {
     const panel = document.getElementById('ideas-panel');
-    panel.innerHTML = '<p style="color:var(--text-secondary);font-size:12px;padding:8px 0">Loading…</p>';
+    panel.innerHTML = '<p style="color:var(--text-muted);font-size:12px;padding:8px 0">Loading…</p>';
 
     const cacheBuster = Date.now();
     fetch(`http://localhost:8089/api/ideas?_=${cacheBuster}`, { cache: 'no-store' })
@@ -840,7 +965,6 @@
       })
       .then(data => renderIdeas(data.ideas))
       .catch(err => {
-        // Fall back to static file
         fetch('telos-data.json')
           .then(r => r.json())
           .then(data => renderIdeas(data.ideas || []))
@@ -878,9 +1002,9 @@
     let html = '';
     for (const { key, label, desc } of sections) {
       const list = grouped[key];
-      if (list.length === 0) continue;
+      if (!list || list.length === 0) continue;
       html += `<div class="ideas-section">
-        <h2>${label} <span class="badge">${list.length}</span> <span style="font-weight:400;font-size:10px;color:var(--text-secondary)">${desc}</span></h2>`;
+        <h2>${label} <span class="badge">${list.length}</span> <span style="font-weight:400;font-size:10px;color:var(--text-muted)">${desc}</span></h2>`;
       for (const idea of list) {
         let tags = [];
         try { tags = Array.isArray(idea.tags) ? idea.tags : JSON.parse(idea.tags || '[]'); } catch {}
@@ -915,9 +1039,7 @@
     panel.innerHTML = html;
   }
 
-  // ── Live data refresh ─────────────────────────────────────────────────────
-  // Re-fetch /api/tree with cache-buster and re-init the tree.
-  // Pass silent=true to skip the button spinner (used by auto-refresh interval).
+  // ── Live data refresh ────────────────────────────────────────────────────
   window.refreshData = function refreshData(silent) {
     const btn = document.getElementById('refresh-data-btn');
     if (!silent) {
@@ -932,23 +1054,17 @@
         return r.json();
       })
       .then(data => {
-        // Store raw data and apply filter
         rawTreeData = data.tree[0];
         lastUpdatedTime = Date.now();
         const filtered = applyDoneFilter(JSON.parse(JSON.stringify(rawTreeData)), getCutoffSecs(doneFilterDays));
 
-        // Replace root data
         root = d3.hierarchy(filtered, d => d.children && d.children.length ? d.children : null);
         root.x0 = height / 2;
         root.y0 = 0;
-
-        // Collapse beyond depth 1
         root.descendants().forEach(d => {
-          if (d.depth > 1) {
-            d._children = d.children;
-            d.children = null;
-          }
+          if (d.depth > 1) { d._children = d.children; d.children = null; }
         });
+        window._telosRoot = root;
 
         gLinks.selectAll('.link').remove();
         gNodes.selectAll('.node').remove();
@@ -967,9 +1083,8 @@
           document.getElementById('container').innerHTML =
             `<div id="error">⚠️ Could not reload data<br><small>${err.message}</small></div>`;
           btn.innerText = '↻';
-          btn.disabled = false;
+          btn.disabled  = false;
         }
-        // Silent failures are logged but don't disrupt the UI
         if (silent) console.warn('Auto-refresh failed:', err.message);
       });
   };

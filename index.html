@@ -6,7 +6,7 @@
   <title>Telos — Goal Tree</title>
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#60a5fa">
+  <meta name="theme-color" content="#58a6ff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Telos">
@@ -20,27 +20,52 @@
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     :root {
-      --bg-primary: #0f0f1a;
-      --bg-secondary: #161625;
-      --bg-glass: rgba(16, 16, 30, 0.88);
-      --text-primary: #f0f0f5;
-      --text-secondary: #a0a0b8;
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-hover: rgba(255, 255, 255, 0.18);
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
-      --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
-      --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+      /* ── Backgrounds ── */
+      --bg-primary:  #0d1117;
+      --bg-surface:  #161b22;
+      --bg-panel:    #1c2128;
+      --bg-glass:    rgba(22, 27, 34, 0.92);
+      /* Legacy aliases */
+      --bg-secondary: var(--bg-surface);
+
+      /* ── Node fills + borders by status ── */
+      --node-open:        #1f2d3d; --border-open:        #3b82f6;
+      --node-in_progress: #1a2f1a; --border-in_progress: #22c55e;
+      --node-done:        #1a2614; --border-done:        #4ade80;
+      --node-blocked:     #2d1515; --border-blocked:     #ef4444;
+      --node-shelved:     #1e1e2e; --border-shelved:     #475569;
+      --node-rejected:    #141414; --border-rejected:    #374151;
+      --node-refused:     #141414; --border-refused:     #374151;
+      --node-in_question: #2d2a10; --border-in_question: #eab308;
+      --node-out_of_budget: #2d1515; --border-out_of_budget: #ef4444;
+
+      /* ── Edges ── */
+      --edge-default: rgba(99, 120, 150, 0.45);
+      --edge-hover:   rgba(148, 163, 184, 0.9);
+      --edge-dep:     rgba(99, 120, 150, 0.6);
+
+      /* ── Text ── */
+      --text-primary:   #e6edf3;
+      --text-muted:     #7d8590;
+      --text-secondary: var(--text-muted);
+      --text-accent:    #58a6ff;
+      --highlight:      rgba(88, 166, 255, 0.18);
+
+      /* ── Borders ── */
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --border-hover:  rgba(255, 255, 255, 0.16);
+
+      /* ── Shadows ── */
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.6);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.7);
+
+      /* ── Radii ── */
       --radius-sm: 8px;
       --radius-md: 12px;
-      --status-done: #4ade80;
-      --status-progress: #4A90D9;
-      --status-open: #f5f5f5;
-      --status-blocked: #E05C5C;
-      --status-refused: #9ca3af;
-      --status-shelved: #1a1a2e;
-      --status-rejected: #777777;
-      --status-question: #F5C842;
-      --transition-fast: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* ── Transitions ── */
+      --transition-fast:   180ms cubic-bezier(0.4, 0, 0.2, 1);
       --transition-smooth: 350ms cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -48,7 +73,7 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: linear-gradient(160deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, #0d1b2a 100%);
+      background: var(--bg-primary);
       color: var(--text-primary);
       overflow: hidden;
       touch-action: pan-x pan-y;
@@ -56,7 +81,7 @@
       -moz-osx-font-smoothing: grayscale;
     }
 
-    /* ── Header ─────────────────────────────────── */
+    /* ── Header ───────────────────────────────────── */
     #header {
       background: var(--bg-glass);
       backdrop-filter: blur(20px) saturate(1.5);
@@ -91,20 +116,13 @@
       max-width: 100%;
       flex-shrink: 1;
     }
-    #controls::-webkit-scrollbar {
-      height: 3px;
-    }
-    #controls::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    #controls::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.2);
-      border-radius: 2px;
-    }
+    #controls::-webkit-scrollbar { height: 3px; }
+    #controls::-webkit-scrollbar-track { background: transparent; }
+    #controls::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
 
     button {
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
       border: 1px solid var(--border-subtle);
       padding: 5px 12px;
       border-radius: 6px;
@@ -118,82 +136,71 @@
       -webkit-user-select: none;
     }
     button:hover {
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.10);
       color: var(--text-primary);
       border-color: var(--border-hover);
     }
     button:active { transform: scale(0.96); }
     button:focus-visible {
-      outline: 2px solid var(--status-progress);
+      outline: 2px solid var(--text-accent);
       outline-offset: 2px;
     }
 
-    /* ── SVG container ──────────────────────────── */
+    /* ── SVG container ────────────────────────────── */
     #container {
       width: 100vw;
       height: calc(100vh - 44px);
       position: relative;
     }
-
     #container svg { display: block; overflow: visible; }
 
-    /* ── Nodes ──────────────────────────────────── */
+    /* ── Nodes ────────────────────────────────────── */
     .node { cursor: pointer; }
-    .node circle {
+
+    .node .node-circle {
       stroke-width: 2px;
-      transition: all var(--transition-smooth);
+      transition: r var(--transition-smooth), filter var(--transition-fast);
     }
-    .node:hover circle,
-    .node:focus circle {
-      filter: brightness(1.25) drop-shadow(0 0 10px currentColor);
-      stroke-width: 2.5px;
+
+    /* Ensure bottleneck ring isn't filled by status CSS */
+    .bottleneck-ring {
+      fill: none !important;
+      stroke: #ff4444;
     }
-    .node:focus { outline: none; }
-    .node:focus circle {
-      stroke: #fff;
-      stroke-width: 3px;
-      filter: brightness(1.3) drop-shadow(0 0 12px currentColor);
-    }
+
+    /* ── Status colors (fill + border) ─────────────── */
+    .status-open        .node-circle { fill: var(--node-open);        stroke: var(--border-open); }
+    .status-in_progress .node-circle { fill: var(--node-in_progress); stroke: var(--border-in_progress); }
+    .status-done        .node-circle { fill: var(--node-done);        stroke: var(--border-done); }
+    .status-blocked     .node-circle { fill: var(--node-blocked);     stroke: var(--border-blocked); }
+    .status-out_of_budget .node-circle { fill: var(--node-out_of_budget); stroke: var(--border-out_of_budget); }
+    .status-shelved     .node-circle { fill: var(--node-shelved);     stroke: var(--border-shelved); opacity: 0.8; }
+    .status-rejected    .node-circle { fill: var(--node-rejected);    stroke: var(--border-rejected); }
+    .status-refused     .node-circle { fill: var(--node-refused);     stroke: var(--border-refused); }
+    .status-in_question .node-circle { fill: var(--node-in_question); stroke: var(--border-in_question); }
 
     .node text {
       font-family: inherit;
       font-weight: 500;
       fill: var(--text-primary);
-      text-anchor: middle;
       pointer-events: none;
-      dominant-baseline: auto;
       transition: opacity var(--transition-fast);
     }
 
-    /* ── Expand/collapse indicator ──────────────── */
     .node .indicator {
-      fill: rgba(255,255,255,0.5);
-      font-size: 9px;
+      fill: var(--text-muted);
       font-weight: 700;
       pointer-events: none;
-      dominant-baseline: central;
-      text-anchor: middle;
     }
 
-    /* ── Links ──────────────────────────────────── */
+    /* ── Links ────────────────────────────────────── */
     .link {
       fill: none;
-      stroke: rgba(255, 255, 255, 0.1);
+      stroke: var(--edge-default);
       stroke-width: 1.5px;
     }
 
-    /* ── Status colors ─────────────────────────── */
-    .status-done circle          { fill: var(--status-done);     stroke: rgba(74,222,128,0.4); }
-    .status-in_progress circle   { fill: var(--status-progress); stroke: rgba(74,144,217,0.4); }
-    .status-open circle          { fill: var(--status-open);     stroke: rgba(200,200,200,0.5); }
-    .status-blocked circle       { fill: var(--status-blocked);  stroke: rgba(224,92,92,0.4); }
-    .status-out_of_budget circle { fill: var(--status-blocked);  stroke: rgba(224,92,92,0.4); }
-    .status-refused circle       { fill: var(--status-refused);  stroke: rgba(156,163,175,0.4); }
-    .status-shelved circle       { fill: var(--status-shelved);  stroke: rgba(80,80,120,0.5); opacity: 0.85; }
-    .status-rejected circle      { fill: var(--status-rejected); stroke: rgba(119,119,119,0.4); }
-    .status-in_question circle   { fill: var(--status-question); stroke: rgba(245,200,66,0.4); }
-
-    /* ── Tooltip ────────────────────────────────── */
+    /* ── Tooltip ──────────────────────────────────── */
     #tooltip {
       position: absolute;
       background: var(--bg-glass);
@@ -207,7 +214,7 @@
       line-height: 1.55;
       box-shadow: var(--shadow-lg);
       border: 1px solid var(--border-subtle);
-      max-width: 260px;
+      max-width: 320px;
       z-index: 1000;
       opacity: 0;
       transform: translateY(4px);
@@ -220,20 +227,22 @@
     #tooltip .title {
       font-weight: 600;
       font-size: 12px;
-      margin-bottom: 6px;
-      padding-bottom: 5px;
+      margin-bottom: 7px;
+      padding-bottom: 6px;
       border-bottom: 1px solid var(--border-subtle);
+      line-height: 1.4;
     }
     #tooltip .row {
       display: flex;
-      justify-content: space-between;
-      margin: 2px 0;
-      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 3px 0;
+      gap: 4px;
     }
-    #tooltip .label { color: var(--text-secondary); font-size: 10px; }
+    #tooltip .label { color: var(--text-muted); font-size: 10px; }
     #tooltip .value { color: var(--text-primary); font-weight: 500; font-size: 10px; }
 
-    /* ── Legend ──────────────────────────────────── */
+    /* ── Legend ───────────────────────────────────── */
     #legend {
       position: fixed;
       bottom: 12px;
@@ -251,11 +260,7 @@
       max-height: 60vh;
       overflow-y: auto;
     }
-
-    #legend .legend-inner {
-      padding: 10px 12px;
-    }
-
+    #legend .legend-inner { padding: 10px 12px; }
     #legend .legend-title {
       font-weight: 600;
       margin-bottom: 6px;
@@ -269,18 +274,17 @@
       margin: 4px 0;
     }
     #legend .legend-dot {
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       margin-right: 7px;
       flex-shrink: 0;
-      box-shadow: 0 0 4px rgba(0,0,0,0.3);
+      border-width: 2px;
+      border-style: solid;
     }
-    #legend .legend-label {
-      color: var(--text-secondary);
-    }
+    #legend .legend-label { color: var(--text-muted); }
 
-    /* Legend toggle button (visible < 400px) */
+    /* Legend toggle button */
     #legend-toggle {
       display: none;
       width: 36px;
@@ -290,7 +294,7 @@
       backdrop-filter: blur(20px) saturate(1.5);
       -webkit-backdrop-filter: blur(20px) saturate(1.5);
       border: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
+      color: var(--text-muted);
       font-size: 16px;
       cursor: pointer;
       position: absolute;
@@ -304,31 +308,28 @@
       padding: 0;
     }
     #legend-toggle:hover {
-      background: rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.10);
       color: var(--text-primary);
     }
     #legend-toggle:focus-visible {
-      outline: 2px solid var(--status-progress);
+      outline: 2px solid var(--text-accent);
       outline-offset: 2px;
     }
 
-    /* ── Error state ────────────────────────────── */
+    /* ── Error state ──────────────────────────────── */
     #error {
       padding: 32px;
       text-align: center;
-      color: var(--status-blocked);
+      color: var(--border-blocked);
       font-size: 14px;
     }
 
-    /* ── Tab bar ─────────────────────────────────── */
-    #tab-bar {
-      display: flex;
-      gap: 4px;
-    }
+    /* ── Tab bar ──────────────────────────────────── */
+    #tab-bar { display: flex; gap: 4px; }
     .tab-btn {
-      background: rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.04);
       border: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
+      color: var(--text-muted);
       padding: 4px 12px;
       border-radius: 6px;
       cursor: pointer;
@@ -337,29 +338,29 @@
       transition: all var(--transition-fast);
     }
     .tab-btn.active {
-      background: rgba(96,165,250,0.2);
-      border-color: rgba(96,165,250,0.4);
-      color: #60a5fa;
+      background: var(--highlight);
+      border-color: rgba(88, 166, 255, 0.4);
+      color: var(--text-accent);
     }
 
-    /* ── Done filter control ──────────────────────── */
+    /* ── Done filter ──────────────────────────────── */
     #done-filter-wrap {
       display: flex;
       align-items: center;
       gap: 5px;
       font-size: 11px;
-      color: var(--text-secondary);
+      color: var(--text-muted);
     }
     #done-filter-wrap label {
       white-space: nowrap;
       font-size: 10px;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       user-select: none;
       -webkit-user-select: none;
     }
     #done-filter {
-      background: rgba(255,255,255,0.06);
-      color: var(--text-secondary);
+      background: rgba(255,255,255,0.05);
+      color: var(--text-muted);
       border: 1px solid var(--border-subtle);
       border-radius: 6px;
       font-size: 11px;
@@ -370,16 +371,16 @@
       color-scheme: dark;
     }
     #done-filter:hover {
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.09);
       color: var(--text-primary);
       border-color: var(--border-hover);
     }
     #done-filter:focus {
-      outline: 2px solid var(--status-progress);
+      outline: 2px solid var(--text-accent);
       outline-offset: 2px;
     }
 
-    /* ── Detail Panel ───────────────────────────── */
+    /* ── Detail Panel ─────────────────────────────── */
     #detail-panel {
       position: fixed;
       top: 0;
@@ -390,7 +391,7 @@
       backdrop-filter: blur(32px) saturate(1.8);
       -webkit-backdrop-filter: blur(32px) saturate(1.8);
       border-left: 1px solid var(--border-subtle);
-      box-shadow: -8px 0 32px rgba(0,0,0,0.4);
+      box-shadow: -8px 0 32px rgba(0,0,0,0.5);
       z-index: 900;
       overflow-y: auto;
       transition: right 0.28s cubic-bezier(0.4,0,0.2,1);
@@ -400,7 +401,7 @@
     #detail-panel-header {
       position: sticky;
       top: 0;
-      background: rgba(15,20,30,0.9);
+      background: rgba(13, 17, 23, 0.92);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       padding: 16px 20px 12px;
@@ -412,14 +413,14 @@
     #detail-panel-title {
       flex: 1;
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 600;
       color: var(--text-primary);
       line-height: 1.4;
     }
     #detail-panel-close {
       background: none;
       border: none;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       font-size: 18px;
       cursor: pointer;
       padding: 0 4px;
@@ -428,15 +429,14 @@
     }
     #detail-panel-close:hover { color: var(--text-primary); }
     #detail-panel-body { padding: 16px 20px 32px; }
-    .dp-section {
-      margin-bottom: 18px;
-    }
+
+    .dp-section { margin-bottom: 18px; }
     .dp-section-title {
       font-size: 10px;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       margin-bottom: 8px;
     }
     .dp-row {
@@ -448,10 +448,10 @@
       font-size: 11px;
     }
     .dp-row:last-child { border-bottom: none; }
-    .dp-label { color: var(--text-secondary); }
+    .dp-label { color: var(--text-muted); }
     .dp-value { color: var(--text-primary); font-weight: 500; text-align: right; max-width: 60%; }
     .dp-description-box {
-      background: rgba(255,255,255,0.04);
+      background: rgba(255,255,255,0.03);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
       padding: 10px 12px;
@@ -459,14 +459,14 @@
       line-height: 1.7;
       color: var(--text-primary);
     }
-    .dp-desc-collapsed .dp-desc-full { display: none; }
+    .dp-desc-collapsed .dp-desc-full   { display: none; }
     .dp-desc-collapsed .dp-desc-preview { display: block; }
-    .dp-desc-expanded .dp-desc-preview { display: none; }
-    .dp-desc-expanded .dp-desc-full { display: block; }
+    .dp-desc-expanded  .dp-desc-preview { display: none; }
+    .dp-desc-expanded  .dp-desc-full    { display: block; }
     .dp-desc-toggle {
       background: none;
       border: none;
-      color: var(--text-accent, #60a5fa);
+      color: var(--text-accent);
       font-size: 10px;
       cursor: pointer;
       padding: 4px 0 0;
@@ -474,27 +474,27 @@
     }
     .dp-progress-bar-bg {
       height: 6px;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.08);
       border-radius: 3px;
       overflow: hidden;
       margin-top: 4px;
     }
     .dp-progress-bar-fill {
       height: 100%;
-      background: #4ade80;
+      background: var(--border-done);
       border-radius: 3px;
       transition: width 0.4s ease;
     }
     .dp-note {
       font-size: 10px;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       padding: 4px 0;
       border-bottom: 1px solid rgba(255,255,255,0.04);
       line-height: 1.5;
     }
     .dp-note:last-child { border-bottom: none; }
-    .dp-note-ts { color: rgba(255,255,255,0.3); font-size: 9px; }
-    .dp-note-pct { color: #4ade80; font-size: 9px; }
+    .dp-note-ts  { color: rgba(255,255,255,0.25); font-size: 9px; }
+    .dp-note-pct { color: var(--border-done); font-size: 9px; }
     .dp-badge {
       display: inline-block;
       padding: 2px 7px;
@@ -502,16 +502,17 @@
       font-size: 10px;
       font-weight: 600;
     }
-    .badge-done        { background: rgba(52,211,153,0.18);  color: #34d399; }
-    .badge-in_progress { background: rgba(96,165,250,0.18);  color: #60a5fa; }
-    .badge-open        { background: rgba(251,191,36,0.18);  color: #fbbf24; }
-    .badge-blocked     { background: rgba(248,113,113,0.18); color: #f87171; }
-    .badge-refused     { background: rgba(156,163,175,0.18); color: #9ca3af; }
-    .badge-shelved     { background: rgba(107,114,128,0.18); color: #9ca3af; opacity: 0.7; }
-    .badge-rejected    { background: rgba(153,27,27,0.25);   color: #fca5a5; text-decoration: line-through; }
-    .badge-in_question { background: rgba(245,158,11,0.18);  color: #fbbf24; }
+    .badge-done        { background: rgba(74,222,128,0.15);  color: #4ade80; }
+    .badge-in_progress { background: rgba(34,197,94,0.15);   color: #22c55e; }
+    .badge-open        { background: rgba(59,130,246,0.15);  color: #60a5fa; }
+    .badge-blocked     { background: rgba(239,68,68,0.15);   color: #f87171; }
+    .badge-refused     { background: rgba(71,85,105,0.18);   color: #94a3b8; }
+    .badge-shelved     { background: rgba(71,85,105,0.15);   color: #94a3b8; opacity: 0.7; }
+    .badge-rejected    { background: rgba(55,65,81,0.25);    color: #9ca3af; text-decoration: line-through; }
+    .badge-in_question { background: rgba(234,179,8,0.15);   color: #fbbf24; }
+    .badge-out_of_budget { background: rgba(239,68,68,0.15); color: #f87171; }
 
-    /* ── Ideas panel ─────────────────────────────── */
+    /* ── Ideas panel ──────────────────────────────── */
     #ideas-panel {
       display: none;
       width: 100vw;
@@ -527,21 +528,20 @@
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       margin-bottom: 10px;
       padding-bottom: 6px;
       border-bottom: 1px solid var(--border-subtle);
     }
     .ideas-section h2 .badge {
       display: inline-block;
-      background: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.07);
       border-radius: 10px;
       padding: 1px 7px;
       font-size: 10px;
       margin-left: 6px;
       vertical-align: middle;
     }
-
     .idea-card {
       background: var(--bg-glass);
       border: 1px solid var(--border-subtle);
@@ -552,7 +552,6 @@
       transition: border-color var(--transition-fast);
     }
     .idea-card:hover { border-color: var(--border-hover); }
-
     .idea-header {
       display: flex;
       align-items: flex-start;
@@ -565,10 +564,9 @@
       flex-shrink: 0;
       margin-top: 4px;
     }
-    .idea-status-active   { background: var(--status-done); }
-    .idea-status-parked   { background: var(--status-open); }
-    .idea-status-rejected { background: var(--status-refused); }
-
+    .idea-status-active   { background: var(--border-done); }
+    .idea-status-parked   { background: var(--border-open); }
+    .idea-status-rejected { background: var(--border-refused); }
     .idea-title {
       font-size: 13px;
       font-weight: 600;
@@ -577,19 +575,17 @@
     }
     .idea-id {
       font-size: 10px;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       flex-shrink: 0;
     }
-
     .idea-body {
       font-size: 11px;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       line-height: 1.55;
       margin-left: 18px;
     }
     .idea-body p { margin: 4px 0; }
     .idea-body strong { color: var(--text-primary); }
-
     .idea-tags {
       display: flex;
       flex-wrap: wrap;
@@ -598,36 +594,32 @@
       margin-top: 6px;
     }
     .idea-tag {
-      background: rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.06);
       border: 1px solid var(--border-subtle);
       border-radius: 4px;
       padding: 1px 7px;
       font-size: 10px;
-      color: var(--text-secondary);
+      color: var(--text-muted);
     }
-
     .ideas-empty {
-      color: var(--text-secondary);
+      color: var(--text-muted);
       font-size: 12px;
       font-style: italic;
       padding: 8px 0;
     }
-
-    /* ── Responsive: narrow viewports (handled in mobile overrides below) ─── */
 
     @media (max-width: 640px) {
       #detail-panel { width: 100%; right: -100%; }
       #detail-panel.open { right: 0; }
     }
 
-    /* ── Mobile: Bottom Navigation ───────────────── */
+    /* ── Mobile: Bottom Navigation ────────────────── */
     #bottom-nav {
       display: none;
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      height: auto;
       min-height: 60px;
-      background: rgba(15, 15, 26, 0.96);
+      background: rgba(13, 17, 23, 0.97);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-top: 1px solid var(--border-subtle);
@@ -647,7 +639,7 @@
       gap: 3px;
       background: none;
       border: none;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       font-size: 10px;
       cursor: pointer;
       padding: 8px;
@@ -657,8 +649,8 @@
       min-width: 44px;
     }
     .bnav-btn .bnav-icon { font-size: 22px; line-height: 1; display: flex; align-items: center; }
-    .bnav-btn.active { color: var(--text-accent, #60a5fa); }
-    .bnav-btn.active .bnav-icon { filter: drop-shadow(0 0 6px #60a5fa88); }
+    .bnav-btn.active { color: var(--text-accent); }
+    .bnav-btn.active .bnav-icon { filter: drop-shadow(0 0 6px rgba(88,166,255,0.5)); }
 
     /* ── Card List View ───────────────────────────── */
     #list-view {
@@ -674,11 +666,11 @@
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       padding: 0 4px 8px;
     }
     .lv-card {
-      background: var(--bg-secondary);
+      background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
       padding: 12px 14px;
@@ -687,7 +679,8 @@
       transition: border-color var(--transition-fast), background var(--transition-fast);
       -webkit-tap-highlight-color: transparent;
     }
-    .lv-card:active { background: rgba(255,255,255,0.06); }
+    .lv-card:hover  { border-color: var(--border-hover); background: var(--bg-panel); }
+    .lv-card:active { background: rgba(255,255,255,0.05); }
     .lv-card-top {
       display: flex;
       align-items: flex-start;
@@ -697,7 +690,7 @@
     }
     .lv-card-title {
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 500;
       color: var(--text-primary);
       line-height: 1.35;
       flex: 1;
@@ -707,51 +700,42 @@
       align-items: center;
       gap: 8px;
       font-size: 10px;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       flex-wrap: wrap;
     }
-    .lv-card-roi { font-weight: 700; color: var(--text-accent, #60a5fa); }
+    .lv-card-roi { font-weight: 700; color: var(--text-accent); }
     .lv-card-progress {
       height: 3px;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.08);
       border-radius: 2px;
       overflow: hidden;
       margin-top: 8px;
     }
     .lv-card-progress-fill {
       height: 100%;
-      background: #4ade80;
+      background: var(--border-done);
       border-radius: 2px;
     }
 
-    /* ── Mobile overrides ────────────────────────── */
+    /* ── Mobile overrides ─────────────────────────── */
     @media (max-width: 768px) {
-      /* Show bottom nav, hide top-bar tabs (bottom nav replaces them) */
       #bottom-nav { display: flex; }
-      #tab-bar { display: none !important; }
-      /* Container: subtract header (44px) + bottom nav (~60px) */
+      #tab-bar    { display: none !important; }
       #container {
         height: calc(100vh - 44px - 60px);
         height: calc(100dvh - 44px - 60px);
       }
-      /* Scrollable content: pad above bottom nav */
       #list-view, #ideas-panel {
         padding-bottom: max(76px, calc(68px + env(safe-area-inset-bottom, 0px)));
       }
-      /* Slightly bigger tree circles for fat fingers */
-      .node circle { stroke-width: 2px; }
-      /* Larger button hit targets */
       #controls button { min-height: 36px; padding: 6px 10px; font-size: 11px; }
-      #done-filter { min-height: 36px; }
-      /* Tooltip: full-width at bottom */
+      #done-filter     { min-height: 36px; }
       #tooltip { max-width: calc(100vw - 24px); left: 12px !important; right: 12px !important; }
-      /* Legend: always hidden on mobile — toggle reveals it */
-      #legend { display: none; }
-      #legend-toggle { display: flex; }
+      #legend         { display: none; }
+      #legend-toggle  { display: flex; }
     }
 
     @media (max-width: 600px) {
-      /* ── Two-row header: title row + scrollable controls row ── */
       #header {
         height: auto !important;
         min-height: 44px;
@@ -760,7 +744,6 @@
         align-items: center;
         gap: 4px;
       }
-      /* Controls row fills full width and scrolls horizontally */
       #header-right {
         flex: 0 0 100%;
         overflow-x: auto;
@@ -773,9 +756,7 @@
         padding-bottom: 2px;
       }
       #header-right::-webkit-scrollbar { display: none; }
-      /* Don't let #controls create a nested scroll */
       #controls { overflow: visible !important; flex-shrink: 0; }
-      /* Container: 2-row header ~78px + bottom nav ~60px */
       #container {
         height: calc(100vh - 80px - 60px);
         height: calc(100dvh - 80px - 60px);
@@ -784,17 +765,14 @@
         height: calc(100vh - 80px);
         height: calc(100dvh - 80px);
       }
-      /* ── Legend: horizontal scrollable strip above bottom nav ── */
       #legend {
         position: fixed;
         bottom: max(60px, calc(60px + env(safe-area-inset-bottom, 0px)));
-        left: 0;
-        right: 0;
+        left: 0; right: 0;
         max-width: 100%;
         max-height: none;
         border-radius: 0;
-        border-left: none;
-        border-right: none;
+        border-left: none; border-right: none;
         overflow: visible;
         z-index: 150;
       }
@@ -811,53 +789,47 @@
       }
       #legend .legend-inner::-webkit-scrollbar { display: none; }
       #legend .legend-title { flex-shrink: 0; margin-bottom: 0; }
-      #legend .legend-item { flex-shrink: 0; margin: 0; }
+      #legend .legend-item  { flex-shrink: 0; margin: 0; }
       #legend .legend-label { font-size: 9px; white-space: nowrap; }
-      /* Legend toggle: fixed bottom-right, above nav */
       #legend-toggle {
         position: fixed;
         bottom: max(68px, calc(68px + env(safe-area-inset-bottom, 0px)));
-        right: 12px;
-        left: auto;
+        right: 12px; left: auto;
         display: flex;
       }
-      h1 { font-size: 14px; }
-      h1 span { font-size: 14px; }
+      h1       { font-size: 14px; }
+      h1 span  { font-size: 14px; }
     }
 
     @media (max-width: 400px) {
-      /* Larger bottom nav tap targets */
-      .bnav-btn { min-height: 48px; min-width: 48px; }
       .bnav-btn .bnav-icon { font-size: 24px; }
+      .bnav-btn { min-height: 48px; min-width: 48px; }
     }
 
-    /* ── Bottleneck pulse ───────────────────────── */
+    /* ── Bottleneck pulse ─────────────────────────── */
     @keyframes bottleneck-pulse {
       0%   { transform: scale(1.0); opacity: 1; }
       50%  { transform: scale(1.4); opacity: 0; }
       100% { transform: scale(1.0); opacity: 1; }
     }
-
     .bottleneck-ring.bottleneck-pulse {
       animation: bottleneck-pulse 2s ease-in-out infinite;
       transform-box: fill-box;
       transform-origin: center;
     }
 
-    /* Active state for toggle buttons (e.g. Deps) */
+    /* Active state for Deps toggle button */
     button.btn-active {
-      background: rgba(245, 166, 35, 0.18);
-      border-color: rgba(245, 166, 35, 0.5);
-      color: #F5A623;
+      background: rgba(88, 166, 255, 0.15);
+      border-color: rgba(88, 166, 255, 0.4);
+      color: var(--text-accent);
     }
 
-    /* ── Skip-to-content for accessibility ──────── */
+    /* ── Skip-to-content ──────────────────────────── */
     .sr-only {
       position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
       overflow: hidden;
       clip: rect(0,0,0,0);
       white-space: nowrap;
@@ -893,7 +865,7 @@
         <button onclick="collapseAll()" aria-label="Collapse all nodes">Collapse</button>
         <button id="deps-btn" onclick="toggleDeps()" aria-label="Toggle dependency edges" aria-pressed="false">Deps</button>
         <button id="refresh-data-btn" onclick="refreshData()" aria-label="Reload goal tree data">↻</button>
-        <span id="last-updated" style="font-size:10px;color:var(--text-secondary);white-space:nowrap;padding:0 2px;"></span>
+        <span id="last-updated" style="font-size:10px;color:var(--text-muted);white-space:nowrap;padding:0 2px;"></span>
       </div>
     </div>
   </div>
@@ -903,23 +875,20 @@
 
   <!-- Mobile bottom navigation -->
   <nav id="bottom-nav" aria-label="Main navigation">
-    <button class="bnav-btn active" id="bnav-tree" onclick="switchTab('tree')" aria-label="Tree view">
-      <span class="bnav-icon">🌳</span>
-      <span>Tree</span>
+    <button class="bnav-btn active" id="bnav-tree"    onclick="switchTab('tree')"  aria-label="Tree view">
+      <span class="bnav-icon">🌳</span><span>Tree</span>
     </button>
-    <button class="bnav-btn" id="bnav-list" onclick="switchTab('list')" aria-label="List view">
-      <span class="bnav-icon">📋</span>
-      <span>List</span>
+    <button class="bnav-btn" id="bnav-list"    onclick="switchTab('list')"  aria-label="List view">
+      <span class="bnav-icon">📋</span><span>List</span>
     </button>
-    <button class="bnav-btn" id="bnav-ideas" onclick="switchTab('ideas')" aria-label="Ideas">
-      <span class="bnav-icon">💡</span>
-      <span>Ideas</span>
+    <button class="bnav-btn" id="bnav-ideas"   onclick="switchTab('ideas')" aria-label="Ideas">
+      <span class="bnav-icon">💡</span><span>Ideas</span>
     </button>
-    <button class="bnav-btn" id="bnav-refresh" onclick="refreshData()" aria-label="Refresh data">
-      <span class="bnav-icon">↻</span>
-      <span>Sync</span>
+    <button class="bnav-btn" id="bnav-refresh" onclick="refreshData()"      aria-label="Refresh data">
+      <span class="bnav-icon">↻</span><span>Sync</span>
     </button>
   </nav>
+
   <div id="detail-panel" role="complementary" aria-label="Node detail">
     <div id="detail-panel-header">
       <div id="detail-panel-title">—</div>
@@ -927,47 +896,48 @@
     </div>
     <div id="detail-panel-body"></div>
   </div>
-  <div id="ideas-panel" role="tabpanel" aria-label="Ideas backlog"></div>
-  <div id="tooltip" role="tooltip" aria-live="polite"></div>
+
+  <div id="ideas-panel"  role="tabpanel" aria-label="Ideas backlog"></div>
+  <div id="tooltip"      role="tooltip"  aria-live="polite"></div>
 
   <button id="legend-toggle" aria-label="Toggle legend" onclick="toggleLegend()">◑</button>
   <div id="legend" role="complementary" aria-label="Status legend">
     <div class="legend-inner">
       <div class="legend-title">Status</div>
       <div class="legend-item">
-        <div class="legend-dot" style="background: var(--status-done);"></div>
+        <div class="legend-dot" style="background:var(--node-done);border-color:var(--border-done);"></div>
         <span class="legend-label">Done</span>
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background: var(--status-progress);"></div>
+        <div class="legend-dot" style="background:var(--node-in_progress);border-color:var(--border-in_progress);"></div>
         <span class="legend-label">In Progress</span>
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background: var(--status-open);"></div>
+        <div class="legend-dot" style="background:var(--node-open);border-color:var(--border-open);"></div>
         <span class="legend-label">Open</span>
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background: var(--status-blocked);"></div>
+        <div class="legend-dot" style="background:var(--node-blocked);border-color:var(--border-blocked);"></div>
         <span class="legend-label">Blocked</span>
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background: var(--status-question);"></div>
+        <div class="legend-dot" style="background:var(--node-in_question);border-color:var(--border-in_question);"></div>
         <span class="legend-label">In Question</span>
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background: var(--status-shelved); opacity: 0.6;"></div>
+        <div class="legend-dot" style="background:var(--node-shelved);border-color:var(--border-shelved);opacity:0.7;"></div>
         <span class="legend-label">Shelved</span>
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background: var(--status-rejected);"></div>
+        <div class="legend-dot" style="background:var(--node-rejected);border-color:var(--border-rejected);"></div>
         <span class="legend-label">Rejected</span>
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background: var(--status-refused);"></div>
+        <div class="legend-dot" style="background:var(--node-refused);border-color:var(--border-refused);"></div>
         <span class="legend-label">Refused</span>
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background:none;border:2px solid #ff4444;box-shadow:0 0 4px rgba(255,68,68,0.5);"></div>
+        <div class="legend-dot" style="background:none;border-color:#ff4444;box-shadow:0 0 4px rgba(255,68,68,0.5);"></div>
         <span class="legend-label">Bottleneck</span>
       </div>
     </div>
