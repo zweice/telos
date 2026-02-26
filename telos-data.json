@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T21:58:12.463Z",
+  "generated_at": "2026-02-26T21:58:35.680Z",
   "tree": [
     {
       "id": 1,
@@ -959,6 +959,26 @@
               "completed_at": null,
               "progress": 0,
               "description": "Currently gog uses full OAuth drive access. Investigate switching to a service account with only the MacroHard folder shared. True folder-level isolation, zero access to rest of Drive. Check if gog supports service account JSON key credentials. If yes: create service account in Google Cloud Console, share MacroHard folder, migrate token.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 89,
+              "title": "Enable 2FA on GitHub account (zweice)",
+              "type": "task",
+              "owner": "andreas",
+              "status": "open",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": null,
               "notes": [],
               "children": []
             }
