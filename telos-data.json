@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T10:59:04.799Z",
+  "generated_at": "2026-02-26T11:19:05.812Z",
   "tree": [
     {
       "id": 1,
@@ -893,16 +893,16 @@
               "title": "Self-healing systemd watchdog for OpenClaw",
               "type": "task",
               "owner": "conductor",
-              "status": "in_progress",
+              "status": "done",
               "value": 8000,
               "cost_estimate": 50,
-              "cost_actual": null,
+              "cost_actual": 5,
               "roi": 160,
               "effort_hours_estimate": 4,
-              "effort_hours_actual": null,
+              "effort_hours_actual": 3,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772104745,
               "progress": 0,
               "description": null,
               "notes": [
