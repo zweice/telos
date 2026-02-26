@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T14:00:04.846Z",
+  "generated_at": "2026-02-26T14:02:43.469Z",
   "tree": [
     {
       "id": 1,
@@ -1623,7 +1623,7 @@
               "title": "Book notary appointment (online or in-person)",
               "type": "task",
               "owner": "atlas",
-              "status": "open",
+              "status": "in_progress",
               "value": 0,
               "cost_estimate": 200,
               "cost_actual": null,
