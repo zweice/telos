@@ -32,12 +32,12 @@
       --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
       --radius-sm: 8px;
       --radius-md: 12px;
-      --status-done: #999999;
+      --status-done: #4ade80;
       --status-progress: #4A90D9;
       --status-open: #f5f5f5;
       --status-blocked: #E05C5C;
       --status-refused: #9ca3af;
-      --status-shelved: #cccccc;
+      --status-shelved: #1a1a2e;
       --status-rejected: #777777;
       --status-question: #F5C842;
       --transition-fast: 180ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -183,13 +183,13 @@
     }
 
     /* ── Status colors ─────────────────────────── */
-    .status-done circle          { fill: var(--status-done);     stroke: rgba(153,153,153,0.4); }
+    .status-done circle          { fill: var(--status-done);     stroke: rgba(74,222,128,0.4); }
     .status-in_progress circle   { fill: var(--status-progress); stroke: rgba(74,144,217,0.4); }
     .status-open circle          { fill: var(--status-open);     stroke: rgba(200,200,200,0.5); }
     .status-blocked circle       { fill: var(--status-blocked);  stroke: rgba(224,92,92,0.4); }
     .status-out_of_budget circle { fill: var(--status-blocked);  stroke: rgba(224,92,92,0.4); }
     .status-refused circle       { fill: var(--status-refused);  stroke: rgba(156,163,175,0.4); }
-    .status-shelved circle       { fill: var(--status-shelved);  stroke: rgba(204,204,204,0.4); opacity: 0.6; }
+    .status-shelved circle       { fill: var(--status-shelved);  stroke: rgba(80,80,120,0.5); opacity: 0.85; }
     .status-rejected circle      { fill: var(--status-rejected); stroke: rgba(119,119,119,0.4); }
     .status-in_question circle   { fill: var(--status-question); stroke: rgba(245,200,66,0.4); }
 
@@ -879,6 +879,7 @@
         <label for="done-filter">Hide done&nbsp;&gt;</label>
         <select id="done-filter" onchange="setDoneFilter(parseInt(this.value))" aria-label="Hide done tasks older than N days">
           <option value="0">off</option>
+          <option value="-1">all</option>
           <option value="1">1 day</option>
           <option value="3">3 days</option>
           <option value="7">7 days</option>

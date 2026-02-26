@@ -49,8 +49,10 @@
   let rawTreeData = null;
 
   /** Return seconds cutoff: nodes completed before this timestamp are hidden.
-   *  Returns 0 when filtering is off (days === 0). */
+   *  Returns 0 when filtering is off (days === 0).
+   *  Returns Infinity when days === -1 (hide ALL done regardless of age). */
   function getCutoffSecs(days) {
+    if (days === -1) return Infinity;
     if (!days || days <= 0) return 0;
     return Math.floor(Date.now() / 1000) - days * 86400;
   }
@@ -768,16 +770,31 @@
       const sx = blocker.y, sy = blocker.x;
       const dx = blocked.y, dy = blocked.x;
 
-      // Quadratic bezier — arc upward (-60px) for visual separation from tree links
+      // Quadratic bezier control point — arc upward for visual separation
       const mx = (sx + dx) / 2;
       const my = (sy + dy) / 2 - 60;
 
+      // Offset endpoints so arrow starts/ends at circle edge, not center
+      const srcR = (NODE_RADIUS[blocker.data.type] || NODE_RADIUS.task) + 2;
+      const tgtR = (NODE_RADIUS[blocked.data.type] || NODE_RADIUS.task) + 2;
+
+      // Tangent at t=0: direction from source toward control point
+      const s2mx = mx - sx, s2my = my - sy;
+      const s2mLen = Math.sqrt(s2mx * s2mx + s2my * s2my) || 1;
+      const ssx = sx + (s2mx / s2mLen) * srcR;
+      const ssy = sy + (s2my / s2mLen) * srcR;
+
+      // Tangent at t=1: direction from control point toward target
+      const m2dx = dx - mx, m2dy = dy - my;
+      const m2dLen = Math.sqrt(m2dx * m2dx + m2dy * m2dy) || 1;
+      const ddx = dx - (m2dx / m2dLen) * tgtR;
+      const ddy = dy - (m2dy / m2dLen) * tgtR;
+
       gDepEdges.append('path')
-        .attr('d', `M ${sx} ${sy} Q ${mx} ${my} ${dx} ${dy}`)
+        .attr('d', `M ${ssx} ${ssy} Q ${mx} ${my} ${ddx} ${ddy}`)
         .attr('fill', 'none')
         .attr('stroke', '#F5A623')
         .attr('stroke-width', 1.5)
-        .attr('stroke-dasharray', '5,3')
         .attr('opacity', 0.7)
         .attr('marker-end', 'url(#dep-arrow)');
     });
