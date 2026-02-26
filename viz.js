@@ -92,6 +92,7 @@
 
   // Approximate rect dimensions for a node (text-width based)
   function nodeRectDims(d, s) {
+    const scale    = s.nodeScale || 1;
     const fontSize = 11 * s.fontSize;
     const charW    = fontSize * 0.58;
     const label    = `#${d.data.id} ${d.data.title || ''}`;
@@ -100,9 +101,9 @@
     const hasSec   = s.secondaryField && s.secondaryField !== 'none';
     const text2    = hasSec ? getSecondaryText(d, s) : '';
     const w2       = text2 ? (text2.length * charW * 0.8 + 32) : 0;
-    const w        = Math.max(w1, w2, 60);
+    const w        = Math.max(w1, w2, 60) * scale;
     const lineH    = fontSize * 1.4;
-    const h        = (hasSec && text2) ? (lineH * 2 + 16) : (lineH + 16);
+    const h        = ((hasSec && text2) ? (lineH * 2 + 16) : (lineH + 16)) * scale;
     return { w, h };
   }
 
