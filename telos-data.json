@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T02:02:35.270Z",
+  "generated_at": "2026-02-26T02:05:43.384Z",
   "tree": [
     {
       "id": 1,
@@ -1136,6 +1136,26 @@
                   "completed_at": null,
                   "progress": 0,
                   "description": "Second wave: 20 companies from lead list without active hiring trigger. Fax + 5-day follow-up email. Blocked on Wave 1 results + Andreas approval.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 80,
+                  "title": "Wave 2 Outreach Preparation: 20 warm leads package",
+                  "type": "task",
+                  "owner": "atlas",
+                  "status": "done",
+                  "value": 200000,
+                  "cost_estimate": 10,
+                  "cost_actual": 2,
+                  "roi": 20000,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": 1.5,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": 1772071521,
+                  "progress": 0,
+                  "description": "Pre-flight preparation for Wave 2 (20 warm leads). Execution package created with personalized scripts, fax covers, email sequences, and tracking sheets. Ready for immediate launch once Wave 1 approvals + initial responses received.",
                   "notes": [],
                   "children": []
                 }
