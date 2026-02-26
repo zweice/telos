@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T20:02:43.758Z",
+  "generated_at": "2026-02-26T20:05:32.559Z",
   "tree": [
     {
       "id": 1,
@@ -873,16 +873,16 @@
               "title": "Research: how to prevent agent tool loops",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "done",
               "value": 4000,
               "cost_estimate": 30,
-              "cost_actual": null,
+              "cost_actual": 25,
               "roi": 133.33333333333334,
               "effort_hours_estimate": 3,
-              "effort_hours_actual": null,
+              "effort_hours_actual": 2.5,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772136329,
               "progress": 0,
               "description": "Tool loops cause stuck sessions, wasted tokens, and silent agent failures (Atlas stuck 21:07–22:15 CET Feb 25 @ unknown cost). Research prevention angles: (1) Stronger prompting — explicit loop detection instructions in SOUL.md / system prompt; (2) Tool design — better descriptions, clearer error returns, idempotency signals; (3) Timeout at tool level — max retries per tool call per session; (4) Gateway-level circuit breaker — detect >N same tool calls in N turns and abort; (5) Model choice — does Sonnet loop less than Haiku on ambiguous tool results? Produce concrete recommendations with implementation path.",
               "notes": [],
