@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T03:22:11.102Z",
+  "generated_at": "2026-02-26T03:26:41.836Z",
   "tree": [
     {
       "id": 1,
@@ -436,16 +436,16 @@
                   "title": "Telos UI: Full visual overhaul",
                   "type": "task",
                   "owner": "forge",
-                  "status": "in_progress",
+                  "status": "done",
                   "value": 30000,
                   "cost_estimate": 100,
-                  "cost_actual": null,
+                  "cost_actual": 8,
                   "roi": 300,
                   "effort_hours_estimate": 8,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 2.5,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1772076401,
                   "progress": 0,
                   "description": null,
                   "notes": [
