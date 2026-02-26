@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T02:49:58.105Z",
+  "generated_at": "2026-02-26T02:50:20.321Z",
   "tree": [
     {
       "id": 1,
@@ -104,7 +104,7 @@
                   "title": "Telos: Add Idea Backlog Feature",
                   "type": "task",
                   "owner": "forge",
-                  "status": "in_progress",
+                  "status": "done",
                   "value": 30,
                   "cost_estimate": 0,
                   "cost_actual": 0,
@@ -113,7 +113,7 @@
                   "effort_hours_actual": 2,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": 1771963411,
+                  "completed_at": 1772074220,
                   "progress": 0,
                   "description": "Add idea backlog to Telos UI and CLI. Track business ideas with status (active/parked/rejected), rationale, key decisions. Currently in MACROHARD_IDEAS.md (Atlas workspace) — Telos needs native support. CLI: telos idea add/list/update. UI: dedicated Ideas tab.",
                   "notes": [],
