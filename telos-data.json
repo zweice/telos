@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T12:24:49.637Z",
+  "generated_at": "2026-02-26T12:53:37.206Z",
   "tree": [
     {
       "id": 1,
@@ -1422,7 +1422,7 @@
               "title": "Andreas: approve outreach launch (first wave 8 companies)",
               "type": "task",
               "owner": "andreas",
-              "status": "blocked",
+              "status": "open",
               "value": 400000,
               "cost_estimate": 1,
               "cost_actual": null,
@@ -1623,7 +1623,7 @@
               "title": "Book notary appointment (online or in-person)",
               "type": "task",
               "owner": "atlas",
-              "status": "blocked",
+              "status": "open",
               "value": 0,
               "cost_estimate": 200,
               "cost_actual": null,
