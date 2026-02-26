@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T10:39:21.234Z",
+  "generated_at": "2026-02-26T10:59:04.799Z",
   "tree": [
     {
       "id": 1,
@@ -439,10 +439,10 @@
                   "status": "done",
                   "value": 30000,
                   "cost_estimate": 100,
-                  "cost_actual": 8,
+                  "cost_actual": 15,
                   "roi": 300,
                   "effort_hours_estimate": 8,
-                  "effort_hours_actual": 2.5,
+                  "effort_hours_actual": 4,
                   "start_date": null,
                   "end_date": null,
                   "completed_at": 1772076401,
@@ -486,7 +486,7 @@
                   "title": "Telos UI: layout options, settings overlay, node interactions",
                   "type": "task",
                   "owner": "forge",
-                  "status": "open",
+                  "status": "in_progress",
                   "value": 20000,
                   "cost_estimate": 80,
                   "cost_actual": null,
@@ -893,7 +893,7 @@
               "title": "Self-healing systemd watchdog for OpenClaw",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "in_progress",
               "value": 8000,
               "cost_estimate": 50,
               "cost_actual": null,
