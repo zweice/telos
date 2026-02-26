@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T20:00:04.006Z",
+  "generated_at": "2026-02-26T20:02:43.758Z",
   "tree": [
     {
       "id": 1,
@@ -1824,6 +1824,26 @@
       "completed_at": 1772132729,
       "progress": 0,
       "description": "Based on pskoett/pskoett-ai-skills self-improvement. Structured LRN/ERR/FEAT logging to ~/.openclaw/agents/{id}/learnings/. Promotion workflow to SOUL.md, AGENTS.md, TOOLS.md, Telos, daily memory. Trigger: errors, critique, mistakes.",
+      "notes": [],
+      "children": []
+    },
+    {
+      "id": 88,
+      "title": "Restrict Google Drive access to single folder (service account)",
+      "type": "task",
+      "owner": "conductor",
+      "status": "open",
+      "value": 3000,
+      "cost_estimate": 15,
+      "cost_actual": null,
+      "roi": 0.9950248756218906,
+      "effort_hours_estimate": 2,
+      "effort_hours_actual": null,
+      "start_date": null,
+      "end_date": null,
+      "completed_at": null,
+      "progress": 0,
+      "description": "Currently gog uses full OAuth drive access. Investigate switching to a service account with only the MacroHard folder shared. True folder-level isolation, zero access to rest of Drive. Check if gog supports service account JSON key credentials. If yes: create service account in Google Cloud Console, share MacroHard folder, migrate token.",
       "notes": [],
       "children": []
     }
