@@ -541,11 +541,14 @@
   // ── Layout: Horizontal (left-to-right) ───────────────────────────────────
   function runHorizontalLayout() {
     if (simulation) { simulation.stop(); simulation = null; }
+    // nodeSize[0] = sibling spacing (becomes Y after swap)
+    // nodeSize[1] = level depth spacing (becomes X after swap = horizontal spacing)
     d3.tree()
-      .nodeSize([settings.spacingV, settings.levelSpacing])
+      .nodeSize([settings.spacingV, settings.spacingH])
       .separation((a, b) => a.parent === b.parent ? 1 : 1.2)
       (root);
     // Swap x ↔ y for left-to-right orientation
+    // After swap: x = depth * spacingH (horizontal), y = sibling * spacingV (vertical)
     root.descendants().forEach(d => {
       const tmp = d.x;
       d.x = d.y;
