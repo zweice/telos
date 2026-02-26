@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T00:10:58.496Z",
+  "generated_at": "2026-02-26T00:14:07.419Z",
   "tree": [
     {
       "id": 1,
@@ -411,16 +411,16 @@
                   "title": "Telos UI fixes: colors, dep arrows, done filter",
                   "type": "task",
                   "owner": "forge",
-                  "status": "open",
+                  "status": "done",
                   "value": 5000,
                   "cost_estimate": 20,
-                  "cost_actual": null,
+                  "cost_actual": 0,
                   "roi": 250,
                   "effort_hours_estimate": 2,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 0.3,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1772064847,
                   "progress": 0,
                   "description": null,
                   "notes": [
