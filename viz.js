@@ -22,16 +22,22 @@
 
   // ── Settings ─────────────────────────────────────────────────────────────
   const DEFAULT_SETTINGS = {
-    layout:         'tree',
-    fontSize:       1.0,
-    labelThreshold: 0.4,
-    nodeScale:      1.0,
-    spacingH:       220,
-    spacingV:       100,
-    levelSpacing:   120,
-    edgeWidth:      1.0,
-    edgeOpacity:    0.35,
-    animations:     true,
+    layout:             'tree',
+    fontSize:           1.0,
+    labelThreshold:     0.4,
+    nodeScale:          1.0,
+    spacingH:           220,
+    spacingV:           100,
+    levelSpacing:       120,
+    edgeWidth:          1.0,
+    edgeOpacity:        0.35,
+    animations:         true,
+    nodeShape:          'rect',   // 'rect' | 'circle' | 'pill'
+    nodeCornerRadius:   8,        // 0–24 px (rect only)
+    truncMinChars:      8,
+    truncMaxChars:      40,
+    truncWhitespaceMax: 28,
+    secondaryField:     'none',   // 'none'|'owner'|'roi'|'cost'|'status'|'type'
   };
 
   function loadSettings() {
@@ -41,6 +47,64 @@
   function saveSettings(s) { localStorage.setItem('telos_settings', JSON.stringify(s)); }
 
   let settings = loadSettings();
+
+  // ── Smart truncation ──────────────────────────────────────────────────────
+  function smartTruncate(text, s) {
+    const { truncMinChars, truncMaxChars, truncWhitespaceMax } = s;
+    if (text.length <= truncMinChars) return text;
+    if (text.length <= truncMaxChars) return text;
+    const sub       = text.slice(0, truncWhitespaceMax);
+    const lastSpace = sub.lastIndexOf(' ');
+    if (lastSpace >= truncMinChars) return text.slice(0, lastSpace) + '…';
+    return text.slice(0, truncMaxChars) + '…';
+  }
+
+  function getSecondaryText(d, s) {
+    const nd = d.data;
+    switch (s.secondaryField) {
+      case 'owner':  return nd.owner           ? String(nd.owner)  : '';
+      case 'roi':    return nd.roi    != null   ? `ROI ${parseFloat(nd.roi).toFixed(1)}` : '';
+      case 'cost':   return nd.cost_estimate != null ? `€${Number(nd.cost_estimate).toLocaleString()}` : '';
+      case 'status': return nd.status          ? nd.status.replace(/_/g, ' ') : '';
+      case 'type':   return nd.type            ? nd.type : '';
+      default:       return '';
+    }
+  }
+
+  // Approximate rect dimensions for a node (text-width based)
+  function nodeRectDims(d, s) {
+    const fontSize = 11 * s.fontSize;
+    const charW    = fontSize * 0.58;
+    const label    = `#${d.data.id} ${d.data.title || ''}`;
+    const text1    = smartTruncate(label, s);
+    const w1       = text1.length * charW + 32;
+    const hasSec   = s.secondaryField && s.secondaryField !== 'none';
+    const text2    = hasSec ? getSecondaryText(d, s) : '';
+    const w2       = text2 ? (text2.length * charW * 0.8 + 32) : 0;
+    const w        = Math.max(w1, w2, 60);
+    const lineH    = fontSize * 1.4;
+    const h        = (hasSec && text2) ? (lineH * 2 + 16) : (lineH + 16);
+    return { w, h };
+  }
+
+  // Bottom half-height (for indicator and progress-bar placement)
+  function nodeBottom(d, radii, s) {
+    if (s.nodeShape === 'circle') return radii[d.data.type] || radii.task;
+    return nodeRectDims(d, s).h / 2;
+  }
+
+  // Half-width (for progress-bar width)
+  function nodeHalfWidth(d, radii, s) {
+    if (s.nodeShape === 'circle') return radii[d.data.type] || radii.task;
+    return nodeRectDims(d, s).w / 2;
+  }
+
+  // Effective collision radius for force layout + hit-target
+  function nodeCollisionR(d, radii, s) {
+    if (s.nodeShape === 'circle') return radii[d.data.type] || radii.task;
+    const { w, h } = nodeRectDims(d, s);
+    return Math.sqrt(w * w + h * h) / 2;
+  }
 
   // ── Dynamic node sizing ──────────────────────────────────────────────────
   function computeNodeRadius(count) {
@@ -88,6 +152,49 @@
     const opt = Array.from(sel.options).find(o => parseInt(o.value, 10) === doneFilterDays);
     sel.value = opt ? opt.value : String(doneFilterDays);
   }
+
+  // ── Hide-rejected filter state ───────────────────────────────────────────
+  let hideRejected = localStorage.getItem('telos_hide_rejected') === 'true';
+
+  function applyRejectedFilter(node) {
+    if (!node) return node;
+    if (!node.children || node.children.length === 0) return node;
+    node.children = node.children
+      .filter(c => c.status !== 'rejected')
+      .map(c => applyRejectedFilter(c));
+    return node;
+  }
+
+  function syncHideRejectedBtn() {
+    const btn = document.getElementById('hide-rejected-btn');
+    if (!btn) return;
+    btn.textContent = hideRejected ? 'Show rejected' : 'Hide rejected';
+    btn.classList.toggle('btn-active', hideRejected);
+    btn.setAttribute('aria-pressed', String(hideRejected));
+  }
+
+  window.toggleHideRejected = function () {
+    hideRejected = !hideRejected;
+    localStorage.setItem('telos_hide_rejected', hideRejected);
+    syncHideRejectedBtn();
+    if (!rawTreeData) return;
+    let copy = JSON.parse(JSON.stringify(rawTreeData));
+    const cutoff = getCutoffSecs(doneFilterDays);
+    if (cutoff > 0) applyDoneFilter(copy, cutoff);
+    if (hideRejected) applyRejectedFilter(copy);
+    const newRoot = d3.hierarchy(copy, d => d.children && d.children.length ? d.children : null);
+    newRoot.x0 = width / 2;
+    newRoot.y0 = height / 2;
+    newRoot.descendants().forEach(d => {
+      if (d.depth > 1) { d._children = d.children; d.children = null; }
+    });
+    root = newRoot;
+    window._telosRoot = root;
+    gLinks.selectAll('.link').remove();
+    gNodes.selectAll('.node').remove();
+    update(root);
+    setTimeout(resetView, 400);
+  };
 
   // ── State ────────────────────────────────────────────────────────────────
   let root, svg, gAll, gLinks, gNodes, gDepEdges, width, height;
@@ -169,6 +276,7 @@
 
     const cutoff = getCutoffSecs(doneFilterDays);
     if (cutoff > 0) applyDoneFilter(treeData, cutoff);
+    if (hideRejected) applyRejectedFilter(treeData);
 
     root = d3.hierarchy(treeData, d => d.children && d.children.length ? d.children : null);
     root.x0 = width  / 2;
@@ -202,8 +310,8 @@
 
     gAll      = svg.append('g').attr('class', 'all');
     gLinks    = gAll.append('g').attr('class', 'links');
-    gDepEdges = gAll.append('g').attr('id', 'dep-edges');
     gNodes    = gAll.append('g').attr('class', 'nodes');
+    gDepEdges = gAll.append('g').attr('id', 'dep-edges'); // LAST = on top
 
     // Dep arrow marker
     const defs = svg.append('defs');
@@ -231,10 +339,11 @@
       doneFilterDays = isNaN(days) ? 0 : days;
       localStorage.setItem(LS_FILTER_KEY, doneFilterDays);
       if (!rawTreeData) return;
-      const filtered = applyDoneFilter(
+      let filtered = applyDoneFilter(
         JSON.parse(JSON.stringify(rawTreeData)),
         getCutoffSecs(doneFilterDays)
       );
+      if (hideRejected) applyRejectedFilter(filtered);
       const newRoot = d3.hierarchy(filtered, d => d.children && d.children.length ? d.children : null);
       newRoot.x0 = width  / 2;
       newRoot.y0 = height / 2;
@@ -267,12 +376,20 @@
           toggleSettingsPanel();
         }
       }
+      if (e.key === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const tag = document.activeElement && document.activeElement.tagName;
+        if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) {
+          e.preventDefault();
+          window.toggleHideRejected();
+        }
+      }
     });
 
     // Click outside dismisses context menu
     document.addEventListener('click', () => dismissContextMenu());
 
     initSettingsPanel();
+    syncHideRejectedBtn();
   }
 
   // ── Resize ───────────────────────────────────────────────────────────────
@@ -314,7 +431,7 @@
         }))
       .force('center',  d3.forceCenter(width / 2, height / 2))
       .force('collide', d3.forceCollide(d => {
-        const base = radii[d.data.type] || radii.task;
+        const base = nodeCollisionR(d, radii, settings);
         return isMobile ? base + 8 : base + 12;
       }))
       .force('x', d3.forceX(d => width * (0.15 + d.depth / maxDepth * 0.7))
@@ -498,14 +615,14 @@
     // Position all nodes via selected layout
     positionNodes(nodes, links);
 
-    // ── Tree links ──
+    // ── Tree links ──  (use .style() so inline style overrides CSS rules)
     const link = gLinks.selectAll('.link').data(links, d => d.target.data.id);
 
     const linkEnter = link.enter().append('path')
-      .attr('class',        'link')
-      .attr('fill',         'none')
-      .attr('stroke',       edgeStroke())
-      .attr('stroke-width', edgeStrokeWidth())
+      .attr('class', 'link')
+      .attr('fill',  'none')
+      .style('stroke',       edgeStroke())
+      .style('stroke-width', edgeStrokeWidth())
       .attr('d', () => {
         const o = { x: source.x0 ?? source.x, y: source.y0 ?? source.y };
         return linkPath(o, o);
@@ -513,8 +630,8 @@
 
     link.merge(linkEnter)
       .transition(t)
-      .attr('stroke',       edgeStroke())
-      .attr('stroke-width', edgeStrokeWidth())
+      .style('stroke',       edgeStroke())
+      .style('stroke-width', edgeStrokeWidth())
       .attr('d', d => linkPath(d.source, d.target));
 
     link.exit()
@@ -534,36 +651,14 @@
       .attr('tabindex',   0)
       .attr('role',       'treeitem')
       .attr('aria-label', d => `#${d.data.id} ${d.data.title}`)
-      // Single click → expand/collapse
-      .on('click', (e, d) => {
-        e.stopPropagation();
-        dismissContextMenu();
-        toggle(d);
-      })
-      // Double click → detail panel
-      .on('dblclick', (e, d) => {
-        e.stopPropagation();
-        showDetailPanel(d);
-      })
-      // Right-click → context menu
-      .on('contextmenu', (e, d) => {
-        e.preventDefault();
-        e.stopPropagation();
-        showContextMenu(e, d);
-      })
-      // Long-press (mobile, 500 ms) → context menu
+      .on('click', (e, d) => { e.stopPropagation(); dismissContextMenu(); toggle(d); })
+      .on('dblclick', (e, d) => { e.stopPropagation(); showDetailPanel(d); })
+      .on('contextmenu', (e, d) => { e.preventDefault(); e.stopPropagation(); showContextMenu(e, d); })
       .on('touchstart', (e, d) => {
-        longPressTimer = setTimeout(() => {
-          longPressTimer = null;
-          showContextMenu(e, d);
-        }, 500);
+        longPressTimer = setTimeout(() => { longPressTimer = null; showContextMenu(e, d); }, 500);
       })
-      .on('touchend', () => {
-        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-      })
-      .on('touchmove', () => {
-        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-      })
+      .on('touchend',  () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } })
+      .on('touchmove', () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } })
       .on('keydown', (e, d) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showDetailPanel(d); }
         if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); toggle(d); }
@@ -577,9 +672,9 @@
       .attr('class',  'hit-target')
       .attr('fill',   'transparent')
       .attr('stroke', 'none')
-      .attr('r',      d => Math.max(r(d), 22));
+      .attr('r',      d => Math.max(nodeCollisionR(d, radii, settings), 22));
 
-    // Bottleneck ring (behind main circle)
+    // Bottleneck ring (behind main shape)
     nodeEnter.append('circle')
       .attr('class',        'bottleneck-ring')
       .attr('fill',         'none')
@@ -587,15 +682,33 @@
       .attr('stroke-width', 2)
       .attr('r', 0);
 
-    // Main circle
-    nodeEnter.append('circle').attr('class', 'node-circle').attr('r', 0);
+    // Main shape — circle OR rect/pill based on settings.nodeShape
+    if (settings.nodeShape === 'circle') {
+      nodeEnter.append('circle')
+        .attr('class', 'node-shape node-circle')
+        .attr('r', 0);
+    } else {
+      nodeEnter.append('rect')
+        .attr('class', 'node-shape node-rect')
+        .attr('x', 0).attr('y', 0)
+        .attr('width', 0).attr('height', 0)
+        .attr('rx', 0).attr('ry', 0);
+    }
 
-    // Label
+    // Primary label
     nodeEnter.append('text')
       .attr('class',             'label')
       .attr('text-anchor',       'middle')
       .attr('dominant-baseline', 'central')
       .attr('pointer-events',    'none');
+
+    // Secondary label (shown when secondaryField !== 'none')
+    nodeEnter.append('text')
+      .attr('class',             'secondary-label')
+      .attr('text-anchor',       'middle')
+      .attr('dominant-baseline', 'central')
+      .attr('pointer-events',    'none')
+      .style('display',          'none');
 
     // Expand/collapse indicator
     nodeEnter.append('text')
@@ -606,16 +719,11 @@
     // Progress bar below node
     const progG = nodeEnter.append('g').attr('class', 'progress-bar');
     progG.append('rect')
-      .attr('class',  'progress-bg')
-      .attr('height', 3)
-      .attr('rx',     1.5)
-      .attr('fill',   'rgba(255,255,255,0.12)');
+      .attr('class', 'progress-bg').attr('height', 3).attr('rx', 1.5)
+      .attr('fill', 'rgba(255,255,255,0.12)');
     progG.append('rect')
-      .attr('class',  'progress-fill')
-      .attr('height', 3)
-      .attr('rx',     1.5)
-      .attr('fill',   '#4ade80')
-      .attr('width',  0);
+      .attr('class', 'progress-fill').attr('height', 3).attr('rx', 1.5)
+      .attr('fill', '#4ade80').attr('width', 0);
 
     // ── Merged update ──
     const nodeMerge = node.merge(nodeEnter);
@@ -625,51 +733,60 @@
       .attr('transform', d => `translate(${d.x},${d.y})`)
       .attr('class',     d => `node status-${d.data.status}`);
 
-    nodeMerge.select('.hit-target').attr('r', d => Math.max(r(d), 22));
+    nodeMerge.select('.hit-target')
+      .attr('r', d => Math.max(nodeCollisionR(d, radii, settings), 22));
 
-    nodeMerge.select('.node-circle')
-      .transition(t)
-      .attr('r', r);
+    // Update main shape
+    if (settings.nodeShape === 'circle') {
+      nodeMerge.select('circle.node-shape').transition(t).attr('r', r);
+    } else {
+      nodeMerge.select('rect.node-shape').each(function (d) {
+        const { w, h } = nodeRectDims(d, settings);
+        const rx = settings.nodeShape === 'pill'
+          ? h / 2 : (settings.nodeCornerRadius || 0);
+        d3.select(this).transition(t)
+          .attr('x', -w / 2).attr('y', -h / 2)
+          .attr('width', w).attr('height', h)
+          .attr('rx', rx).attr('ry', rx);
+      });
+    }
 
     nodeMerge.select('.bottleneck-ring')
       .classed('bottleneck-pulse', d => !!d.data.is_bottleneck)
       .transition(t)
-      .attr('r', d => d.data.is_bottleneck ? r(d) + 4 : 0);
+      .attr('r', d => {
+        if (!d.data.is_bottleneck) return 0;
+        if (settings.nodeShape === 'circle') return r(d) + 4;
+        const { w, h } = nodeRectDims(d, settings);
+        return Math.sqrt(w * w + h * h) / 2 + 4;
+      });
 
-    // Seed label content
-    nodeMerge.select('text.label').each(function (d) {
-      const el = d3.select(this);
-      el.selectAll('tspan').remove();
-      el.append('tspan')
-        .attr('x',  0)
-        .attr('dy', 0)
-        .text(`#${d.data.id} ${d.data.title || ''}`);
-    });
-
-    // Expand/collapse indicator
+    // Indicator + progress bar positioning
     nodeMerge.select('text.indicator')
-      .attr('font-size', d => Math.max(r(d) * 0.55, 7))
-      .attr('dy',        d => r(d) + 12)
+      .attr('font-size', d => Math.max(nodeBottom(d, radii, settings) * 0.55, 7))
+      .attr('dy',        d => nodeBottom(d, radii, settings) + 12)
       .text(d => {
         if (!d._children && !d.children) return '';
         return d.children ? EXPANDED_SYMBOL : COLLAPSED_SYMBOL;
       });
 
-    // Progress bars
     nodeMerge.select('.progress-bar')
-      .attr('transform', d => `translate(${-r(d)}, ${r(d) + 5})`)
+      .attr('transform', d => {
+        const hw  = nodeHalfWidth(d, radii, settings);
+        const bot = nodeBottom(d, radii, settings);
+        return `translate(${-hw}, ${bot + 5})`;
+      })
       .attr('display', d => (d.data.status === 'in_progress' && d.data.progress > 0) ? null : 'none');
     nodeMerge.select('.progress-bar rect.progress-bg')
-      .attr('width', d => r(d) * 2);
+      .attr('width', d => nodeHalfWidth(d, radii, settings) * 2);
     nodeMerge.select('.progress-bar rect.progress-fill')
       .transition(t)
-      .attr('width', d => r(d) * 2 * ((d.data.progress || 0) / 100));
+      .attr('width', d => nodeHalfWidth(d, radii, settings) * 2 * ((d.data.progress || 0) / 100));
 
     node.exit()
       .transition(t)
       .attr('transform', `translate(${source.x},${source.y})`)
-      .remove()
-      .select('.node-circle').attr('r', 0);
+      .remove();
 
     root.descendants().forEach(d => { d.x0 = d.x; d.y0 = d.y; });
 
@@ -678,43 +795,81 @@
     updateLabels();
   }
 
-  // ── Zoom-invariant labels ────────────────────────────────────────────────
+  // ── Zoom-invariant labels (with smart truncation + secondary text) ─────────
   function updateLabels() {
+    if (!gNodes) return;
     const zoom      = currentZoom;
-    const maxChars  = Math.floor(10 + zoom * 12);
-    const fontSize  = (11 * settings.fontSize / zoom) + 'px';
+    const fontSize  = 11 * settings.fontSize / zoom;
+    const fsStr     = fontSize + 'px';
     const threshold = settings.labelThreshold;
+    const hasSec    = settings.secondaryField && settings.secondaryField !== 'none';
 
     gNodes.selectAll('text.label').each(function (d) {
       const el   = d3.select(this);
       const kids = (d.children || []).length + (d._children || []).length;
       const isImportant = d.data.type === 'goal' || d.data.type === 'milestone' || kids >= 3;
 
-      if (zoom < threshold && !isImportant) {
-        el.style('display', 'none');
-        return;
-      }
+      if (zoom < threshold && !isImportant) { el.style('display', 'none'); return; }
       el.style('display', null);
-      el.attr('font-size', fontSize);
+      el.attr('font-size', fsStr);
 
       const raw   = `#${d.data.id} ${d.data.title || ''}`;
-      const label = raw.length > maxChars ? raw.slice(0, maxChars - 1) + '…' : raw;
+      const label = smartTruncate(raw, settings);
+
+      // If secondary visible, shift primary upward so both lines centre together
+      const secText  = hasSec ? getSecondaryText(d, settings) : '';
+      const hasSecNow = hasSec && !!secText;
+      const yPrimary  = hasSecNow ? -(fontSize * 0.65) : 0;
 
       el.selectAll('tspan').remove();
       el.append('tspan')
-        .attr('x',  0)
-        .attr('dy', 0)
+        .attr('x',   0)
+        .attr('dy',  yPrimary)
         .attr('fill', 'var(--text-primary, #e6edf3)')
         .text(label);
+    });
+
+    // ── Secondary labels ──
+    gNodes.selectAll('text.secondary-label').each(function (d) {
+      const el   = d3.select(this);
+      if (!hasSec) { el.style('display', 'none'); return; }
+      const kids = (d.children || []).length + (d._children || []).length;
+      const isImportant = d.data.type === 'goal' || d.data.type === 'milestone' || kids >= 3;
+      if (zoom < threshold && !isImportant) { el.style('display', 'none'); return; }
+      const text = getSecondaryText(d, settings);
+      if (!text) { el.style('display', 'none'); return; }
+      el.style('display', null);
+      const secFs = (11 * settings.fontSize * 0.8 / zoom) + 'px';
+      el.attr('font-size', secFs)
+        .attr('fill', 'var(--text-muted, #7d8590)');
+      el.selectAll('tspan').remove();
+      el.append('tspan')
+        .attr('x',  0)
+        .attr('dy', fontSize * 0.65)
+        .text(text);
     });
   }
 
   // ── Live edge style update (no full rebuild) ──────────────────────────────
   function updateEdgeStyles() {
-    if (!gLinks) return;
-    gLinks.selectAll('.link')
-      .attr('stroke',       edgeStroke())
-      .attr('stroke-width', edgeStrokeWidth());
+    if (gLinks) {
+      // Use .style() so inline styles override CSS presentation rules
+      gLinks.selectAll('.link')
+        .style('stroke',       edgeStroke())
+        .style('stroke-width', edgeStrokeWidth());
+    }
+    if (gDepEdges) {
+      gDepEdges.selectAll('path')
+        .style('stroke-width', settings.edgeWidth + 'px');
+    }
+  }
+
+  // ── Update corner radius live (no full rebuild needed) ────────────────────
+  function updateNodeCornerRadius() {
+    if (!gNodes || settings.nodeShape !== 'rect') return;
+    gNodes.selectAll('rect.node-shape')
+      .attr('rx', settings.nodeCornerRadius)
+      .attr('ry', settings.nodeCornerRadius);
   }
 
   // ── Toggle collapse/expand ───────────────────────────────────────────────
@@ -988,25 +1143,39 @@
     const setChk = (id, v) => { const el = get(id); if (el) el.checked = v; };
     const setTxt = (id, v) => { const el = get(id); if (el) el.textContent = v; };
 
-    setV('s-layout',         settings.layout);
-    setV('s-fontSize',       settings.fontSize);
-    setV('s-labelThreshold', settings.labelThreshold);
-    setV('s-nodeScale',      settings.nodeScale);
-    setV('s-spacingH',       settings.spacingH);
-    setV('s-spacingV',       settings.spacingV);
-    setV('s-levelSpacing',   settings.levelSpacing);
-    setV('s-edgeWidth',      settings.edgeWidth);
-    setV('s-edgeOpacity',    settings.edgeOpacity);
-    setChk('s-animations',   settings.animations);
+    setV('s-layout',            settings.layout);
+    setV('s-fontSize',          settings.fontSize);
+    setV('s-labelThreshold',    settings.labelThreshold);
+    setV('s-nodeScale',         settings.nodeScale);
+    setV('s-spacingH',          settings.spacingH);
+    setV('s-spacingV',          settings.spacingV);
+    setV('s-levelSpacing',      settings.levelSpacing);
+    setV('s-edgeWidth',         settings.edgeWidth);
+    setV('s-edgeOpacity',       settings.edgeOpacity);
+    setChk('s-animations',      settings.animations);
+    setV('s-nodeShape',         settings.nodeShape);
+    setV('s-nodeCornerRadius',  settings.nodeCornerRadius);
+    setV('s-truncMinChars',     settings.truncMinChars);
+    setV('s-truncMaxChars',     settings.truncMaxChars);
+    setV('s-truncWhitespaceMax', settings.truncWhitespaceMax);
+    setV('s-secondaryField',    settings.secondaryField);
 
-    setTxt('sv-fontSize',       fmtSettingVal('fontSize',       settings.fontSize));
-    setTxt('sv-labelThreshold', fmtSettingVal('labelThreshold', settings.labelThreshold));
-    setTxt('sv-nodeScale',      fmtSettingVal('nodeScale',      settings.nodeScale));
-    setTxt('sv-spacingH',       fmtSettingVal('spacingH',       settings.spacingH));
-    setTxt('sv-spacingV',       fmtSettingVal('spacingV',       settings.spacingV));
-    setTxt('sv-levelSpacing',   fmtSettingVal('levelSpacing',   settings.levelSpacing));
-    setTxt('sv-edgeWidth',      fmtSettingVal('edgeWidth',      settings.edgeWidth));
-    setTxt('sv-edgeOpacity',    fmtSettingVal('edgeOpacity',    settings.edgeOpacity));
+    setTxt('sv-fontSize',          fmtSettingVal('fontSize',          settings.fontSize));
+    setTxt('sv-labelThreshold',    fmtSettingVal('labelThreshold',    settings.labelThreshold));
+    setTxt('sv-nodeScale',         fmtSettingVal('nodeScale',         settings.nodeScale));
+    setTxt('sv-spacingH',          fmtSettingVal('spacingH',          settings.spacingH));
+    setTxt('sv-spacingV',          fmtSettingVal('spacingV',          settings.spacingV));
+    setTxt('sv-levelSpacing',      fmtSettingVal('levelSpacing',      settings.levelSpacing));
+    setTxt('sv-edgeWidth',         fmtSettingVal('edgeWidth',         settings.edgeWidth));
+    setTxt('sv-edgeOpacity',       fmtSettingVal('edgeOpacity',       settings.edgeOpacity));
+    setTxt('sv-nodeCornerRadius',  fmtSettingVal('nodeCornerRadius',  settings.nodeCornerRadius));
+    setTxt('sv-truncMinChars',     fmtSettingVal('truncMinChars',     settings.truncMinChars));
+    setTxt('sv-truncMaxChars',     fmtSettingVal('truncMaxChars',     settings.truncMaxChars));
+    setTxt('sv-truncWhitespaceMax', fmtSettingVal('truncWhitespaceMax', settings.truncWhitespaceMax));
+
+    // Show corner-radius row only when shape = rect
+    const crRow = document.getElementById('sp-cornerRadius-row');
+    if (crRow) crRow.style.display = settings.nodeShape === 'rect' ? '' : 'none';
   }
 
   function initSettingsPanel() {
@@ -1025,14 +1194,18 @@
       });
     }
 
-    bind('s-fontSize',       'fontSize',       parseFloat, updateLabels);
-    bind('s-labelThreshold', 'labelThreshold', parseFloat, updateLabels);
-    bind('s-nodeScale',      'nodeScale',       parseFloat, debouncedRebuild);
-    bind('s-spacingH',       'spacingH',        parseInt,   debouncedRebuild);
-    bind('s-spacingV',       'spacingV',        parseInt,   debouncedRebuild);
-    bind('s-levelSpacing',   'levelSpacing',    parseInt,   debouncedRebuild);
-    bind('s-edgeWidth',      'edgeWidth',       parseFloat, updateEdgeStyles);
-    bind('s-edgeOpacity',    'edgeOpacity',     parseFloat, updateEdgeStyles);
+    bind('s-fontSize',           'fontSize',          parseFloat, updateLabels);
+    bind('s-labelThreshold',     'labelThreshold',    parseFloat, updateLabels);
+    bind('s-nodeScale',          'nodeScale',          parseFloat, debouncedRebuild);
+    bind('s-spacingH',           'spacingH',           parseInt,   debouncedRebuild);
+    bind('s-spacingV',           'spacingV',           parseInt,   debouncedRebuild);
+    bind('s-levelSpacing',       'levelSpacing',       parseInt,   debouncedRebuild);
+    bind('s-edgeWidth',          'edgeWidth',          parseFloat, updateEdgeStyles);
+    bind('s-edgeOpacity',        'edgeOpacity',        parseFloat, updateEdgeStyles);
+    bind('s-nodeCornerRadius',   'nodeCornerRadius',   parseInt,   updateNodeCornerRadius);
+    bind('s-truncMinChars',      'truncMinChars',      parseInt,   updateLabels);
+    bind('s-truncMaxChars',      'truncMaxChars',      parseInt,   updateLabels);
+    bind('s-truncWhitespaceMax', 'truncWhitespaceMax', parseInt,   updateLabels);
 
     // Animations toggle
     const animEl = document.getElementById('s-animations');
@@ -1046,8 +1219,27 @@
     // Layout select
     const layoutEl = document.getElementById('s-layout');
     if (layoutEl) {
-      layoutEl.addEventListener('change', () => {
-        window.setLayout(layoutEl.value);
+      layoutEl.addEventListener('change', () => { window.setLayout(layoutEl.value); });
+    }
+
+    // Node shape select
+    const shapeEl = document.getElementById('s-nodeShape');
+    if (shapeEl) {
+      shapeEl.addEventListener('change', () => {
+        settings.nodeShape = shapeEl.value;
+        saveSettings(settings);
+        syncSettingsUI();
+        rebuildLayout();
+      });
+    }
+
+    // Secondary field select
+    const secEl = document.getElementById('s-secondaryField');
+    if (secEl) {
+      secEl.addEventListener('change', () => {
+        settings.secondaryField = secEl.value;
+        saveSettings(settings);
+        rebuildLayout();
       });
     }
 
@@ -1306,14 +1498,17 @@
       const ddy    = dy - (m2dy / m2dLen) * tgtR;
 
       gDepEdges.append('path')
-        .attr('d',            `M ${ssx} ${ssy} Q ${mx} ${my} ${ddx} ${ddy}`)
-        .attr('fill',         'none')
-        .attr('stroke',       EDGE_DEP_COLOR)
-        .attr('stroke-width', 2.5)
-        .attr('marker-end',   'url(#dep-arrow)')
-        .attr('data-src',     dep.blocked_id)
-        .attr('data-tgt',     dep.blocker_id);
+        .attr('d',          `M ${ssx} ${ssy} Q ${mx} ${my} ${ddx} ${ddy}`)
+        .attr('fill',       'none')
+        .attr('stroke',     EDGE_DEP_COLOR)
+        .style('stroke-width', settings.edgeWidth + 'px')
+        .attr('marker-end', 'url(#dep-arrow)')
+        .attr('data-src',   dep.blocked_id)
+        .attr('data-tgt',   dep.blocker_id);
     });
+
+    // Always keep dep edges on top — re-append to end of gAll
+    if (gAll && gDepEdges) gAll.node().appendChild(gDepEdges.node());
   }
 
   window.toggleDeps = function toggleDeps() {
@@ -1445,10 +1640,11 @@
       .then(data => {
         rawTreeData     = data.tree[0];
         lastUpdatedTime = Date.now();
-        const filtered  = applyDoneFilter(
+        let filtered  = applyDoneFilter(
           JSON.parse(JSON.stringify(rawTreeData)),
           getCutoffSecs(doneFilterDays)
         );
+        if (hideRejected) applyRejectedFilter(filtered);
 
         root = d3.hierarchy(filtered, d => d.children && d.children.length ? d.children : null);
         root.x0 = width  / 2;

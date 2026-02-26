@@ -192,10 +192,13 @@
     /* ── Nodes ────────────────────────────────────── */
     .node { cursor: pointer; }
 
-    .node .node-circle {
+    .node .node-circle,
+    .node .node-rect {
       stroke-width: 2px;
-      transition: r var(--transition-smooth), filter var(--transition-fast);
+      transition: filter var(--transition-fast);
     }
+    /* circle-only radius transition */
+    .node .node-circle { transition: r var(--transition-smooth), filter var(--transition-fast); }
 
     /* Ensure bottleneck ring isn't filled by status CSS */
     .bottleneck-ring {
@@ -204,15 +207,15 @@
     }
 
     /* ── Status colors (fill + border) ─────────────── */
-    .status-open        .node-circle { fill: var(--node-open);        stroke: var(--border-open); }
-    .status-in_progress .node-circle { fill: var(--node-in_progress); stroke: var(--border-in_progress); }
-    .status-done        .node-circle { fill: var(--node-done);        stroke: var(--border-done); }
-    .status-blocked     .node-circle { fill: var(--node-blocked);     stroke: var(--border-blocked); }
-    .status-out_of_budget .node-circle { fill: var(--node-out_of_budget); stroke: var(--border-out_of_budget); }
-    .status-shelved     .node-circle { fill: var(--node-shelved);     stroke: var(--border-shelved); opacity: 0.8; }
-    .status-rejected    .node-circle { fill: var(--node-rejected);    stroke: var(--border-rejected); }
-    .status-refused     .node-circle { fill: var(--node-refused);     stroke: var(--border-refused); }
-    .status-in_question .node-circle { fill: var(--node-in_question); stroke: var(--border-in_question); }
+    .status-open        .node-circle, .status-open        .node-rect { fill: var(--node-open);        stroke: var(--border-open); }
+    .status-in_progress .node-circle, .status-in_progress .node-rect { fill: var(--node-in_progress); stroke: var(--border-in_progress); }
+    .status-done        .node-circle, .status-done        .node-rect { fill: var(--node-done);        stroke: var(--border-done); }
+    .status-blocked     .node-circle, .status-blocked     .node-rect { fill: var(--node-blocked);     stroke: var(--border-blocked); }
+    .status-out_of_budget .node-circle, .status-out_of_budget .node-rect { fill: var(--node-out_of_budget); stroke: var(--border-out_of_budget); }
+    .status-shelved     .node-circle, .status-shelved     .node-rect { fill: var(--node-shelved);     stroke: var(--border-shelved); opacity: 0.8; }
+    .status-rejected    .node-circle, .status-rejected    .node-rect { fill: var(--node-rejected);    stroke: var(--border-rejected); }
+    .status-refused     .node-circle, .status-refused     .node-rect { fill: var(--node-refused);     stroke: var(--border-refused); }
+    .status-in_question .node-circle, .status-in_question .node-rect { fill: var(--node-in_question); stroke: var(--border-in_question); }
 
     .node text {
       font-family: inherit;
@@ -1162,6 +1165,7 @@
         <button onclick="expandAll()" aria-label="Expand all nodes">Expand</button>
         <button onclick="collapseAll()" aria-label="Collapse all nodes">Collapse</button>
         <button id="deps-btn" onclick="toggleDeps()" aria-label="Toggle dependency edges" aria-pressed="false">Deps</button>
+        <button id="hide-rejected-btn" onclick="toggleHideRejected()" aria-label="Toggle visibility of rejected nodes" aria-pressed="false" title="Hide rejected nodes (R)">Hide rejected</button>
         <button id="refresh-data-btn" onclick="refreshData()" aria-label="Reload goal tree data">↻</button>
         <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode" style="padding:5px 8px;font-size:14px;">🌙</button>
         <button id="settings-btn" onclick="toggleSettingsPanel()" aria-label="Open settings (S)" title="Settings (S)" style="padding:5px 8px;font-size:14px;">⚙</button>
@@ -1268,19 +1272,42 @@
         <div class="sp-row-header"><span>Node size</span><span class="sp-val" id="sv-nodeScale">1.0</span></div>
         <input type="range" id="s-nodeScale" class="sp-slider" min="0.5" max="3.0" step="0.1" value="1.0" aria-label="Node size multiplier">
       </div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Shape</span></div>
+        <select id="s-nodeShape" class="sp-select" aria-label="Node shape">
+          <option value="rect">▭ Rounded rect</option>
+          <option value="pill">⬭ Pill</option>
+          <option value="circle">⬤ Circle</option>
+        </select>
+      </div>
+      <div class="sp-row" id="sp-cornerRadius-row">
+        <div class="sp-row-header"><span>Corner radius</span><span class="sp-val" id="sv-nodeCornerRadius">8</span></div>
+        <input type="range" id="s-nodeCornerRadius" class="sp-slider" min="0" max="24" step="1" value="8" aria-label="Corner radius (rect only)">
+      </div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Secondary label</span></div>
+        <select id="s-secondaryField" class="sp-select" aria-label="Secondary label field">
+          <option value="none">None</option>
+          <option value="owner">Owner</option>
+          <option value="roi">ROI</option>
+          <option value="cost">Cost</option>
+          <option value="status">Status</option>
+          <option value="type">Type</option>
+        </select>
+      </div>
 
       <div class="sp-section-title">Spacing</div>
       <div class="sp-row">
         <div class="sp-row-header"><span>H spacing</span><span class="sp-val" id="sv-spacingH">220</span></div>
-        <input type="range" id="s-spacingH" class="sp-slider" min="80" max="600" step="20" value="220" aria-label="Horizontal spacing">
+        <input type="range" id="s-spacingH" class="sp-slider" min="10" max="600" step="5" value="220" aria-label="Horizontal spacing">
       </div>
       <div class="sp-row">
         <div class="sp-row-header"><span>V spacing</span><span class="sp-val" id="sv-spacingV">100</span></div>
-        <input type="range" id="s-spacingV" class="sp-slider" min="40" max="300" step="10" value="100" aria-label="Vertical spacing">
+        <input type="range" id="s-spacingV" class="sp-slider" min="5" max="300" step="5" value="100" aria-label="Vertical spacing">
       </div>
       <div class="sp-row">
         <div class="sp-row-header"><span>Level spacing</span><span class="sp-val" id="sv-levelSpacing">120</span></div>
-        <input type="range" id="s-levelSpacing" class="sp-slider" min="40" max="400" step="10" value="120" aria-label="Level spacing">
+        <input type="range" id="s-levelSpacing" class="sp-slider" min="10" max="400" step="5" value="120" aria-label="Level spacing">
       </div>
 
       <div class="sp-section-title">Edges</div>
@@ -1291,6 +1318,20 @@
       <div class="sp-row">
         <div class="sp-row-header"><span>Opacity</span><span class="sp-val" id="sv-edgeOpacity">0.35</span></div>
         <input type="range" id="s-edgeOpacity" class="sp-slider" min="0.05" max="1.0" step="0.05" value="0.35" aria-label="Edge opacity">
+      </div>
+
+      <div class="sp-section-title">Label truncation</div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Min chars</span><span class="sp-val" id="sv-truncMinChars">8</span></div>
+        <input type="range" id="s-truncMinChars" class="sp-slider" min="4" max="20" step="1" value="8" aria-label="Minimum chars always shown">
+      </div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Max chars</span><span class="sp-val" id="sv-truncMaxChars">40</span></div>
+        <input type="range" id="s-truncMaxChars" class="sp-slider" min="10" max="80" step="1" value="40" aria-label="Maximum chars before forced cut">
+      </div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Whitespace limit</span><span class="sp-val" id="sv-truncWhitespaceMax">28</span></div>
+        <input type="range" id="s-truncWhitespaceMax" class="sp-slider" min="8" max="60" step="1" value="28" aria-label="Truncate at nearest whitespace up to this length">
       </div>
 
       <div class="sp-section-title">Misc</div>
