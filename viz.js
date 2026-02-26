@@ -607,17 +607,20 @@
   // ── Rebuild (re-render with current layout) ───────────────────────────────
   let rebuildDebouncer = null;
 
-  function rebuildLayout() {
+  function rebuildLayout(keepView) {
     if (!root || !gLinks || !gNodes) return;
     gLinks.selectAll('.link').remove();
     gNodes.selectAll('.node').remove();
     update(root);
-    setTimeout(resetView, 400);
+    // Don't auto-fit when adjusting spacing/size settings — user wants to
+    // see the effect at their current zoom level, not have it cancelled out.
+    if (!keepView) setTimeout(resetView, 400);
   }
 
   function debouncedRebuild() {
     clearTimeout(rebuildDebouncer);
-    rebuildDebouncer = setTimeout(rebuildLayout, 130);
+    // keepView=true so spacing/size changes are visible without zoom compensation
+    rebuildDebouncer = setTimeout(() => rebuildLayout(true), 130);
   }
 
   window.setLayout      = function (name) {
