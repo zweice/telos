@@ -22,41 +22,60 @@
 
   // ── Settings ─────────────────────────────────────────────────────────────
   const DEFAULT_SETTINGS = {
-    layout:             'tree',
-    fontSize:           1.0,
-    labelThreshold:     0.4,
-    nodeScale:          1.0,
-    spacingH:           220,
-    spacingV:           100,
-    levelSpacing:       120,
-    edgeWidth:          1.0,
-    edgeOpacity:        0.35,
+    layout:             'horizontal',
+    fontSize:           1,
+    labelThreshold:     0.55,
+    nodeScale:          0.7,
+    spacingH:           240,
+    spacingV:           60,
+    levelSpacing:       80,
+    edgeWidth:          2,
+    edgeOpacity:        0.6,
     animations:         true,
-    nodeShape:          'rect',   // 'rect' | 'circle' | 'pill'
-    nodeCornerRadius:   8,        // 0–24 px (rect only)
+    nodeShape:          'rect',
+    nodeCornerRadius:   8,
     truncMinChars:      8,
     truncMaxChars:      40,
     truncWhitespaceMax: 28,
-    secondaryField:     'none',   // 'none'|'owner'|'roi'|'cost'|'status'|'type'
+    secondaryField:     'none',
+    hideShelved:        false,
+    nodeTextColor:      '#c9d1d9',
   };
 
-  function loadSettings() {
-    try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem('telos_settings') || '{}') }; }
-    catch { return { ...DEFAULT_SETTINGS }; }
+  // ── Cookie helpers ────────────────────────────────────────────────────────
+  function saveCookie(name, value) {
+    const exp = new Date(Date.now() + 365 * 864e5).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(String(value))}; expires=${exp}; path=/; SameSite=Lax`;
   }
-  function saveSettings(s) { localStorage.setItem('telos_settings', JSON.stringify(s)); }
+  function loadCookie(name, defaultVal) {
+    try {
+      const m = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+      if (m) return decodeURIComponent(m[1]);
+    } catch {}
+    return defaultVal;
+  }
+  function saveSettings(s) {
+    const exp = new Date(Date.now() + 365 * 864e5).toUTCString();
+    document.cookie = `telos_settings=${encodeURIComponent(JSON.stringify(s))}; expires=${exp}; path=/; SameSite=Lax`;
+  }
+  function loadSettings() {
+    try {
+      const m = document.cookie.match(/(?:^|;\s*)telos_settings=([^;]*)/);
+      if (m) return { ...DEFAULT_SETTINGS, ...JSON.parse(decodeURIComponent(m[1])) };
+    } catch {}
+    return { ...DEFAULT_SETTINGS };
+  }
 
   let settings = loadSettings();
 
   // ── Smart truncation ──────────────────────────────────────────────────────
   function smartTruncate(text, s) {
     const { truncMinChars, truncMaxChars, truncWhitespaceMax } = s;
-    if (text.length <= truncMinChars) return text;
     if (text.length <= truncMaxChars) return text;
     const sub       = text.slice(0, truncWhitespaceMax);
     const lastSpace = sub.lastIndexOf(' ');
-    if (lastSpace >= truncMinChars) return text.slice(0, lastSpace) + '…';
-    return text.slice(0, truncMaxChars) + '…';
+    if (lastSpace >= truncMinChars) return text.slice(0, lastSpace); // clean cut, no ellipsis
+    return text.slice(0, truncMaxChars) + '…'; // hard mid-word fallback only
   }
 
   function getSecondaryText(d, s) {
@@ -154,7 +173,8 @@
   }
 
   // ── Hide-rejected filter state ───────────────────────────────────────────
-  let hideRejected = localStorage.getItem('telos_hide_rejected') === 'true';
+  let hideRejected = loadCookie('telos_hide_rejected', 'false') === 'true';
+  let hideShelved  = loadCookie('telos_hide_shelved',  'false') === 'true';
 
   function applyRejectedFilter(node) {
     if (!node) return node;
@@ -162,6 +182,15 @@
     node.children = node.children
       .filter(c => c.status !== 'rejected')
       .map(c => applyRejectedFilter(c));
+    return node;
+  }
+
+  function applyShelvedFilter(node) {
+    if (!node) return node;
+    if (!node.children || node.children.length === 0) return node;
+    node.children = node.children
+      .filter(c => c.status !== 'shelved')
+      .map(c => applyShelvedFilter(c));
     return node;
   }
 
@@ -173,15 +202,48 @@
     btn.setAttribute('aria-pressed', String(hideRejected));
   }
 
+  function syncHideShelvedBtn() {
+    const btn = document.getElementById('hide-shelved-btn');
+    if (!btn) return;
+    btn.textContent = hideShelved ? 'Show shelved' : 'Hide shelved';
+    btn.classList.toggle('btn-active', hideShelved);
+    btn.setAttribute('aria-pressed', String(hideShelved));
+  }
+
   window.toggleHideRejected = function () {
     hideRejected = !hideRejected;
-    localStorage.setItem('telos_hide_rejected', hideRejected);
+    saveCookie('telos_hide_rejected', hideRejected);
     syncHideRejectedBtn();
     if (!rawTreeData) return;
     let copy = JSON.parse(JSON.stringify(rawTreeData));
     const cutoff = getCutoffSecs(doneFilterDays);
     if (cutoff > 0) applyDoneFilter(copy, cutoff);
     if (hideRejected) applyRejectedFilter(copy);
+    if (hideShelved)  applyShelvedFilter(copy);
+    const newRoot = d3.hierarchy(copy, d => d.children && d.children.length ? d.children : null);
+    newRoot.x0 = width / 2;
+    newRoot.y0 = height / 2;
+    newRoot.descendants().forEach(d => {
+      if (d.depth > 1) { d._children = d.children; d.children = null; }
+    });
+    root = newRoot;
+    window._telosRoot = root;
+    gLinks.selectAll('.link').remove();
+    gNodes.selectAll('.node').remove();
+    update(root);
+    setTimeout(resetView, 400);
+  };
+
+  window.toggleHideShelved = function () {
+    hideShelved = !hideShelved;
+    saveCookie('telos_hide_shelved', hideShelved);
+    syncHideShelvedBtn();
+    if (!rawTreeData) return;
+    let copy = JSON.parse(JSON.stringify(rawTreeData));
+    const cutoff = getCutoffSecs(doneFilterDays);
+    if (cutoff > 0) applyDoneFilter(copy, cutoff);
+    if (hideRejected) applyRejectedFilter(copy);
+    if (hideShelved)  applyShelvedFilter(copy);
     const newRoot = d3.hierarchy(copy, d => d.children && d.children.length ? d.children : null);
     newRoot.x0 = width / 2;
     newRoot.y0 = height / 2;
@@ -221,7 +283,7 @@
 
   // ── Theme ────────────────────────────────────────────────────────────────
   (function initTheme() {
-    const saved       = localStorage.getItem('telos_theme');
+    const saved       = loadCookie('telos_theme', '');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const theme       = saved || (prefersDark ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
@@ -233,9 +295,21 @@
     const cur  = document.documentElement.getAttribute('data-theme') || 'dark';
     const next = cur === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('telos_theme', next);
+    saveCookie('telos_theme', next);
     const btn = document.getElementById('theme-toggle');
     if (btn) btn.textContent = next === 'dark' ? '☀' : '🌙';
+    // Auto-switch node text color if still at the per-theme default
+    const DARK_DEFAULT = '#c9d1d9', LIGHT_DEFAULT = '#444c56';
+    if (next === 'light' && settings.nodeTextColor === DARK_DEFAULT) {
+      settings.nodeTextColor = LIGHT_DEFAULT;
+      saveSettings(settings);
+    } else if (next === 'dark' && settings.nodeTextColor === LIGHT_DEFAULT) {
+      settings.nodeTextColor = DARK_DEFAULT;
+      saveSettings(settings);
+    }
+    const colorEl = document.getElementById('s-nodeTextColor');
+    if (colorEl) colorEl.value = settings.nodeTextColor;
+    updateLabels();
   };
 
   // ── Bootstrap ────────────────────────────────────────────────────────────
@@ -277,6 +351,7 @@
     const cutoff = getCutoffSecs(doneFilterDays);
     if (cutoff > 0) applyDoneFilter(treeData, cutoff);
     if (hideRejected) applyRejectedFilter(treeData);
+    if (hideShelved)  applyShelvedFilter(treeData);
 
     root = d3.hierarchy(treeData, d => d.children && d.children.length ? d.children : null);
     root.x0 = width  / 2;
@@ -307,6 +382,7 @@
         updateLabels();
       });
     svg.call(zoomBehavior);
+    svg.on('dblclick.zoom', null); // Fix 1: let dblclick open detail panel, not zoom
 
     gAll      = svg.append('g').attr('class', 'all');
     gLinks    = gAll.append('g').attr('class', 'links');
@@ -344,6 +420,7 @@
         getCutoffSecs(doneFilterDays)
       );
       if (hideRejected) applyRejectedFilter(filtered);
+      if (hideShelved)  applyShelvedFilter(filtered);
       const newRoot = d3.hierarchy(filtered, d => d.children && d.children.length ? d.children : null);
       newRoot.x0 = width  / 2;
       newRoot.y0 = height / 2;
@@ -383,6 +460,13 @@
           window.toggleHideRejected();
         }
       }
+      if (e.key === 'h' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const tag = document.activeElement && document.activeElement.tagName;
+        if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) {
+          e.preventDefault();
+          window.toggleHideShelved();
+        }
+      }
     });
 
     // Click outside dismisses context menu
@@ -390,6 +474,7 @@
 
     initSettingsPanel();
     syncHideRejectedBtn();
+    syncHideShelvedBtn();
   }
 
   // ── Resize ───────────────────────────────────────────────────────────────
@@ -825,7 +910,7 @@
       el.append('tspan')
         .attr('x',   0)
         .attr('dy',  yPrimary)
-        .attr('fill', 'var(--text-primary, #e6edf3)')
+        .attr('fill', settings.nodeTextColor)
         .text(label);
     });
 
@@ -1159,6 +1244,8 @@
     setV('s-truncMaxChars',     settings.truncMaxChars);
     setV('s-truncWhitespaceMax', settings.truncWhitespaceMax);
     setV('s-secondaryField',    settings.secondaryField);
+    const colorEl = document.getElementById('s-nodeTextColor');
+    if (colorEl) colorEl.value = settings.nodeTextColor || '#c9d1d9';
 
     setTxt('sv-fontSize',          fmtSettingVal('fontSize',          settings.fontSize));
     setTxt('sv-labelThreshold',    fmtSettingVal('labelThreshold',    settings.labelThreshold));
@@ -1240,6 +1327,16 @@
         settings.secondaryField = secEl.value;
         saveSettings(settings);
         rebuildLayout();
+      });
+    }
+
+    // Node text color picker
+    const nodeTextColorEl = document.getElementById('s-nodeTextColor');
+    if (nodeTextColorEl) {
+      nodeTextColorEl.addEventListener('input', () => {
+        settings.nodeTextColor = nodeTextColorEl.value;
+        saveSettings(settings);
+        updateLabels();
       });
     }
 
@@ -1464,6 +1561,16 @@
     if (desc) showDetailPanel(desc);
   };
 
+  // ── Rect boundary intersection for dep arrow edge-to-edge placement ──────
+  function rectEdgePoint(cx, cy, w, h, tx, ty) {
+    const dx = tx - cx, dy = ty - cy;
+    if (dx === 0 && dy === 0) return { x: cx, y: cy };
+    const sx = dx !== 0 ? (w / 2) / Math.abs(dx) : Infinity;
+    const sy = dy !== 0 ? (h / 2) / Math.abs(dy) : Infinity;
+    const s  = Math.min(sx, sy);
+    return { x: cx + dx * s, y: cy + dy * s };
+  }
+
   // ── Dependency edges ─────────────────────────────────────────────────────
   function drawDepEdges(deps) {
     cachedDeps = deps;
@@ -1484,18 +1591,28 @@
       const mx = (sx + dx) / 2;
       const my = (sy + dy) / 2 - 60;
 
-      const srcR = (radii[blocked.data.type] || radii.task) + 2;
-      const tgtR = (radii[blocker.data.type] || radii.task) + 2;
-
-      const s2mx   = mx - sx, s2my = my - sy;
-      const s2mLen = Math.sqrt(s2mx * s2mx + s2my * s2my) || 1;
-      const ssx    = sx + (s2mx / s2mLen) * srcR;
-      const ssy    = sy + (s2my / s2mLen) * srcR;
-
-      const m2dx   = dx - mx, m2dy = dy - my;
-      const m2dLen = Math.sqrt(m2dx * m2dx + m2dy * m2dy) || 1;
-      const ddx    = dx - (m2dx / m2dLen) * tgtR;
-      const ddy    = dy - (m2dy / m2dLen) * tgtR;
+      // Compute boundary points: source = edge of blocked toward ctrl pt, target = edge of blocker toward ctrl pt
+      let ssx, ssy, ddx, ddy;
+      if (settings.nodeShape === 'circle') {
+        const srcR = (radii[blocked.data.type] || radii.task) + 2;
+        const tgtR = (radii[blocker.data.type] || radii.task) + 2;
+        const s2mx = mx - sx, s2my = my - sy;
+        const s2mLen = Math.sqrt(s2mx * s2mx + s2my * s2my) || 1;
+        ssx = sx + (s2mx / s2mLen) * srcR;
+        ssy = sy + (s2my / s2mLen) * srcR;
+        const m2dx = dx - mx, m2dy = dy - my;
+        const m2dLen = Math.sqrt(m2dx * m2dx + m2dy * m2dy) || 1;
+        ddx = dx - (m2dx / m2dLen) * tgtR;
+        ddy = dy - (m2dy / m2dLen) * tgtR;
+      } else {
+        // rect or pill — use axis-aligned boundary intersection
+        const srcDims = nodeRectDims(blocked, settings);
+        const tgtDims = nodeRectDims(blocker, settings);
+        const srcPt   = rectEdgePoint(sx, sy, srcDims.w, srcDims.h, mx, my);
+        const tgtPt   = rectEdgePoint(dx, dy, tgtDims.w, tgtDims.h, mx, my);
+        ssx = srcPt.x; ssy = srcPt.y;
+        ddx = tgtPt.x; ddy = tgtPt.y;
+      }
 
       gDepEdges.append('path')
         .attr('d',          `M ${ssx} ${ssy} Q ${mx} ${my} ${ddx} ${ddy}`)
@@ -1645,6 +1762,7 @@
           getCutoffSecs(doneFilterDays)
         );
         if (hideRejected) applyRejectedFilter(filtered);
+        if (hideShelved)  applyShelvedFilter(filtered);
 
         root = d3.hierarchy(filtered, d => d.children && d.children.length ? d.children : null);
         root.x0 = width  / 2;

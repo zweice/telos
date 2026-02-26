@@ -1166,6 +1166,7 @@
         <button onclick="collapseAll()" aria-label="Collapse all nodes">Collapse</button>
         <button id="deps-btn" onclick="toggleDeps()" aria-label="Toggle dependency edges" aria-pressed="false">Deps</button>
         <button id="hide-rejected-btn" onclick="toggleHideRejected()" aria-label="Toggle visibility of rejected nodes" aria-pressed="false" title="Hide rejected nodes (R)">Hide rejected</button>
+        <button id="hide-shelved-btn"  onclick="toggleHideShelved()"  aria-label="Toggle visibility of shelved nodes"  aria-pressed="false" title="Hide shelved nodes (H)">Hide shelved</button>
         <button id="refresh-data-btn" onclick="refreshData()" aria-label="Reload goal tree data">↻</button>
         <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode" style="padding:5px 8px;font-size:14px;">🌙</button>
         <button id="settings-btn" onclick="toggleSettingsPanel()" aria-label="Open settings (S)" title="Settings (S)" style="padding:5px 8px;font-size:14px;">⚙</button>
@@ -1263,14 +1264,14 @@
         <input type="range" id="s-fontSize" class="sp-slider" min="0.5" max="2.0" step="0.1" value="1.0" aria-label="Font scale">
       </div>
       <div class="sp-row">
-        <div class="sp-row-header"><span>Label threshold</span><span class="sp-val" id="sv-labelThreshold">0.40</span></div>
-        <input type="range" id="s-labelThreshold" class="sp-slider" min="0" max="1.0" step="0.05" value="0.4" aria-label="Label hide threshold">
+        <div class="sp-row-header"><span>Label threshold</span><span class="sp-val" id="sv-labelThreshold">0.55</span></div>
+        <input type="range" id="s-labelThreshold" class="sp-slider" min="0" max="1.0" step="0.05" value="0.55" aria-label="Label hide threshold">
       </div>
 
       <div class="sp-section-title">Nodes</div>
       <div class="sp-row">
-        <div class="sp-row-header"><span>Node size</span><span class="sp-val" id="sv-nodeScale">1.0</span></div>
-        <input type="range" id="s-nodeScale" class="sp-slider" min="0.5" max="3.0" step="0.1" value="1.0" aria-label="Node size multiplier">
+        <div class="sp-row-header"><span>Node size</span><span class="sp-val" id="sv-nodeScale">0.7</span></div>
+        <input type="range" id="s-nodeScale" class="sp-slider" min="0.5" max="3.0" step="0.1" value="0.7" aria-label="Node size multiplier">
       </div>
       <div class="sp-row">
         <div class="sp-row-header"><span>Shape</span></div>
@@ -1298,26 +1299,26 @@
 
       <div class="sp-section-title">Spacing</div>
       <div class="sp-row">
-        <div class="sp-row-header"><span>H spacing</span><span class="sp-val" id="sv-spacingH">220</span></div>
-        <input type="range" id="s-spacingH" class="sp-slider" min="10" max="600" step="5" value="220" aria-label="Horizontal spacing">
+        <div class="sp-row-header"><span>H spacing</span><span class="sp-val" id="sv-spacingH">240</span></div>
+        <input type="range" id="s-spacingH" class="sp-slider" min="10" max="600" step="5" value="240" aria-label="Horizontal spacing">
       </div>
       <div class="sp-row">
-        <div class="sp-row-header"><span>V spacing</span><span class="sp-val" id="sv-spacingV">100</span></div>
-        <input type="range" id="s-spacingV" class="sp-slider" min="5" max="300" step="5" value="100" aria-label="Vertical spacing">
+        <div class="sp-row-header"><span>V spacing</span><span class="sp-val" id="sv-spacingV">60</span></div>
+        <input type="range" id="s-spacingV" class="sp-slider" min="5" max="300" step="5" value="60" aria-label="Vertical spacing">
       </div>
       <div class="sp-row">
-        <div class="sp-row-header"><span>Level spacing</span><span class="sp-val" id="sv-levelSpacing">120</span></div>
-        <input type="range" id="s-levelSpacing" class="sp-slider" min="10" max="400" step="5" value="120" aria-label="Level spacing">
+        <div class="sp-row-header"><span>Level spacing</span><span class="sp-val" id="sv-levelSpacing">80</span></div>
+        <input type="range" id="s-levelSpacing" class="sp-slider" min="10" max="400" step="5" value="80" aria-label="Level spacing">
       </div>
 
       <div class="sp-section-title">Edges</div>
       <div class="sp-row">
-        <div class="sp-row-header"><span>Thickness</span><span class="sp-val" id="sv-edgeWidth">1.0</span></div>
-        <input type="range" id="s-edgeWidth" class="sp-slider" min="0.5" max="5.0" step="0.5" value="1.0" aria-label="Edge thickness">
+        <div class="sp-row-header"><span>Thickness</span><span class="sp-val" id="sv-edgeWidth">2.0</span></div>
+        <input type="range" id="s-edgeWidth" class="sp-slider" min="0.5" max="5.0" step="0.5" value="2.0" aria-label="Edge thickness">
       </div>
       <div class="sp-row">
-        <div class="sp-row-header"><span>Opacity</span><span class="sp-val" id="sv-edgeOpacity">0.35</span></div>
-        <input type="range" id="s-edgeOpacity" class="sp-slider" min="0.05" max="1.0" step="0.05" value="0.35" aria-label="Edge opacity">
+        <div class="sp-row-header"><span>Opacity</span><span class="sp-val" id="sv-edgeOpacity">0.60</span></div>
+        <input type="range" id="s-edgeOpacity" class="sp-slider" min="0.05" max="1.0" step="0.05" value="0.60" aria-label="Edge opacity">
       </div>
 
       <div class="sp-section-title">Label truncation</div>
@@ -1341,6 +1342,12 @@
           <input type="checkbox" id="s-animations" checked>
           <span class="sp-toggle-track"></span>
         </label>
+      </div>
+      <div class="sp-toggle-row">
+        <span class="sp-toggle-label">Node text color</span>
+        <input type="color" id="s-nodeTextColor" value="#c9d1d9"
+               aria-label="Node text color"
+               style="width:36px;height:24px;padding:1px 2px;border:1px solid var(--border-subtle);border-radius:4px;background:transparent;cursor:pointer;">
       </div>
 
     </div><!-- /settings-body -->
