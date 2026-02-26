@@ -264,7 +264,10 @@
   let simulation      = null;
   let currentZoom     = 1;
   let lastUpdatedTime = null;
-  let depsVisible     = false;
+  let depsVisible = (() => {
+    const v = loadCookie('telos_deps_visible', null);
+    return v !== null ? v === 'true' : true; // default ON
+  })();
   let cachedDeps      = null;
   const tooltip       = document.getElementById('tooltip');
 
@@ -408,6 +411,17 @@
     window.collapseAll  = collapseAll;
     window.toggleLegend = toggleLegend;
     window.toggleDeps   = toggleDeps;
+
+    // Auto-load deps on init if depsVisible (default true or saved cookie)
+    if (depsVisible) {
+      const btn = document.getElementById('deps-btn');
+      if (btn) { btn.classList.add('btn-active'); btn.setAttribute('aria-pressed', 'true'); }
+      fetch(`http://localhost:8089/api/dependencies?_=${Date.now()}`, { cache: 'no-store', signal: AbortSignal.timeout(3000) })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(data => drawDepEdges(Array.isArray(data) ? data : (data.dependencies || [])))
+        .catch(() => fetch('telos-data.json').then(r => r.json())
+          .then(d => drawDepEdges((d.dependencies || []))));
+    }
 
     window.setDoneFilter = function setDoneFilter(days) {
       doneFilterDays = isNaN(days) ? 0 : days;
@@ -756,12 +770,12 @@
       .on('mousemove',  moveTooltip)
       .on('mouseleave', (e, d) => onNodeHoverEnd(e, d));
 
-    // Invisible hit-target (min 44px touch target)
-    nodeEnter.append('circle')
+    // Invisible hit-target — rect that exactly matches the visible node bounds
+    // Using rect for all shapes (rx=h/2 for circle/pill, rx=cornerRadius for rect)
+    nodeEnter.append('rect')
       .attr('class',  'hit-target')
       .attr('fill',   'transparent')
-      .attr('stroke', 'none')
-      .attr('r',      d => Math.max(nodeCollisionR(d, radii, settings), 22));
+      .attr('stroke', 'none');
 
     // Bottleneck ring (behind main shape)
     nodeEnter.append('circle')
@@ -817,8 +831,23 @@
       .attr('transform', d => `translate(${d.x},${d.y})`)
       .attr('class',     d => `node status-${d.data.status}`);
 
-    nodeMerge.select('.hit-target')
-      .attr('r', d => Math.max(nodeCollisionR(d, radii, settings), 22));
+    // Size hit-target rect to exactly match the visible node, min 44px for touch
+    nodeMerge.select('.hit-target').each(function(d) {
+      let w, h, rx;
+      if (settings.nodeShape === 'circle') {
+        const cr = Math.max(r(d), 22);
+        w = cr * 2; h = cr * 2; rx = cr;
+      } else {
+        const dims = nodeRectDims(d, settings);
+        w = Math.max(dims.w, 44);
+        h = Math.max(dims.h, 44);
+        rx = settings.nodeShape === 'pill' ? h / 2 : (settings.nodeCornerRadius || 0);
+      }
+      d3.select(this)
+        .attr('x', -w / 2).attr('y', -h / 2)
+        .attr('width', w).attr('height', h)
+        .attr('rx', rx).attr('ry', rx);
+    });
 
     // Update main shape
     if (settings.nodeShape === 'circle') {
@@ -1622,6 +1651,7 @@
   window.toggleDeps = function toggleDeps() {
     const btn = document.getElementById('deps-btn');
     depsVisible = !depsVisible;
+    saveCookie('telos_deps_visible', String(depsVisible), 365);
 
     if (!depsVisible) {
       gDepEdges.selectAll('path').remove();
