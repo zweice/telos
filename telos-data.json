@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T00:03:55.707Z",
+  "generated_at": "2026-02-26T00:10:58.496Z",
   "tree": [
     {
       "id": 1,
@@ -404,6 +404,31 @@
                   "progress": 0,
                   "description": "Telos v2 — full spec from Andreas (Feb 25).\n\nDAG LAYER:\nNew 'dependencies' table: blocked_id, blocker_id, type (hard/soft). Circular dep prevention at DB/app layer.\n\nBLOCKING LOGIC (dynamic):\nA node is blocked if: (1) hierarchical — parent with incomplete children, OR (2) lateral — exists as blocked_id where blocker_id is not done/shelved/rejected.\n\nCONSTRAINT WEIGHT ALGORITHM (ToC):\n- Base ROI: value / (cost_estimate + value * risk)\n- Constraint Weight: Node_Base_ROI + sum(Base_ROI of all laterally-blocked downstream nodes)\n- next command: filter dynamically blocked nodes, sort by Constraint Weight desc\n\nCLI CHANGES:\n- node src/cli.js block <blocked_id> by <blocker_id> [--type soft]  (replaces current block)\n- node src/cli.js unblock <blocked_id> from <blocker_id>\n- node src/cli.js next --owner forge  (now uses Constraint Weight)\n- node src/cli.js bottlenecks  (top 3 global root constraints)\n- node src/cli.js path <id>  (chain of blockers for a node)\n\nFRONTEND:\n- Dashed directional splines between laterally dependent nodes (toggle: Show Dependencies)\n- ToC Pulse: red pulse / thick border on #1 global bottleneck node\n\nCOO AGENT DIRECTIVES:\nAgents use bottlenecks to find constraint, subordinate all resources to clear it, re-evaluate after each completion.",
                   "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 79,
+                  "title": "Telos UI fixes: colors, dep arrows, done filter",
+                  "type": "task",
+                  "owner": "forge",
+                  "status": "open",
+                  "value": 5000,
+                  "cost_estimate": 20,
+                  "cost_actual": null,
+                  "roi": 250,
+                  "effort_hours_estimate": 2,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": null,
+                  "notes": [
+                    {
+                      "ts": 1772064653,
+                      "text": "4 fixes:\n1. Node colors: done = green, shelved = dark/black (currently no distinct color)\n2. Dep arrows: solid lines, not dashed\n3. Arrowhead placement: must sit OUTSIDE the node circle, not overlapping/poking into it\n4. 'Hide done > N days' filter: also add option to hide ALL done tasks (not just old ones)"
+                    }
+                  ],
                   "children": []
                 }
               ]
@@ -809,6 +834,10 @@
                 {
                   "ts": 1772064233,
                   "text": "Spec: systemd timer (every 60s) checks OpenClaw process alive + responsive. Heal sequence: (1) openclaw doctor --fix, (2) restart service, (3) restore from latest known-good openclaw.json backup + restart. Backup mgmt: timestamped snapshots of openclaw.json on every clean startup/config change, keep last 7. Telegram alert if all heal attempts fail. Smart extras: check port/API health not just process existence, log heal events."
+                },
+                {
+                  "ts": 1772064336,
+                  "text": "Backup destination: ~/gdrive/MacroHard/Internal/openclaw-backups/ (Drive mount is live — copies survive hardware failure automatically)"
                 }
               ],
               "children": []
