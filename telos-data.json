@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T00:14:07.419Z",
+  "generated_at": "2026-02-26T02:00:06.574Z",
   "tree": [
     {
       "id": 1,
@@ -371,7 +371,7 @@
                   "title": "Claude Code: Best practices, tooling optimization + commit discipline",
                   "type": "task",
                   "owner": "forge",
-                  "status": "open",
+                  "status": "in_progress",
                   "value": 15000,
                   "cost_estimate": 20,
                   "cost_actual": null,
