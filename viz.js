@@ -1,4 +1,4 @@
-/* Telos — D3 force visualization */
+/* Telos — D3 visualization */
 (function () {
   'use strict';
 
@@ -20,13 +20,36 @@
     in_question:   '#eab308',
   };
 
+  // ── Settings ─────────────────────────────────────────────────────────────
+  const DEFAULT_SETTINGS = {
+    layout:         'tree',
+    fontSize:       1.0,
+    labelThreshold: 0.4,
+    nodeScale:      1.0,
+    spacingH:       220,
+    spacingV:       100,
+    levelSpacing:   120,
+    edgeWidth:      1.0,
+    edgeOpacity:    0.35,
+    animations:     true,
+  };
+
+  function loadSettings() {
+    try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem('telos_settings') || '{}') }; }
+    catch { return { ...DEFAULT_SETTINGS }; }
+  }
+  function saveSettings(s) { localStorage.setItem('telos_settings', JSON.stringify(s)); }
+
+  let settings = loadSettings();
+
   // ── Dynamic node sizing ──────────────────────────────────────────────────
   function computeNodeRadius(count) {
-    const base = Math.min(width, height) / Math.sqrt(Math.max(count, 1)) * 0.38;
+    const base  = Math.min(width, height) / Math.sqrt(Math.max(count, 1)) * 0.38;
+    const scale = settings.nodeScale;
     return {
-      goal:      Math.max(24, Math.min(base * 1.4, 72)),
-      milestone: Math.max(18, Math.min(base,       54)),
-      task:      Math.max(12, Math.min(base * 0.7, 38))
+      goal:      Math.max(24, Math.min(base * 1.4, 72)) * scale,
+      milestone: Math.max(18, Math.min(base,       54)) * scale,
+      task:      Math.max(12, Math.min(base * 0.7, 38)) * scale,
     };
   }
 
@@ -68,13 +91,13 @@
 
   // ── State ────────────────────────────────────────────────────────────────
   let root, svg, gAll, gLinks, gNodes, gDepEdges, width, height;
-  let zoomBehavior  = null;
-  let simulation    = null;
-  let currentZoom   = 1;
+  let zoomBehavior    = null;
+  let simulation      = null;
+  let currentZoom     = 1;
   let lastUpdatedTime = null;
-  let depsVisible   = false;
-  let cachedDeps    = null;
-  const tooltip     = document.getElementById('tooltip');
+  let depsVisible     = false;
+  let cachedDeps      = null;
+  const tooltip       = document.getElementById('tooltip');
 
   const COLLAPSED_SYMBOL = '+';
   const EXPANDED_SYMBOL  = '−';
@@ -91,9 +114,9 @@
 
   // ── Theme ────────────────────────────────────────────────────────────────
   (function initTheme() {
-    const saved      = localStorage.getItem('telos_theme');
+    const saved       = localStorage.getItem('telos_theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme      = saved || (prefersDark ? 'dark' : 'light');
+    const theme       = saved || (prefersDark ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
     const btn = document.getElementById('theme-toggle');
     if (btn) btn.textContent = theme === 'dark' ? '☀' : '🌙';
@@ -109,7 +132,7 @@
   };
 
   // ── Bootstrap ────────────────────────────────────────────────────────────
-  fetch('http://localhost:8089/api/tree', { cache: 'no-store' })
+  fetch('http://localhost:8089/api/tree', { cache: 'no-store', signal: AbortSignal.timeout(3000) })
     .then(r => {
       if (!r.ok) throw new Error(`API error: ${r.status}`);
       return r.json();
@@ -182,15 +205,15 @@
     gDepEdges = gAll.append('g').attr('id', 'dep-edges');
     gNodes    = gAll.append('g').attr('class', 'nodes');
 
-    // Dep arrow marker — orange, 10×7
+    // Dep arrow marker
     const defs = svg.append('defs');
     defs.append('marker')
-      .attr('id',          'dep-arrow')
-      .attr('markerWidth', 10)
+      .attr('id',           'dep-arrow')
+      .attr('markerWidth',  10)
       .attr('markerHeight', 7)
-      .attr('refX',        9)
-      .attr('refY',        3.5)
-      .attr('orient',      'auto')
+      .attr('refX',         9)
+      .attr('refY',         3.5)
+      .attr('orient',       'auto')
       .append('path')
         .attr('d',    'M 0 0 L 0 7 L 10 3.5 z')
         .attr('fill', EDGE_DEP_COLOR);
@@ -229,6 +252,27 @@
     window.addEventListener('resize', resize);
     updateLastUpdatedDisplay();
     setInterval(() => refreshData(true), 30000);
+
+    // ── Global keyboard shortcuts ──────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        closeDetailPanel();
+        closeSettingsPanel();
+        dismissContextMenu();
+      }
+      if (e.key === 's' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const tag = document.activeElement && document.activeElement.tagName;
+        if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) {
+          e.preventDefault();
+          toggleSettingsPanel();
+        }
+      }
+    });
+
+    // Click outside dismisses context menu
+    document.addEventListener('click', () => dismissContextMenu());
+
+    initSettingsPanel();
   }
 
   // ── Resize ───────────────────────────────────────────────────────────────
@@ -242,13 +286,13 @@
     if (root) update(root);
   }
 
-  // ── Force layout ─────────────────────────────────────────────────────────
+  // ── Layout: Force-directed ────────────────────────────────────────────────
   function runForceLayout(nodes, links) {
     const radii    = computeNodeRadius(nodes.length);
     const maxDepth = d3.max(nodes, d => d.depth) || 1;
     const isMobile = width < 768;
 
-    // Seed positions for nodes that don't have them yet
+    // Seed positions for nodes without them
     nodes.forEach(d => {
       if (d.x == null || d.y == null) {
         d.x = width  * (0.15 + d.depth / maxDepth * 0.7) + (Math.random() - 0.5) * 80;
@@ -284,47 +328,200 @@
     for (let i = 0; i < n; i++) simulation.tick();
   }
 
-  // ── Bezier path for links (standard x,y SVG coordinates) ─────────────────
-  function bezier(s, d) {
-    const mx = (s.x + d.x) / 2;
-    return `M ${s.x} ${s.y} C ${mx} ${s.y}, ${mx} ${d.y}, ${d.x} ${d.y}`;
+  // ── Layout: Tree (top-down) ───────────────────────────────────────────────
+  function runTreeLayout() {
+    if (simulation) { simulation.stop(); simulation = null; }
+    d3.tree()
+      .nodeSize([settings.spacingH, settings.levelSpacing])
+      .separation((a, b) => a.parent === b.parent ? 1 : 1.2)
+      (root);
+    // d3.tree sets x=horizontal, y=depth — correct orientation
   }
+
+  // ── Layout: Horizontal (left-to-right) ───────────────────────────────────
+  function runHorizontalLayout() {
+    if (simulation) { simulation.stop(); simulation = null; }
+    d3.tree()
+      .nodeSize([settings.spacingV, settings.spacingH])
+      .separation((a, b) => a.parent === b.parent ? 1 : 1.2)
+      (root);
+    // Swap x ↔ y for left-to-right orientation
+    root.descendants().forEach(d => {
+      const tmp = d.x;
+      d.x = d.y;
+      d.y = tmp;
+    });
+  }
+
+  // ── Layout: Radial ────────────────────────────────────────────────────────
+  function runRadialLayout() {
+    if (simulation) { simulation.stop(); simulation = null; }
+    const radius = Math.min(width, height) / 2 * 0.82;
+    d3.cluster().size([2 * Math.PI, radius])(root);
+    // Convert polar (angle, radius) → cartesian (x, y) centered on canvas
+    root.descendants().forEach(d => {
+      const [cx, cy] = d3.pointRadial(d.x, d.y);
+      d.x = cx + width  / 2;
+      d.y = cy + height / 2;
+    });
+  }
+
+  // ── Layout dispatcher ─────────────────────────────────────────────────────
+  function positionNodes(nodes, links) {
+    switch (settings.layout) {
+      case 'force':      runForceLayout(nodes, links); break;
+      case 'horizontal': runHorizontalLayout();         break;
+      case 'radial':     runRadialLayout();             break;
+      default:           runTreeLayout();               break;
+    }
+  }
+
+  // ── Link path (layout-aware) ──────────────────────────────────────────────
+  function linkPath(s, d) {
+    switch (settings.layout) {
+      case 'tree': {
+        // Vertical cubic bezier for top-down tree
+        const midY = (s.y + d.y) / 2;
+        return `M ${s.x} ${s.y} C ${s.x} ${midY}, ${d.x} ${midY}, ${d.x} ${d.y}`;
+      }
+      case 'horizontal': {
+        // Horizontal cubic bezier for left-right tree
+        const midX = (s.x + d.x) / 2;
+        return `M ${s.x} ${s.y} C ${midX} ${s.y}, ${midX} ${d.y}, ${d.x} ${d.y}`;
+      }
+      default: {
+        // Diagonal bezier for force / radial
+        const mx = (s.x + d.x) / 2;
+        return `M ${s.x} ${s.y} C ${mx} ${s.y}, ${mx} ${d.y}, ${d.x} ${d.y}`;
+      }
+    }
+  }
+
+  // ── Edge style helpers ────────────────────────────────────────────────────
+  function edgeStroke()       { return `rgba(99,120,150,${settings.edgeOpacity})`; }
+  function edgeStrokeWidth()  { return `${settings.edgeWidth}px`; }
+
+  // ── Rebuild (re-render with current layout) ───────────────────────────────
+  let rebuildDebouncer = null;
+
+  function rebuildLayout() {
+    if (!root || !gLinks || !gNodes) return;
+    gLinks.selectAll('.link').remove();
+    gNodes.selectAll('.node').remove();
+    update(root);
+    setTimeout(resetView, 400);
+  }
+
+  function debouncedRebuild() {
+    clearTimeout(rebuildDebouncer);
+    rebuildDebouncer = setTimeout(rebuildLayout, 130);
+  }
+
+  window.setLayout      = function (name) {
+    settings.layout = name;
+    saveSettings(settings);
+    rebuildLayout();
+    syncSettingsUI();
+    // Highlight active layout button in toolbar if present
+    document.querySelectorAll('#layout-btns button').forEach(b => {
+      b.classList.toggle('btn-active', b.dataset.layout === name);
+    });
+  };
+  window.rebuildLayout = rebuildLayout;
+
+  // ── Context Menu ──────────────────────────────────────────────────────────
+  let ctxNode       = null;
+  let longPressTimer = null;
+
+  function showContextMenu(event, d) {
+    ctxNode = d;
+    const menu = document.getElementById('ctx-menu');
+    if (!menu) return;
+
+    let x, y;
+    if (event.touches && event.touches.length) {
+      x = event.touches[0].clientX;
+      y = event.touches[0].clientY;
+    } else {
+      x = event.clientX;
+      y = event.clientY;
+    }
+
+    // Keep menu in viewport
+    const mw = 160, mh = 110;
+    menu.style.left = `${Math.min(x, window.innerWidth  - mw - 8)}px`;
+    menu.style.top  = `${Math.min(y, window.innerHeight - mh - 8)}px`;
+    menu.classList.add('visible');
+  }
+
+  function dismissContextMenu() {
+    const menu = document.getElementById('ctx-menu');
+    if (menu) menu.classList.remove('visible');
+    ctxNode = null;
+  }
+
+  window.ctxOpenDetail = function () {
+    if (ctxNode) showDetailPanel(ctxNode);
+    dismissContextMenu();
+  };
+
+  window.ctxExpandAll = function () {
+    if (!ctxNode) return;
+    dismissContextMenu();
+    ctxNode.descendants().forEach(d => {
+      if (d._children) { d.children = d._children; d._children = null; }
+    });
+    update(ctxNode);
+  };
+
+  window.ctxCollapseAll = function () {
+    if (!ctxNode) return;
+    dismissContextMenu();
+    ctxNode.descendants().forEach(d => {
+      if (d.depth > ctxNode.depth && d.children) {
+        d._children = d.children;
+        d.children  = null;
+      }
+    });
+    update(ctxNode);
+  };
 
   // ── Update / render ──────────────────────────────────────────────────────
   function update(source) {
     const nodes = root.descendants();
     const links = root.links();
     const radii = computeNodeRadius(nodes.length);
-    const t     = d3.transition().duration(350).ease(d3.easeCubicInOut);
+    const dur   = settings.animations ? 350 : 0;
+    const t     = d3.transition().duration(dur).ease(d3.easeCubicInOut);
     const r     = d => radii[d.data.type] || radii.task;
 
-    // Position nodes via force simulation
-    runForceLayout(nodes, links);
+    // Position all nodes via selected layout
+    positionNodes(nodes, links);
 
-    // ── Tree links: thin, no arrowhead ──
+    // ── Tree links ──
     const link = gLinks.selectAll('.link').data(links, d => d.target.data.id);
 
     const linkEnter = link.enter().append('path')
-      .attr('class', 'link')
+      .attr('class',        'link')
       .attr('fill',         'none')
-      .attr('stroke',       EDGE_TREE_STROKE)
-      .attr('stroke-width', '1px')
+      .attr('stroke',       edgeStroke())
+      .attr('stroke-width', edgeStrokeWidth())
       .attr('d', () => {
         const o = { x: source.x0 ?? source.x, y: source.y0 ?? source.y };
-        return bezier(o, o);
+        return linkPath(o, o);
       });
 
     link.merge(linkEnter)
       .transition(t)
-      .attr('stroke',       EDGE_TREE_STROKE)
-      .attr('stroke-width', '1px')
-      .attr('d', d => bezier(d.source, d.target));
+      .attr('stroke',       edgeStroke())
+      .attr('stroke-width', edgeStrokeWidth())
+      .attr('d', d => linkPath(d.source, d.target));
 
     link.exit()
       .transition(t)
       .attr('d', () => {
         const o = { x: source.x, y: source.y };
-        return bezier(o, o);
+        return linkPath(o, o);
       })
       .remove();
 
@@ -337,17 +534,45 @@
       .attr('tabindex',   0)
       .attr('role',       'treeitem')
       .attr('aria-label', d => `#${d.data.id} ${d.data.title}`)
-      .on('click',     (e, d) => { e.stopPropagation(); showDetailPanel(d); })
-      .on('dblclick',  (e, d) => { e.stopPropagation(); toggle(d); })
-      .on('keydown',   (e, d) => {
+      // Single click → expand/collapse
+      .on('click', (e, d) => {
+        e.stopPropagation();
+        dismissContextMenu();
+        toggle(d);
+      })
+      // Double click → detail panel
+      .on('dblclick', (e, d) => {
+        e.stopPropagation();
+        showDetailPanel(d);
+      })
+      // Right-click → context menu
+      .on('contextmenu', (e, d) => {
+        e.preventDefault();
+        e.stopPropagation();
+        showContextMenu(e, d);
+      })
+      // Long-press (mobile, 500 ms) → context menu
+      .on('touchstart', (e, d) => {
+        longPressTimer = setTimeout(() => {
+          longPressTimer = null;
+          showContextMenu(e, d);
+        }, 500);
+      })
+      .on('touchend', () => {
+        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      })
+      .on('touchmove', () => {
+        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      })
+      .on('keydown', (e, d) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showDetailPanel(d); }
         if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); toggle(d); }
       })
       .on('mouseenter', (e, d) => onNodeHover(e, d))
-      .on('mousemove',   moveTooltip)
-      .on('mouseleave',  (e, d) => onNodeHoverEnd(e, d));
+      .on('mousemove',  moveTooltip)
+      .on('mouseleave', (e, d) => onNodeHoverEnd(e, d));
 
-    // Invisible hit-target (min 44px for mobile)
+    // Invisible hit-target (min 44px touch target)
     nodeEnter.append('circle')
       .attr('class',  'hit-target')
       .attr('fill',   'transparent')
@@ -411,8 +636,8 @@
       .transition(t)
       .attr('r', d => d.data.is_bottleneck ? r(d) + 4 : 0);
 
-    // Seed label content — updateLabels() will refine on zoom
-    nodeMerge.select('text.label').each(function(d) {
+    // Seed label content
+    nodeMerge.select('text.label').each(function (d) {
       const el = d3.select(this);
       el.selectAll('tspan').remove();
       el.append('tspan')
@@ -455,16 +680,17 @@
 
   // ── Zoom-invariant labels ────────────────────────────────────────────────
   function updateLabels() {
-    const zoom     = currentZoom;
-    const maxChars = Math.floor(10 + zoom * 12);
-    const fontSize = (11 / zoom) + 'px';
+    const zoom      = currentZoom;
+    const maxChars  = Math.floor(10 + zoom * 12);
+    const fontSize  = (11 * settings.fontSize / zoom) + 'px';
+    const threshold = settings.labelThreshold;
 
-    gNodes.selectAll('text.label').each(function(d) {
+    gNodes.selectAll('text.label').each(function (d) {
       const el   = d3.select(this);
       const kids = (d.children || []).length + (d._children || []).length;
       const isImportant = d.data.type === 'goal' || d.data.type === 'milestone' || kids >= 3;
 
-      if (zoom < 0.5 && !isImportant) {
+      if (zoom < threshold && !isImportant) {
         el.style('display', 'none');
         return;
       }
@@ -481,6 +707,14 @@
         .attr('fill', 'var(--text-primary, #e6edf3)')
         .text(label);
     });
+  }
+
+  // ── Live edge style update (no full rebuild) ──────────────────────────────
+  function updateEdgeStyles() {
+    if (!gLinks) return;
+    gLinks.selectAll('.link')
+      .attr('stroke',       edgeStroke())
+      .attr('stroke-width', edgeStrokeWidth());
   }
 
   // ── Toggle collapse/expand ───────────────────────────────────────────────
@@ -540,7 +774,7 @@
     document.getElementById('legend').classList.toggle('legend-expanded');
   }
 
-  // ── Hover: dim unrelated nodes/links, highlight dep edges of hovered node ─
+  // ── Hover: dim unrelated nodes/links ─────────────────────────────────────
   function getConnectedNodeIds(d) {
     const ids = new Set([d.data.id]);
     if (d.parent) ids.add(d.parent.data.id);
@@ -563,17 +797,17 @@
     d3.select(event.currentTarget).select('.node-circle')
       .attr('filter', `drop-shadow(0 0 10px ${glowColor})`);
 
-    gNodes.selectAll('.node').each(function(nd) {
+    gNodes.selectAll('.node').each(function (nd) {
       d3.select(this).style('opacity', connected.has(nd.data.id) ? 1.0 : 0.2);
     });
 
-    gLinks.selectAll('.link').each(function(ld) {
+    gLinks.selectAll('.link').each(function (ld) {
       const inv = connected.has(ld.source.data.id) || connected.has(ld.target.data.id);
       d3.select(this).style('opacity', inv ? 1.0 : EDGE_DIM_OPACITY);
     });
 
     if (depsVisible) {
-      gDepEdges.selectAll('path').each(function() {
+      gDepEdges.selectAll('path').each(function () {
         const src    = +d3.select(this).attr('data-src');
         const tgt    = +d3.select(this).attr('data-tgt');
         const isConn = connected.has(src) || connected.has(tgt);
@@ -599,16 +833,15 @@
     const titleEl = document.getElementById('detail-panel-title');
     const body    = document.getElementById('detail-panel-body');
 
-    // Fix 8: #ID in accent color before title
     titleEl.innerHTML =
       `<span style="color:var(--text-accent);font-weight:800;font-size:16px">#${nd.id}</span>` +
       ` <span style="color:var(--text-muted);font-weight:400">—</span> ` +
       `${escHtml(nd.title)}`;
 
-    const roi      = nd.roi != null ? parseFloat(nd.roi).toFixed(2) : '—';
-    const fmt2     = v => v != null ? '€' + Number(v).toLocaleString() : '—';
-    const fmtDate  = ts => ts ? new Date(ts * 1000).toLocaleDateString() : '—';
-    const badgeClass  = `badge-${nd.status}`;
+    const roi        = nd.roi != null ? parseFloat(nd.roi).toFixed(2) : '—';
+    const fmt2       = v => v != null ? '€' + Number(v).toLocaleString() : '—';
+    const fmtDate    = ts => ts ? new Date(ts * 1000).toLocaleDateString() : '—';
+    const badgeClass = `badge-${nd.status}`;
     const statusLabel = nd.status.replace(/_/g, ' ');
 
     const desc       = nd.description || '';
@@ -623,7 +856,7 @@
          </div>`
       : `<div class="dp-description-box" style="color:rgba(255,255,255,0.3);font-style:italic">No description</div>`;
 
-    const pct          = nd.progress || 0;
+    const pct = nd.progress || 0;
     const progressHTML = `
       <div class="dp-progress-bar-bg">
         <div class="dp-progress-bar-fill" style="width:${pct}%"></div>
@@ -716,9 +949,147 @@
       .replace(/\n/g, '<br>');
   }
 
-  document.getElementById('container').addEventListener('click', () => closeDetailPanel());
+  document.getElementById('container').addEventListener('click', () => {
+    closeDetailPanel();
+    dismissContextMenu();
+  });
   window.closeDetailPanel = closeDetailPanel;
-  window.toggleDesc = toggleDesc;
+  window.toggleDesc       = toggleDesc;
+
+  // ── Settings Panel ────────────────────────────────────────────────────────
+  function toggleSettingsPanel() {
+    const panel = document.getElementById('settings-panel');
+    if (!panel) return;
+    const isOpen = panel.classList.toggle('open');
+    const btn    = document.getElementById('settings-btn');
+    if (btn) btn.classList.toggle('btn-active', isOpen);
+  }
+
+  function closeSettingsPanel() {
+    const panel = document.getElementById('settings-panel');
+    if (panel) panel.classList.remove('open');
+    const btn = document.getElementById('settings-btn');
+    if (btn) btn.classList.remove('btn-active');
+  }
+
+  window.toggleSettingsPanel = toggleSettingsPanel;
+  window.closeSettingsPanel  = closeSettingsPanel;
+
+  // Format a setting value for display
+  function fmtSettingVal(key, val) {
+    if (key === 'labelThreshold' || key === 'edgeOpacity') return val.toFixed(2);
+    if (Number.isInteger(val)) return String(val);
+    return val.toFixed(1);
+  }
+
+  function syncSettingsUI() {
+    const get    = id => document.getElementById(id);
+    const setV   = (id, v) => { const el = get(id); if (el) el.value = v; };
+    const setChk = (id, v) => { const el = get(id); if (el) el.checked = v; };
+    const setTxt = (id, v) => { const el = get(id); if (el) el.textContent = v; };
+
+    setV('s-layout',         settings.layout);
+    setV('s-fontSize',       settings.fontSize);
+    setV('s-labelThreshold', settings.labelThreshold);
+    setV('s-nodeScale',      settings.nodeScale);
+    setV('s-spacingH',       settings.spacingH);
+    setV('s-spacingV',       settings.spacingV);
+    setV('s-levelSpacing',   settings.levelSpacing);
+    setV('s-edgeWidth',      settings.edgeWidth);
+    setV('s-edgeOpacity',    settings.edgeOpacity);
+    setChk('s-animations',   settings.animations);
+
+    setTxt('sv-fontSize',       fmtSettingVal('fontSize',       settings.fontSize));
+    setTxt('sv-labelThreshold', fmtSettingVal('labelThreshold', settings.labelThreshold));
+    setTxt('sv-nodeScale',      fmtSettingVal('nodeScale',      settings.nodeScale));
+    setTxt('sv-spacingH',       fmtSettingVal('spacingH',       settings.spacingH));
+    setTxt('sv-spacingV',       fmtSettingVal('spacingV',       settings.spacingV));
+    setTxt('sv-levelSpacing',   fmtSettingVal('levelSpacing',   settings.levelSpacing));
+    setTxt('sv-edgeWidth',      fmtSettingVal('edgeWidth',      settings.edgeWidth));
+    setTxt('sv-edgeOpacity',    fmtSettingVal('edgeOpacity',    settings.edgeOpacity));
+  }
+
+  function initSettingsPanel() {
+    syncSettingsUI();
+
+    // Generic slider binder
+    function bind(id, key, parse, onUpdate) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', () => {
+        settings[key] = parse(el.value);
+        saveSettings(settings);
+        const valEl = document.getElementById('sv-' + id.slice(2));
+        if (valEl) valEl.textContent = fmtSettingVal(key, settings[key]);
+        if (typeof onUpdate === 'function') onUpdate();
+      });
+    }
+
+    bind('s-fontSize',       'fontSize',       parseFloat, updateLabels);
+    bind('s-labelThreshold', 'labelThreshold', parseFloat, updateLabels);
+    bind('s-nodeScale',      'nodeScale',       parseFloat, debouncedRebuild);
+    bind('s-spacingH',       'spacingH',        parseInt,   debouncedRebuild);
+    bind('s-spacingV',       'spacingV',        parseInt,   debouncedRebuild);
+    bind('s-levelSpacing',   'levelSpacing',    parseInt,   debouncedRebuild);
+    bind('s-edgeWidth',      'edgeWidth',       parseFloat, updateEdgeStyles);
+    bind('s-edgeOpacity',    'edgeOpacity',     parseFloat, updateEdgeStyles);
+
+    // Animations toggle
+    const animEl = document.getElementById('s-animations');
+    if (animEl) {
+      animEl.addEventListener('change', () => {
+        settings.animations = animEl.checked;
+        saveSettings(settings);
+      });
+    }
+
+    // Layout select
+    const layoutEl = document.getElementById('s-layout');
+    if (layoutEl) {
+      layoutEl.addEventListener('change', () => {
+        window.setLayout(layoutEl.value);
+      });
+    }
+
+    // Export
+    window.exportSettings = function () {
+      const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = 'telos-settings.json'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+
+    // Import
+    window.importSettings = function () {
+      const input = document.createElement('input');
+      input.type = 'file'; input.accept = '.json,application/json';
+      input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          try {
+            const parsed = JSON.parse(ev.target.result);
+            settings = { ...DEFAULT_SETTINGS, ...parsed };
+            saveSettings(settings);
+            syncSettingsUI();
+            rebuildLayout();
+          } catch { alert('Invalid settings JSON — check file format'); }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    };
+
+    // Reset
+    window.resetSettings = function () {
+      settings = { ...DEFAULT_SETTINGS };
+      saveSettings(settings);
+      syncSettingsUI();
+      rebuildLayout();
+    };
+  }
 
   // ── Tooltip ──────────────────────────────────────────────────────────────
   function fmtVal(n) {
@@ -728,7 +1099,6 @@
     return `€${n}`;
   }
 
-  // Fix 8: Tooltip format "#ID — Title / Status | Type | Owner"
   function showTooltip(event, d) {
     const nd     = d.data;
     const status = nd.status.replace(/_/g, ' ');
@@ -758,9 +1128,9 @@
 
   function moveTooltip(event) {
     const margin = 14;
-    const tw     = tooltip.offsetWidth, th = tooltip.offsetHeight;
-    let left     = event.clientX + margin;
-    let top      = event.clientY + margin;
+    const tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
+    let left = event.clientX + margin;
+    let top  = event.clientY + margin;
     if (left + tw > window.innerWidth)  left = event.clientX - tw - margin;
     if (top  + th > window.innerHeight) top  = event.clientY - th - margin;
     tooltip.style.left = `${left}px`;
@@ -787,12 +1157,12 @@
     [treeBtn, ideasBtn].forEach(b => {
       if (b) { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); }
     });
-    if (controls)     controls.style.display     = 'none';
-    if (legend)       legend.style.display        = 'none';
-    if (legendToggle) legendToggle.style.display   = 'none';
-    if (filterWrap)   filterWrap.style.display     = 'none';
+    if (controls)     controls.style.display    = 'none';
+    if (legend)       legend.style.display       = 'none';
+    if (legendToggle) legendToggle.style.display = 'none';
+    if (filterWrap)   filterWrap.style.display   = 'none';
 
-    ['tree','list','ideas'].forEach(t => {
+    ['tree', 'list', 'ideas'].forEach(t => {
       const b = document.getElementById(`bnav-${t}`);
       if (b) b.classList.toggle('active', t === tab);
     });
@@ -800,10 +1170,10 @@
     if (tab === 'tree') {
       container.style.display = '';
       if (treeBtn) { treeBtn.classList.add('active'); treeBtn.setAttribute('aria-selected', 'true'); }
-      if (controls)     controls.style.display     = '';
-      if (legend)       legend.style.display        = '';
-      if (legendToggle) legendToggle.style.display  = '';
-      if (filterWrap)   filterWrap.style.display    = '';
+      if (controls)     controls.style.display    = '';
+      if (legend)       legend.style.display       = '';
+      if (legendToggle) legendToggle.style.display = '';
+      if (filterWrap)   filterWrap.style.display   = '';
     } else if (tab === 'list') {
       if (listView) { listView.classList.add('active'); renderListView(); }
     } else {
@@ -851,7 +1221,7 @@
         statusGroups[g].push(n);
       });
 
-    const groupOrder  = ['in_progress','blocked','in_question','open','done','shelved','rejected','refused','out_of_budget'];
+    const groupOrder  = ['in_progress', 'blocked', 'in_question', 'open', 'done', 'shelved', 'rejected', 'refused', 'out_of_budget'];
     const groupLabels = {
       in_progress:   '🔵 In Progress',
       blocked:       '🔴 Blocked',
@@ -861,7 +1231,7 @@
       shelved:       '⬜ Shelved',
       rejected:      '🚫 Rejected',
       refused:       '⚫ Refused',
-      out_of_budget: '💸 Out of Budget'
+      out_of_budget: '💸 Out of Budget',
     };
 
     let html = '';
@@ -870,9 +1240,9 @@
       if (!gnodes || !gnodes.length) continue;
       html += `<div class="lv-group"><div class="lv-group-title">${groupLabels[g] || g} (${gnodes.length})</div>`;
       for (const n of gnodes) {
-        const roi    = n.roi != null ? `ROI ${parseFloat(n.roi).toFixed(0)}` : '';
-        const owner  = n.owner ? `· ${n.owner}` : '';
-        const pct    = n.progress || 0;
+        const roi  = n.roi != null ? `ROI ${parseFloat(n.roi).toFixed(0)}` : '';
+        const owner = n.owner ? `· ${n.owner}` : '';
+        const pct  = n.progress || 0;
         const progressBar = pct > 0
           ? `<div class="lv-card-progress"><div class="lv-card-progress-fill" style="width:${pct}%"></div></div>` : '';
         const badgeClass = `badge-${n.status}`;
@@ -896,14 +1266,13 @@
     el.innerHTML = html || '<p style="color:var(--text-muted);padding:16px;font-size:12px">No tasks found.</p>';
   }
 
-  window.openNodeDetail = function(id) {
+  window.openNodeDetail = function (id) {
     if (!window._telosRoot) return;
     const desc = window._telosRoot.descendants().find(d => d.data.id === id);
     if (desc) showDetailPanel(desc);
   };
 
   // ── Dependency edges ─────────────────────────────────────────────────────
-  // Arrow FROM blocked node TO its blocker (A → B means "A needs B")
   function drawDepEdges(deps) {
     cachedDeps = deps;
     gDepEdges.selectAll('path').remove();
@@ -918,7 +1287,6 @@
       const blocked = nodeMap.get(dep.blocked_id);
       if (!blocker || !blocked) return;
 
-      // Force layout uses standard SVG x,y
       const sx = blocked.x, sy = blocked.y;
       const dx = blocker.x, dy = blocker.y;
       const mx = (sx + dx) / 2;
@@ -938,13 +1306,13 @@
       const ddy    = dy - (m2dy / m2dLen) * tgtR;
 
       gDepEdges.append('path')
-        .attr('d',           `M ${ssx} ${ssy} Q ${mx} ${my} ${ddx} ${ddy}`)
-        .attr('fill',        'none')
-        .attr('stroke',      EDGE_DEP_COLOR)
+        .attr('d',            `M ${ssx} ${ssy} Q ${mx} ${my} ${ddx} ${ddy}`)
+        .attr('fill',         'none')
+        .attr('stroke',       EDGE_DEP_COLOR)
         .attr('stroke-width', 2.5)
-        .attr('marker-end',  'url(#dep-arrow)')
-        .attr('data-src',    dep.blocked_id)
-        .attr('data-tgt',    dep.blocker_id);
+        .attr('marker-end',   'url(#dep-arrow)')
+        .attr('data-src',     dep.blocked_id)
+        .attr('data-tgt',     dep.blocker_id);
     });
   }
 
@@ -961,7 +1329,7 @@
     if (btn) { btn.classList.add('btn-active'); btn.setAttribute('aria-pressed', 'true'); }
 
     const cacheBuster = Date.now();
-    fetch(`http://localhost:8089/api/dependencies?_=${cacheBuster}`, { cache: 'no-store' })
+    fetch(`http://localhost:8089/api/dependencies?_=${cacheBuster}`, { cache: 'no-store', signal: AbortSignal.timeout(3000) })
       .then(r => {
         if (!r.ok) throw new Error(`API error: ${r.status}`);
         return r.json();
@@ -981,7 +1349,7 @@
     panel.innerHTML = '<p style="color:var(--text-muted);font-size:12px;padding:8px 0">Loading…</p>';
 
     const cacheBuster = Date.now();
-    fetch(`http://localhost:8089/api/ideas?_=${cacheBuster}`, { cache: 'no-store' })
+    fetch(`http://localhost:8089/api/ideas?_=${cacheBuster}`, { cache: 'no-store', signal: AbortSignal.timeout(3000) })
       .then(r => {
         if (!r.ok) throw new Error(`API error: ${r.status}`);
         return r.json();
@@ -999,7 +1367,7 @@
 
   function esc(str) {
     if (!str) return '';
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function renderIdeas(ideas) {
@@ -1017,9 +1385,9 @@
     ideas.forEach(i => { (grouped[i.status] || grouped.active).push(i); });
 
     const sections = [
-      { key: 'active',   label: '🟢 Active',  desc: 'Worth pursuing now' },
-      { key: 'parked',   label: '🟡 Parked',  desc: 'Good ideas, not now' },
-      { key: 'rejected', label: '⬜ Rejected', desc: 'Decided against' }
+      { key: 'active',   label: '🟢 Active',   desc: 'Worth pursuing now' },
+      { key: 'parked',   label: '🟡 Parked',   desc: 'Good ideas, not now' },
+      { key: 'rejected', label: '⬜ Rejected',  desc: 'Decided against' },
     ];
 
     let html = '';
@@ -1031,7 +1399,7 @@
       for (const idea of list) {
         let tags = [];
         try { tags = Array.isArray(idea.tags) ? idea.tags : JSON.parse(idea.tags || '[]'); } catch {}
-        const created = new Date(idea.created_at * 1000).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+        const created = new Date(idea.created_at * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
         html += `<div class="idea-card">
           <div class="idea-header">
@@ -1069,7 +1437,7 @@
     }
 
     const cacheBuster = Date.now();
-    fetch(`http://localhost:8089/api/tree?_=${cacheBuster}`, { cache: 'no-store' })
+    fetch(`http://localhost:8089/api/tree?_=${cacheBuster}`, { cache: 'no-store', signal: AbortSignal.timeout(3000) })
       .then(r => {
         if (!r.ok) throw new Error(`API error: ${r.status}`);
         return r.json();
@@ -1112,4 +1480,5 @@
         if (silent) console.warn('Auto-refresh failed:', err.message);
       });
   };
+
 })();
