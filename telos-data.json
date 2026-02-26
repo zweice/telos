@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-26T09:58:24.085Z",
+  "generated_at": "2026-02-26T10:00:18.410Z",
   "tree": [
     {
       "id": 1,
@@ -783,16 +783,16 @@
               "title": "Improve daily cost report: include all sources (Claude Code, Jared/main, subagents)",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "done",
               "value": 5000,
               "cost_estimate": 20,
-              "cost_actual": null,
+              "cost_actual": 5,
               "roi": 250,
               "effort_hours_estimate": 1,
-              "effort_hours_actual": null,
+              "effort_hours_actual": 1.5,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772100015,
               "progress": 0,
               "description": "Current 24h cost report only covers Atlas, Conductor, Forge session spend. Missing: (1) Jared/main agent spend, (2) Claude Code subagent sessions spawned by Forge, (3) any other isolated/subagent sessions. Update the cost monitoring to capture ALL spend sources and include them in the daily report. The report should show total + per-agent breakdown including Claude Code. Check how OpenClaw tracks token usage across sessions and build a complete picture. Report format: total 24h spend + breakdown by agent/source.",
               "notes": [],
