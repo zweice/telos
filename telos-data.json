@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T17:20:23.923Z",
+  "generated_at": "2026-02-27T17:55:37.897Z",
   "tree": [
     {
       "id": 1,
@@ -1339,8 +1339,8 @@
               "children": [],
               "locked": true,
               "locked_by": {
-                "id": 37,
-                "title": "Found Pyfio UG (haftungsbeschränkt)"
+                "id": 20,
+                "title": "Shadow Pilot Execution"
               }
             },
             {
@@ -1383,8 +1383,8 @@
                   "children": [],
                   "locked": true,
                   "locked_by": {
-                    "id": 37,
-                    "title": "Found Pyfio UG (haftungsbeschränkt)"
+                    "id": 47,
+                    "title": "Andreas: approve outreach launch (first wave 8 companies)"
                   }
                 },
                 {
@@ -1408,8 +1408,8 @@
                   "children": [],
                   "locked": true,
                   "locked_by": {
-                    "id": 37,
-                    "title": "Found Pyfio UG (haftungsbeschränkt)"
+                    "id": 61,
+                    "title": "Outreach Wave 1: Send faxes to 8 HOT leads"
                   }
                 },
                 {
@@ -1433,8 +1433,8 @@
                   "children": [],
                   "locked": true,
                   "locked_by": {
-                    "id": 37,
-                    "title": "Found Pyfio UG (haftungsbeschränkt)"
+                    "id": 61,
+                    "title": "Outreach Wave 1: Send faxes to 8 HOT leads"
                   }
                 },
                 {
@@ -1918,7 +1918,12 @@
                   "progress": 0,
                   "description": null,
                   "notes": [],
-                  "children": []
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 39,
+                    "title": "Book notary appointment (online or in-person)"
+                  }
                 },
                 {
                   "id": 42,
@@ -1943,7 +1948,12 @@
                       "text": "Notary appointment (task #39) marked complete. Registration requires: 1) Confirm notary appointment date/time 2) Gather all documents (Gesellschaftsvertrag, etc. from task #40) 3) Attend appointment 4) Notary files with Handelsregister 5) Obtain registration confirmation. Awaiting Andreas to confirm notary appointment booking and schedule registration meeting."
                     }
                   ],
-                  "children": []
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 39,
+                    "title": "Book notary appointment (online or in-person)"
+                  }
                 },
                 {
                   "id": 43,
@@ -1963,7 +1973,12 @@
                   "progress": 0,
                   "description": null,
                   "notes": [],
-                  "children": []
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 42,
+                    "title": "Handelsregister registration (via notary)"
+                  }
                 },
                 {
                   "id": 44,
@@ -1983,7 +1998,12 @@
                   "progress": 0,
                   "description": null,
                   "notes": [],
-                  "children": []
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 43,
+                    "title": "Gewerbeanmeldung at Gewerbeamt"
+                  }
                 }
               ]
             },
