@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T13:46:22.430Z",
+  "generated_at": "2026-02-27T14:00:11.498Z",
   "tree": [
     {
       "id": 1,
@@ -511,7 +511,7 @@
                   "title": "Telos: ROI field — Fibonacci convention [0-100], default=0",
                   "type": "task",
                   "owner": "forge",
-                  "status": "open",
+                  "status": "in_progress",
                   "value": 0,
                   "cost_estimate": 0,
                   "cost_actual": null,
