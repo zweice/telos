@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T18:53:37.555Z",
+  "generated_at": "2026-02-27T18:54:37.079Z",
   "tree": [
     {
       "id": 1,
@@ -2173,52 +2173,22 @@
           "description": "Parking lot for tools, integrations, and ideas to evaluate at the right milestone. Not actionable yet.",
           "notes": [],
           "children": []
-        },
-        {
-          "id": 109,
-          "title": "Ideas & Future Tooling",
-          "type": "milestone",
-          "owner": "conductor",
-          "status": "shelved",
-          "value": 0,
-          "cost_estimate": 0,
-          "cost_actual": null,
-          "roi": 0,
-          "effort_hours_estimate": null,
-          "effort_hours_actual": null,
-          "start_date": null,
-          "end_date": null,
-          "completed_at": null,
-          "progress": 0,
-          "description": "Parking lot for tools, integrations, and ideas to evaluate at the right milestone. Not actionable yet.",
-          "notes": [],
-          "children": [
-            {
-              "id": 110,
-              "title": "MarkdownLM — AI coding rules as MCP infrastructure",
-              "type": "task",
-              "owner": "conductor",
-              "status": "shelved",
-              "value": 0,
-              "cost_estimate": 0,
-              "cost_actual": null,
-              "roi": 0,
-              "effort_hours_estimate": null,
-              "effort_hours_actual": null,
-              "start_date": null,
-              "end_date": null,
-              "completed_at": null,
-              "progress": 0,
-              "description": "AI coding rule enforcement via MCP. Define rules once, enforced across all agents/sessions. Revisit at M1 when Forge reactivates and multi-codebase rule drift becomes a real pain. Currently covered by CLAUDE.md per-repo.",
-              "notes": [],
-              "children": []
-            }
-          ]
         }
       ]
     }
   ],
   "ideas": [
+    {
+      "id": 4,
+      "title": "MarkdownLM — AI coding rules as MCP infrastructure",
+      "description": "Treats coding rules as infrastructure via MCP. Define once, enforced across all agents/sessions. Revisit at M1 when Forge reactivates and multi-codebase rule drift becomes real. Currently CLAUDE.md per-repo is sufficient. https://markdownlm.com",
+      "rationale": null,
+      "status": "active",
+      "key_decisions": null,
+      "tags": [],
+      "created_at": 1772218474,
+      "updated_at": 1772218474
+    },
     {
       "id": 1,
       "title": "OpenClaw SaaS offering",
