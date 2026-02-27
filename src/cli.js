@@ -410,13 +410,13 @@ program
 program
   .command('viz')
   .description('Export data for visualization')
-  .option('-o, --output <path>', 'Output path', 'web/telos-data.json')
+  .option('-o, --output <path>', 'Output path', 'docs/telos-data.json')
   .option('-f, --format <format>', 'Export format: json | mermaid | dot', 'json')
   .action((options) => {
     const db = new TelosDB();
     exportForViz(db, options.output, options.format);
     console.log('✅ Exported to:', options.output);
-    console.log('💡 Open web/index.html in a browser to visualize');
+    console.log('💡 Open docs/index.html in a browser to visualize');
     db.close();
     // Auto-push to GitHub Pages (zweice/telos) if script exists
     const pushScript = path.join(__dirname, '..', 'push-pages.sh');
