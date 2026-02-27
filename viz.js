@@ -1618,37 +1618,43 @@
 
       const sx = blocked.x, sy = blocked.y;
       const dx = blocker.x, dy = blocker.y;
-      const mx = (sx + dx) / 2;
-      const my = (sy + dy) / 2 - 60;
+
+      // Perpendicular offset for control point so parallel lines fan out
+      const lineLen = Math.sqrt((dx - sx) ** 2 + (dy - sy) ** 2) || 1;
+      const perpX   = -(dy - sy) / lineLen;
+      const perpY   =  (dx - sx) / lineLen;
+      const cpx     = (sx + dx) / 2 + perpX * 30;
+      const cpy     = (sy + dy) / 2 + perpY * 30;
 
       // Compute boundary points: source = edge of blocked toward ctrl pt, target = edge of blocker toward ctrl pt
       let ssx, ssy, ddx, ddy;
       if (settings.nodeShape === 'circle') {
         const srcR = (radii[blocked.data.type] || radii.task) + 2;
         const tgtR = (radii[blocker.data.type] || radii.task) + 2;
-        const s2mx = mx - sx, s2my = my - sy;
-        const s2mLen = Math.sqrt(s2mx * s2mx + s2my * s2my) || 1;
-        ssx = sx + (s2mx / s2mLen) * srcR;
-        ssy = sy + (s2my / s2mLen) * srcR;
-        const m2dx = dx - mx, m2dy = dy - my;
-        const m2dLen = Math.sqrt(m2dx * m2dx + m2dy * m2dy) || 1;
-        ddx = dx - (m2dx / m2dLen) * tgtR;
-        ddy = dy - (m2dy / m2dLen) * tgtR;
+        const s2cx = cpx - sx, s2cy = cpy - sy;
+        const s2cLen = Math.sqrt(s2cx * s2cx + s2cy * s2cy) || 1;
+        ssx = sx + (s2cx / s2cLen) * srcR;
+        ssy = sy + (s2cy / s2cLen) * srcR;
+        const c2dx = dx - cpx, c2dy = dy - cpy;
+        const c2dLen = Math.sqrt(c2dx * c2dx + c2dy * c2dy) || 1;
+        ddx = dx - (c2dx / c2dLen) * tgtR;
+        ddy = dy - (c2dy / c2dLen) * tgtR;
       } else {
         // rect or pill — use axis-aligned boundary intersection
         const srcDims = nodeRectDims(blocked, settings);
         const tgtDims = nodeRectDims(blocker, settings);
-        const srcPt   = rectEdgePoint(sx, sy, srcDims.w, srcDims.h, mx, my);
-        const tgtPt   = rectEdgePoint(dx, dy, tgtDims.w, tgtDims.h, mx, my);
+        const srcPt   = rectEdgePoint(sx, sy, srcDims.w, srcDims.h, cpx, cpy);
+        const tgtPt   = rectEdgePoint(dx, dy, tgtDims.w, tgtDims.h, cpx, cpy);
         ssx = srcPt.x; ssy = srcPt.y;
         ddx = tgtPt.x; ddy = tgtPt.y;
       }
 
       gDepEdges.append('path')
-        .attr('d',          `M ${ssx} ${ssy} Q ${mx} ${my} ${ddx} ${ddy}`)
+        .attr('d',          `M ${ssx} ${ssy} Q ${cpx} ${cpy} ${ddx} ${ddy}`)
         .attr('fill',       'none')
         .attr('stroke',     EDGE_DEP_COLOR)
         .style('stroke-width', settings.edgeWidth + 'px')
+        .style('opacity',   0.65)
         .attr('marker-end', 'url(#dep-arrow)')
         .attr('data-src',   dep.blocked_id)
         .attr('data-tgt',   dep.blocker_id);
