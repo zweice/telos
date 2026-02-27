@@ -218,6 +218,12 @@
     .status-refused     .node-circle, .status-refused     .node-rect { fill: var(--node-refused);     stroke: var(--border-refused); }
     .status-in_question .node-circle, .status-in_question .node-rect { fill: var(--node-in_question); stroke: var(--border-in_question); }
 
+    /* Locked nodes — milestone gate not yet done (overrides status fill) */
+    .node.locked .node-circle,
+    .node.locked .node-rect { fill: #1a1a2a; stroke: #6b7280; opacity: 0.72; }
+    [data-theme="light"] .node.locked .node-circle,
+    [data-theme="light"] .node.locked .node-rect { fill: #e5e7eb; stroke: #6b7280; opacity: 0.72; }
+
     .node text {
       font-family: inherit;
       font-weight: 500;

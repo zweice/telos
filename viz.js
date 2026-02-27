@@ -18,6 +18,7 @@
     rejected:      '#374151',
     refused:       '#374151',
     in_question:   '#eab308',
+    locked:        '#6b7280',
   };
 
   // ── Settings ─────────────────────────────────────────────────────────────
@@ -749,7 +750,7 @@
     const node = gNodes.selectAll('.node').data(nodes, d => d.data.id);
 
     const nodeEnter = node.enter().append('g')
-      .attr('class',      d => `node status-${d.data.status}`)
+      .attr('class',      d => `node status-${d.data.status}${d.data.locked ? ' locked' : ''}`)
       .attr('transform',  () => `translate(${source.x0 ?? source.x},${source.y0 ?? source.y})`)
       .attr('tabindex',   0)
       .attr('role',       'treeitem')
@@ -829,7 +830,7 @@
     nodeMerge
       .transition(t)
       .attr('transform', d => `translate(${d.x},${d.y})`)
-      .attr('class',     d => `node status-${d.data.status}`);
+      .attr('class',     d => `node status-${d.data.status}${d.data.locked ? ' locked' : ''}`);
 
     // Size hit-target rect to exactly match the visible node, min 44px for touch
     nodeMerge.select('.hit-target').each(function(d) {
@@ -918,7 +919,8 @@
       el.style('display', null);
       el.attr('font-size', fsStr);
 
-      const raw   = `#${d.data.id} ${d.data.title || ''}`;
+      const lockPrefix = d.data.locked ? '🔒 ' : '';
+      const raw   = `${lockPrefix}#${d.data.id} ${d.data.title || ''}`;
       const label = smartTruncate(raw, settings);
 
       // If secondary visible, shift primary upward so both lines centre together
@@ -1052,7 +1054,7 @@
     showTooltip(event, d);
 
     const connected = getConnectedNodeIds(d);
-    const glowColor = BORDER_COLORS[d.data.status] || '#3b82f6';
+    const glowColor = d.data.locked ? BORDER_COLORS.locked : (BORDER_COLORS[d.data.status] || '#3b82f6');
 
     d3.select(event.currentTarget).select('.node-shape')
       .attr('filter', `drop-shadow(0 0 10px ${glowColor})`);
@@ -1423,6 +1425,10 @@
         <span style="color:var(--text-muted);margin-left:8px">|</span>
         <span class="label" style="margin-left:8px">Owner</span><span class="value">${nd.owner || '—'}</span>
       </div>
+      ${nd.locked ? `
+      <div class="row" style="color:#9ca3af">
+        <span class="label">🔒 Locked</span><span class="value">Waiting for: ${escHtml(nd.locked_by ? nd.locked_by.title : 'milestone')}</span>
+      </div>` : ''}
       ${nd.value != null || nd.cost_estimate != null ? `
       <div class="row">
         <span class="label">Value</span><span class="value">${fmtVal(nd.value)}</span>
@@ -1555,17 +1561,21 @@
         const progressBar = pct > 0
           ? `<div class="lv-card-progress"><div class="lv-card-progress-fill" style="width:${pct}%"></div></div>` : '';
         const badgeClass = `badge-${n.status}`;
-        html += `<div class="lv-card" onclick="openNodeDetail(${n.id})" role="listitem">
+        const lockedBadge = n.locked
+          ? `<span class="dp-badge" style="background:rgba(107,114,128,0.18);color:#9ca3af">🔒 locked</span>`
+          : '';
+        html += `<div class="lv-card${n.locked ? ' lv-card-locked' : ''}" onclick="openNodeDetail(${n.id})" role="listitem" style="${n.locked ? 'opacity:0.7' : ''}">
           <div class="lv-card-top">
             <div class="lv-card-title">
               <span style="color:var(--text-accent);font-weight:700">#${n.id}</span> ${escHtml(n.title)}
             </div>
-            <span class="dp-badge ${badgeClass}">${n.type}</span>
+            <div style="display:flex;gap:4px;align-items:center">${lockedBadge}<span class="dp-badge ${badgeClass}">${n.type}</span></div>
           </div>
           <div class="lv-card-meta">
             ${roi ? `<span class="lv-card-roi">${roi}</span>` : ''}
             <span>${owner}</span>
             ${pct > 0 ? `<span>${pct}%</span>` : ''}
+            ${n.locked && n.locked_by ? `<span style="color:#6b7280">⬡ ${escHtml(n.locked_by.title)}</span>` : ''}
           </div>
           ${progressBar}
         </div>`;
