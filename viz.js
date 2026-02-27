@@ -1611,6 +1611,14 @@
     const allNodes = root.descendants();
     const radii    = computeNodeRadius(allNodes.length);
 
+    // Group deps by source node (blocked_id) to assign fan indices
+    const srcGroups = new Map();
+    deps.forEach(dep => {
+      if (!nodeMap.get(dep.blocker_id) || !nodeMap.get(dep.blocked_id)) return;
+      if (!srcGroups.has(dep.blocked_id)) srcGroups.set(dep.blocked_id, []);
+      srcGroups.get(dep.blocked_id).push(dep);
+    });
+
     deps.forEach(dep => {
       const blocker = nodeMap.get(dep.blocker_id);
       const blocked = nodeMap.get(dep.blocked_id);
@@ -1619,12 +1627,16 @@
       const sx = blocked.x, sy = blocked.y;
       const dx = blocker.x, dy = blocker.y;
 
-      // Perpendicular offset for control point so parallel lines fan out
-      const lineLen = Math.sqrt((dx - sx) ** 2 + (dy - sy) ** 2) || 1;
-      const perpX   = -(dy - sy) / lineLen;
-      const perpY   =  (dx - sx) / lineLen;
-      const cpx     = (sx + dx) / 2 + perpX * 30;
-      const cpy     = (sy + dy) / 2 + perpY * 30;
+      // Index-based symmetric fan offset: edges from same source spread evenly
+      const group     = srcGroups.get(dep.blocked_id);
+      const idx       = group.indexOf(dep);
+      const fanOffset = (idx - (group.length - 1) / 2) * 28;
+
+      const lineLen = Math.sqrt((dx - sx) ** 2 + (dy - sy) ** 2);
+      const perpX   = lineLen > 1 ? -(dy - sy) / lineLen : 1;
+      const perpY   = lineLen > 1 ?  (dx - sx) / lineLen : 0;
+      const cpx     = (sx + dx) / 2 + perpX * fanOffset;
+      const cpy     = (sy + dy) / 2 + perpY * fanOffset;
 
       // Compute boundary points: source = edge of blocked toward ctrl pt, target = edge of blocker toward ctrl pt
       let ssx, ssy, ddx, ddy;
