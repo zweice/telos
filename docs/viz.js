@@ -1611,12 +1611,23 @@
     const allNodes = root.descendants();
     const radii    = computeNodeRadius(allNodes.length);
 
-    // Group deps by source node (blocked_id) to assign fan indices
-    const srcGroups = new Map();
+    // Group deps by TARGET (blocker_id) — multiple edges converging on same node should fan out
+    // Sort each group by the angle from target to source so they spread cleanly
+    const tgtGroups = new Map();
     deps.forEach(dep => {
       if (!nodeMap.get(dep.blocker_id) || !nodeMap.get(dep.blocked_id)) return;
-      if (!srcGroups.has(dep.blocked_id)) srcGroups.set(dep.blocked_id, []);
-      srcGroups.get(dep.blocked_id).push(dep);
+      if (!tgtGroups.has(dep.blocker_id)) tgtGroups.set(dep.blocker_id, []);
+      tgtGroups.get(dep.blocker_id).push(dep);
+    });
+    // Sort each group by angle so fan indices are spatially ordered
+    tgtGroups.forEach(group => {
+      group.sort((a, b) => {
+        const na = nodeMap.get(a.blocked_id), nb = nodeMap.get(b.blocked_id);
+        const ta = nodeMap.get(a.blocker_id);
+        const angA = Math.atan2(na.y - ta.y, na.x - ta.x);
+        const angB = Math.atan2(nb.y - ta.y, nb.x - ta.x);
+        return angA - angB;
+      });
     });
 
     deps.forEach(dep => {
@@ -1627,10 +1638,10 @@
       const sx = blocked.x, sy = blocked.y;
       const dx = blocker.x, dy = blocker.y;
 
-      // Index-based symmetric fan offset: edges from same source spread evenly
-      const group     = srcGroups.get(dep.blocked_id);
+      // Index-based symmetric fan: edges converging on same target spread evenly (40px per step)
+      const group     = tgtGroups.get(dep.blocker_id);
       const idx       = group.indexOf(dep);
-      const fanOffset = (idx - (group.length - 1) / 2) * 28;
+      const fanOffset = (idx - (group.length - 1) / 2) * 40;
 
       const lineLen = Math.sqrt((dx - sx) ** 2 + (dy - sy) ** 2);
       const perpX   = lineLen > 1 ? -(dy - sy) / lineLen : 1;
