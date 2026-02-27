@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T14:12:14.095Z",
+  "generated_at": "2026-02-27T14:12:47.262Z",
   "tree": [
     {
       "id": 1,
@@ -1200,6 +1200,31 @@
               "progress": 0,
               "description": null,
               "notes": [],
+              "children": []
+            },
+            {
+              "id": 97,
+              "title": "Pre-migration backup + backup-before-wipe discipline",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 5000,
+              "cost_estimate": 20,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": 2,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": null,
+              "notes": [
+                {
+                  "ts": 1772201567,
+                  "text": "Incident 2026-02-27: Forge migration for #91 wiped telos.db, then backup cron ran after and backed up empty test data. Two fixes needed:\n1. Any DB migration must take a timestamped backup to Drive BEFORE running destructive DDL\n2. Backup cron must detect if node count drops dramatically (>50%) and refuse to overwrite — treat as anomaly, alert instead\nImplement both. The snapshot-to-git recovery path worked this time but was brittle."
+                }
+              ],
               "children": []
             }
           ]
