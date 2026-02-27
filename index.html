@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Telos — Goal Tree</title>
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#58a6ff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Telos">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js')
+        .catch(e => console.warn('SW reg failed:', e)));
+    }
+  </script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    :root {
+      /* ── Backgrounds ── */
+      --bg-primary:  #0d1117;
+      --bg-surface:  #161b22;
+      --bg-panel:    #1c2128;
+      --bg-glass:    rgba(22, 27, 34, 0.92);
+      /* Legacy aliases */
+      --bg-secondary: var(--bg-surface);
+
+      /* ── Node fills + borders by status ── */
+      --node-open:          #1e1e2e; --border-open:          #6366f1;
+      --node-in_progress:   #1e3a5f; --border-in_progress:   #3b82f6;
+      --node-done:          #0d2818; --border-done:          #4ade80;
+      --node-blocked:       #2d1515; --border-blocked:       #ef4444;
+      --node-shelved:       #1c1c1c; --border-shelved:       #475569;
+      --node-rejected:      #111111; --border-rejected:      #374151;
+      --node-refused:       #111111; --border-refused:       #374151;
+      --node-in_question:   #2a2200; --border-in_question:   #eab308;
+      --node-out_of_budget: #2d1515; --border-out_of_budget: #ef4444;
+
+      /* ── Edges ── */
+      --edge-default: rgba(99, 120, 150, 0.35);
+      --edge-hover:   rgba(148, 163, 184, 0.9);
+      --edge-dep:     #f97316;
+
+      /* ── Text ── */
+      --text-primary:   #e6edf3;
+      --text-muted:     #7d8590;
+      --text-secondary: var(--text-muted);
+      --text-accent:    #58a6ff;
+      --highlight:      rgba(88, 166, 255, 0.18);
+
+      /* ── Borders ── */
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --border-hover:  rgba(255, 255, 255, 0.16);
+
+      /* ── Shadows ── */
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.6);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.7);
+
+      /* ── Radii ── */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+
+      /* ── Transitions ── */
+      --transition-fast:   180ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-smooth: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ── Light mode overrides ─────────────────────────── */
+    [data-theme="light"] {
+      --bg-primary:  #f6f8fa;
+      --bg-surface:  #ffffff;
+      --bg-panel:    #f0f2f4;
+      --bg-glass:    rgba(246, 248, 250, 0.92);
+      --bg-secondary: var(--bg-surface);
+
+      --text-primary:   #1f2328;
+      --text-muted:     #57606a;
+      --text-secondary: var(--text-muted);
+      --text-accent:    #0969da;
+      --highlight:      rgba(9, 105, 218, 0.12);
+
+      --border-subtle: rgba(0, 0, 0, 0.10);
+      --border-hover:  rgba(0, 0, 0, 0.20);
+
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.18);
+
+      /* Node fills in light mode — same borders */
+      --node-open:          #eef2ff; --border-open:          #6366f1;
+      --node-in_progress:   #dbeafe; --border-in_progress:   #3b82f6;
+      --node-done:          #dcfce7; --border-done:          #4ade80;
+      --node-blocked:       #fee2e2; --border-blocked:       #ef4444;
+      --node-shelved:       #f1f5f9; --border-shelved:       #475569;
+      --node-rejected:      #f9fafb; --border-rejected:      #374151;
+      --node-refused:       #f9fafb; --border-refused:       #374151;
+      --node-in_question:   #fefce8; --border-in_question:   #eab308;
+      --node-out_of_budget: #fee2e2; --border-out_of_budget: #ef4444;
+
+      --edge-default: rgba(99, 120, 150, 0.50);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow: hidden;
+      touch-action: pan-x pan-y;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Header ───────────────────────────────────── */
+    #header {
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px) saturate(1.5);
+      -webkit-backdrop-filter: blur(20px) saturate(1.5);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 200;
+      height: 44px;
+    }
+
+    h1 {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    h1 span { font-size: 16px; }
+
+    #controls {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100%;
+      flex-shrink: 1;
+    }
+    #controls::-webkit-scrollbar { height: 3px; }
+    #controls::-webkit-scrollbar-track { background: transparent; }
+    #controls::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+    button {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    button:hover {
+      background: rgba(255, 255, 255, 0.10);
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+    }
+    button:active { transform: scale(0.96); }
+    button:focus-visible {
+      outline: 2px solid var(--text-accent);
+      outline-offset: 2px;
+    }
+
+    /* ── SVG container ────────────────────────────── */
+    #container {
+      width: 100vw;
+      height: calc(100vh - 44px);
+      position: relative;
+    }
+    #container svg { display: block; overflow: visible; }
+
+    /* ── Nodes ────────────────────────────────────── */
+    .node { cursor: pointer; }
+
+    .node .node-circle,
+    .node .node-rect {
+      stroke-width: 2px;
+      transition: filter var(--transition-fast);
+      pointer-events: none;
+    }
+    /* circle-only radius transition */
+    .node .node-circle { transition: r var(--transition-smooth), filter var(--transition-fast); }
+
+    /* Ensure bottleneck ring isn't filled by status CSS */
+    .bottleneck-ring {
+      fill: none !important;
+      stroke: #ff4444;
+    }
+
+    /* ── Status colors (fill + border) ─────────────── */
+    .status-open        .node-circle, .status-open        .node-rect { fill: var(--node-open);        stroke: var(--border-open); }
+    .status-in_progress .node-circle, .status-in_progress .node-rect { fill: var(--node-in_progress); stroke: var(--border-in_progress); }
+    .status-done        .node-circle, .status-done        .node-rect { fill: var(--node-done);        stroke: var(--border-done); }
+    .status-blocked     .node-circle, .status-blocked     .node-rect { fill: var(--node-blocked);     stroke: var(--border-blocked); }
+    .status-out_of_budget .node-circle, .status-out_of_budget .node-rect { fill: var(--node-out_of_budget); stroke: var(--border-out_of_budget); }
+    .status-shelved     .node-circle, .status-shelved     .node-rect { fill: var(--node-shelved);     stroke: var(--border-shelved); opacity: 0.8; }
+    .status-rejected    .node-circle, .status-rejected    .node-rect { fill: var(--node-rejected);    stroke: var(--border-rejected); }
+    .status-refused     .node-circle, .status-refused     .node-rect { fill: var(--node-refused);     stroke: var(--border-refused); }
+    .status-in_question .node-circle, .status-in_question .node-rect { fill: var(--node-in_question); stroke: var(--border-in_question); }
+
+    /* Locked nodes — milestone gate not yet done (overrides status fill) */
+    .node.locked .node-circle,
+    .node.locked .node-rect { fill: #1a1a2a; stroke: #6b7280; opacity: 0.72; }
+    [data-theme="light"] .node.locked .node-circle,
+    [data-theme="light"] .node.locked .node-rect { fill: #e5e7eb; stroke: #6b7280; opacity: 0.72; }
+
+    .node text {
+      font-family: inherit;
+      font-weight: 500;
+      fill: var(--text-primary);
+      pointer-events: none;
+      transition: opacity var(--transition-fast);
+    }
+
+
+    /* ── Tree links: thin, no arrowhead ─────────── */
+    .link {
+      fill: none;
+      stroke: var(--edge-default);
+      stroke-width: 1px;
+    }
+
+    /* ── Tooltip ──────────────────────────────────── */
+    #tooltip {
+      position: absolute;
+      background: var(--bg-glass);
+      backdrop-filter: blur(24px) saturate(1.8);
+      -webkit-backdrop-filter: blur(24px) saturate(1.8);
+      color: var(--text-primary);
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      pointer-events: none;
+      font-size: 11px;
+      line-height: 1.55;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-subtle);
+      max-width: 320px;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity var(--transition-fast), transform var(--transition-fast);
+    }
+    #tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #tooltip .title {
+      font-weight: 600;
+      font-size: 12px;
+      margin-bottom: 7px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border-subtle);
+      line-height: 1.4;
+    }
+    #tooltip .row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 3px 0;
+      gap: 4px;
+    }
+    #tooltip .label { color: var(--text-muted); font-size: 10px; }
+    #tooltip .value { color: var(--text-primary); font-weight: 500; font-size: 10px; }
+
+    /* ── Legend ───────────────────────────────────── */
+    #legend {
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px) saturate(1.5);
+      -webkit-backdrop-filter: blur(20px) saturate(1.5);
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      z-index: 100;
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-md);
+      transition: all var(--transition-smooth);
+      overflow: hidden;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    #legend .legend-inner { padding: 10px 12px; }
+    #legend .legend-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+      font-size: 11px;
+      letter-spacing: 0.02em;
+    }
+    #legend .legend-item {
+      display: flex;
+      align-items: center;
+      margin: 4px 0;
+    }
+    #legend .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 7px;
+      flex-shrink: 0;
+      border-width: 2px;
+      border-style: solid;
+    }
+    #legend .legend-label { color: var(--text-muted); }
+
+    /* Legend toggle button */
+    #legend-toggle {
+      display: none;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px) saturate(1.5);
+      -webkit-backdrop-filter: blur(20px) saturate(1.5);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      z-index: 101;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+      padding: 0;
+    }
+    #legend-toggle:hover {
+      background: rgba(255,255,255,0.10);
+      color: var(--text-primary);
+    }
+    #legend-toggle:focus-visible {
+      outline: 2px solid var(--text-accent);
+      outline-offset: 2px;
+    }
+
+    /* ── Error state ──────────────────────────────── */
+    #error {
+      padding: 32px;
+      text-align: center;
+      color: var(--border-blocked);
+      font-size: 14px;
+    }
+
+    /* ── Tab bar ──────────────────────────────────── */
+    #tab-bar { display: flex; gap: 4px; }
+    .tab-btn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      transition: all var(--transition-fast);
+    }
+    .tab-btn.active {
+      background: var(--highlight);
+      border-color: rgba(88, 166, 255, 0.4);
+      color: var(--text-accent);
+    }
+
+    /* ── Done filter ──────────────────────────────── */
+    #done-filter-wrap {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    #done-filter-wrap label {
+      white-space: nowrap;
+      font-size: 10px;
+      color: var(--text-muted);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #done-filter {
+      background: rgba(255,255,255,0.05);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: inherit;
+      padding: 4px 6px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      color-scheme: dark;
+    }
+    #done-filter:hover {
+      background: rgba(255,255,255,0.09);
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+    }
+    #done-filter:focus {
+      outline: 2px solid var(--text-accent);
+      outline-offset: 2px;
+    }
+
+    /* ── Detail Panel ─────────────────────────────── */
+    #detail-panel {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 400px;
+      height: 100%;
+      background: var(--bg-glass);
+      backdrop-filter: blur(32px) saturate(1.8);
+      -webkit-backdrop-filter: blur(32px) saturate(1.8);
+      border-left: 1px solid var(--border-subtle);
+      box-shadow: -8px 0 32px rgba(0,0,0,0.5);
+      z-index: 900;
+      overflow-y: auto;
+      transition: right 0.28s cubic-bezier(0.4,0,0.2,1);
+      padding: 0;
+    }
+    #detail-panel.open { right: 0; }
+    #detail-panel-header {
+      position: sticky;
+      top: 0;
+      background: rgba(13, 17, 23, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    #detail-panel-title {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+    #detail-panel-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    #detail-panel-close:hover { color: var(--text-primary); }
+    #detail-panel-body { padding: 16px 20px 32px; }
+
+    .dp-section { margin-bottom: 18px; }
+    .dp-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .dp-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 11px;
+    }
+    .dp-row:last-child { border-bottom: none; }
+    .dp-label { color: var(--text-muted); }
+    .dp-value { color: var(--text-primary); font-weight: 500; text-align: right; max-width: 60%; }
+    .dp-description-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 11px;
+      line-height: 1.7;
+      color: var(--text-primary);
+    }
+    .dp-desc-collapsed .dp-desc-full   { display: none; }
+    .dp-desc-collapsed .dp-desc-preview { display: block; }
+    .dp-desc-expanded  .dp-desc-preview { display: none; }
+    .dp-desc-expanded  .dp-desc-full    { display: block; }
+    .dp-desc-toggle {
+      background: none;
+      border: none;
+      color: var(--text-accent);
+      font-size: 10px;
+      cursor: pointer;
+      padding: 4px 0 0;
+      display: block;
+    }
+    .dp-progress-bar-bg {
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .dp-progress-bar-fill {
+      height: 100%;
+      background: var(--border-done);
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+    .dp-note {
+      font-size: 10px;
+      color: var(--text-muted);
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      line-height: 1.5;
+    }
+    .dp-note:last-child { border-bottom: none; }
+    .dp-note-ts  { color: rgba(255,255,255,0.25); font-size: 9px; }
+    .dp-note-pct { color: var(--border-done); font-size: 9px; }
+    .dp-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .badge-done        { background: rgba(74,222,128,0.15);  color: #4ade80; }
+    .badge-in_progress { background: rgba(34,197,94,0.15);   color: #22c55e; }
+    .badge-open        { background: rgba(59,130,246,0.15);  color: #60a5fa; }
+    .badge-blocked     { background: rgba(239,68,68,0.15);   color: #f87171; }
+    .badge-refused     { background: rgba(71,85,105,0.18);   color: #94a3b8; }
+    .badge-shelved     { background: rgba(71,85,105,0.15);   color: #94a3b8; opacity: 0.7; }
+    .badge-rejected    { background: rgba(55,65,81,0.25);    color: #9ca3af; text-decoration: line-through; }
+    .badge-in_question { background: rgba(234,179,8,0.15);   color: #fbbf24; }
+    .badge-out_of_budget { background: rgba(239,68,68,0.15); color: #f87171; }
+
+    /* ── Ideas panel ──────────────────────────────── */
+    #ideas-panel {
+      display: none;
+      width: 100vw;
+      height: calc(100vh - 44px);
+      overflow-y: auto;
+      padding: 20px;
+    }
+    #ideas-panel.visible { display: block; }
+
+    .ideas-section { margin-bottom: 28px; }
+    .ideas-section h2 {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .ideas-section h2 .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 1px 7px;
+      font-size: 10px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .idea-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      backdrop-filter: blur(10px);
+      transition: border-color var(--transition-fast);
+    }
+    .idea-card:hover { border-color: var(--border-hover); }
+    .idea-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .idea-status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+    .idea-status-active   { background: var(--border-done); }
+    .idea-status-parked   { background: var(--border-open); }
+    .idea-status-rejected { background: var(--border-refused); }
+    .idea-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      flex: 1;
+    }
+    .idea-id {
+      font-size: 10px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .idea-body {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin-left: 18px;
+    }
+    .idea-body p { margin: 4px 0; }
+    .idea-body strong { color: var(--text-primary); }
+    .idea-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-left: 18px;
+      margin-top: 6px;
+    }
+    .idea-tag {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .ideas-empty {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-style: italic;
+      padding: 8px 0;
+    }
+
+    @media (max-width: 640px) {
+      #detail-panel { width: 100%; right: -100%; }
+      #detail-panel.open { right: 0; }
+    }
+
+    /* ── Mobile: Bottom Navigation ────────────────── */
+    #bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      min-height: 60px;
+      background: rgba(13, 17, 23, 0.97);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-subtle);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 8px 0;
+      padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    }
+    .bnav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 10px;
+      cursor: pointer;
+      padding: 8px;
+      transition: color var(--transition-fast);
+      -webkit-tap-highlight-color: transparent;
+      min-height: 44px;
+      min-width: 44px;
+    }
+    .bnav-btn .bnav-icon { font-size: 22px; line-height: 1; display: flex; align-items: center; }
+    .bnav-btn.active { color: var(--text-accent); }
+    .bnav-btn.active .bnav-icon { filter: drop-shadow(0 0 6px rgba(88,166,255,0.5)); }
+
+    /* ── Card List View ───────────────────────────── */
+    #list-view {
+      display: none;
+      overflow-y: auto;
+      padding: 12px 12px 80px;
+      height: 100%;
+    }
+    #list-view.active { display: block; }
+    .lv-group { margin-bottom: 20px; }
+    .lv-group-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0 4px 8px;
+    }
+    .lv-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: border-color var(--transition-fast), background var(--transition-fast);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .lv-card:hover  { border-color: var(--border-hover); background: var(--bg-panel); }
+    .lv-card:active { background: rgba(255,255,255,0.05); }
+    .lv-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .lv-card-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.35;
+      flex: 1;
+    }
+    .lv-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+    .lv-card-roi { font-weight: 700; color: var(--text-accent); }
+    .lv-card-progress {
+      height: 3px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .lv-card-progress-fill {
+      height: 100%;
+      background: var(--border-done);
+      border-radius: 2px;
+    }
+
+    /* ── Mobile overrides ─────────────────────────── */
+    @media (max-width: 768px) {
+      #bottom-nav { display: flex; }
+      #tab-bar    { display: none !important; }
+      #container {
+        height: calc(100vh - 44px - 48px);
+        height: calc(100dvh - 44px - 48px);
+      }
+      #list-view, #ideas-panel {
+        padding-bottom: max(76px, calc(68px + env(safe-area-inset-bottom, 0px)));
+      }
+      #controls button { min-height: 36px; padding: 6px 10px; font-size: 11px; }
+      #done-filter     { min-height: 36px; }
+      #tooltip { max-width: calc(100vw - 24px); left: 12px !important; right: 12px !important; }
+      #legend         { display: none; }
+      #legend-toggle  { display: flex; }
+    }
+
+    @media (max-width: 600px) {
+      #header {
+        height: auto !important;
+        min-height: 44px;
+        padding: 6px 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+      }
+      #header-right {
+        flex: 0 0 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 6px !important;
+        flex-wrap: nowrap !important;
+        align-items: center;
+        padding-bottom: 2px;
+      }
+      #header-right::-webkit-scrollbar { display: none; }
+      #controls { overflow: visible !important; flex-shrink: 0; }
+      #container {
+        height: calc(100vh - 80px - 48px);
+        height: calc(100dvh - 80px - 48px);
+      }
+      #ideas-panel {
+        height: calc(100vh - 80px);
+        height: calc(100dvh - 80px);
+      }
+      #legend {
+        position: fixed;
+        bottom: max(60px, calc(60px + env(safe-area-inset-bottom, 0px)));
+        left: 0; right: 0;
+        max-width: 100%;
+        max-height: none;
+        border-radius: 0;
+        border-left: none; border-right: none;
+        overflow: visible;
+        z-index: 150;
+      }
+      #legend.legend-expanded { display: block; }
+      #legend .legend-inner {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 10px;
+        align-items: center;
+        padding: 8px 12px;
+      }
+      #legend .legend-inner::-webkit-scrollbar { display: none; }
+      #legend .legend-title { flex-shrink: 0; margin-bottom: 0; }
+      #legend .legend-item  { flex-shrink: 0; margin: 0; }
+      #legend .legend-label { font-size: 9px; white-space: nowrap; }
+      #legend-toggle {
+        position: fixed;
+        bottom: max(68px, calc(68px + env(safe-area-inset-bottom, 0px)));
+        right: 12px; left: auto;
+        display: flex;
+      }
+      h1       { font-size: 14px; }
+      h1 span  { font-size: 14px; }
+    }
+
+    @media (max-width: 400px) {
+      .bnav-btn .bnav-icon { font-size: 24px; }
+      .bnav-btn { min-height: 48px; min-width: 48px; }
+    }
+
+    /* ── Bottleneck pulse ─────────────────────────── */
+    @keyframes bottleneck-pulse {
+      0%   { transform: scale(1.0); opacity: 1; }
+      50%  { transform: scale(1.4); opacity: 0; }
+      100% { transform: scale(1.0); opacity: 1; }
+    }
+    .bottleneck-ring.bottleneck-pulse {
+      animation: bottleneck-pulse 2s ease-in-out infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    /* Active state for Deps toggle button */
+    button.btn-active {
+      background: rgba(88, 166, 255, 0.15);
+      border-color: rgba(88, 166, 255, 0.4);
+      color: var(--text-accent);
+    }
+
+    /* ── Skip-to-content ──────────────────────────── */
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ── Settings Panel ───────────────────────────────────────── */
+    #settings-panel {
+      position: fixed;
+      top: 44px;
+      right: -340px;
+      width: 320px;
+      height: calc(100vh - 44px);
+      background: rgba(13, 17, 23, 0.52);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      border-left: 1px solid var(--border-subtle);
+      box-shadow: -8px 0 32px rgba(0,0,0,0.35);
+      z-index: 800;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.28s cubic-bezier(0.4,0,0.2,1);
+    }
+    [data-theme="light"] #settings-panel {
+      background: rgba(246, 248, 250, 0.55);
+    }
+    #settings-panel.open { right: 0; }
+
+    #settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 16px 11px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(13,17,23,0.6);
+      flex-shrink: 0;
+    }
+    #settings-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    #settings-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 2px 6px;
+      line-height: 1;
+      border-radius: 4px;
+      transition: color var(--transition-fast);
+    }
+    #settings-close:hover { color: var(--text-primary); }
+    #settings-close:focus-visible { outline: 2px solid var(--text-accent); outline-offset: 2px; }
+
+    #settings-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.12) transparent;
+    }
+    #settings-body::-webkit-scrollbar { width: 4px; }
+    #settings-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+    .sp-section-title {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding-top: 6px;
+      margin-bottom: -2px;
+    }
+    .sp-section-title:first-child { padding-top: 0; }
+
+    .sp-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .sp-select {
+      background: rgba(255,255,255,0.05);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: inherit;
+      padding: 7px 10px;
+      cursor: pointer;
+      width: 100%;
+      color-scheme: dark;
+      transition: border-color var(--transition-fast), background var(--transition-fast);
+    }
+    .sp-select:hover { border-color: var(--border-hover); background: rgba(255,255,255,0.08); }
+    .sp-select:focus { outline: 2px solid var(--text-accent); outline-offset: 2px; }
+
+    .sp-row {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .sp-row-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .sp-val {
+      font-size: 10px;
+      color: var(--text-accent);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      min-width: 34px;
+      text-align: right;
+    }
+
+    .sp-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.12);
+      outline: none;
+      cursor: pointer;
+    }
+    .sp-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--text-accent);
+      cursor: pointer;
+      border: 2px solid var(--bg-primary);
+      box-shadow: 0 0 0 0 transparent;
+      transition: box-shadow var(--transition-fast);
+    }
+    .sp-slider::-webkit-slider-thumb:hover { box-shadow: 0 0 0 4px rgba(88,166,255,0.2); }
+    .sp-slider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--text-accent);
+      cursor: pointer;
+      border: 2px solid var(--bg-primary);
+    }
+    .sp-slider:focus-visible { outline: 2px solid var(--text-accent); outline-offset: 4px; }
+
+    .sp-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 0;
+    }
+    .sp-toggle-label { font-size: 11px; color: var(--text-muted); }
+    .sp-toggle {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .sp-toggle input { display: none; }
+    .sp-toggle-track {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.12);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background var(--transition-fast);
+    }
+    .sp-toggle-track::before {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      left: 3px;
+      top: 3px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: transform var(--transition-fast), background var(--transition-fast);
+    }
+    .sp-toggle input:checked + .sp-toggle-track { background: var(--text-accent); }
+    .sp-toggle input:checked + .sp-toggle-track::before {
+      transform: translateX(16px);
+      background: #fff;
+    }
+
+    #settings-footer {
+      display: flex;
+      gap: 6px;
+      padding: 10px 16px;
+      border-top: 1px solid var(--border-subtle);
+      background: rgba(13,17,23,0.6);
+      flex-shrink: 0;
+    }
+    .sp-footer-btn {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 6px 4px;
+      font-size: 10px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+    .sp-footer-btn:hover {
+      background: rgba(255,255,255,0.10);
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+    }
+    .sp-footer-btn-danger:hover {
+      color: var(--border-blocked);
+      border-color: var(--border-blocked);
+      background: rgba(239,68,68,0.08);
+    }
+    .sp-footer-btn:focus-visible { outline: 2px solid var(--text-accent); outline-offset: 2px; }
+
+    @media (max-width: 640px) {
+      #settings-panel {
+        width: 100%;
+        right: -100%;
+        top: 44px;
+        height: calc(100vh - 44px);
+        height: calc(100dvh - 44px);
+      }
+    }
+
+    /* ── Context Menu ──────────────────────────────────────────── */
+    #ctx-menu {
+      position: fixed;
+      background: var(--bg-glass);
+      backdrop-filter: blur(24px) saturate(1.8);
+      -webkit-backdrop-filter: blur(24px) saturate(1.8);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      z-index: 2000;
+      display: none;
+      flex-direction: column;
+      min-width: 158px;
+      overflow: hidden;
+    }
+    #ctx-menu.visible { display: flex; }
+    #ctx-menu button {
+      background: none;
+      border: none;
+      border-radius: 0;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      font-size: 12px;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: background var(--transition-fast), color var(--transition-fast);
+      white-space: nowrap;
+    }
+    #ctx-menu button:last-child { border-bottom: none; }
+    #ctx-menu button:hover { background: var(--highlight); color: var(--text-accent); }
+    #ctx-menu button:focus-visible { outline: 2px solid var(--text-accent); outline-offset: -2px; }
+  </style>
+</head>
+<body>
+  <a class="sr-only" href="#container">Skip to goal tree</a>
+
+  <div id="header" role="banner">
+    <h1><span>🌍</span> Telos</h1>
+    <div id="header-right" style="display:flex;align-items:center;gap:12px;">
+      <div id="tab-bar" role="tablist" aria-label="View tabs">
+        <button class="tab-btn active" id="tab-tree"  onclick="switchTab('tree')"  role="tab" aria-selected="true">🌳 Tree</button>
+        <button class="tab-btn"        id="tab-ideas" onclick="switchTab('ideas')" role="tab" aria-selected="false">💡 Ideas</button>
+      </div>
+      <div id="done-filter-wrap" aria-label="Done task filter">
+        <label for="done-filter">Hide done&nbsp;&gt;</label>
+        <select id="done-filter" onchange="setDoneFilter(parseInt(this.value))" aria-label="Hide done tasks older than N days">
+          <option value="0">off</option>
+          <option value="-1">all</option>
+          <option value="1">1 day</option>
+          <option value="3">3 days</option>
+          <option value="7">7 days</option>
+          <option value="30">30 days</option>
+          <option value="90">90 days</option>
+        </select>
+      </div>
+      <div id="controls" role="toolbar" aria-label="Tree controls">
+        <button onclick="resetView()" aria-label="Reset view to fit all nodes">Reset</button>
+        <button onclick="expandAll()" aria-label="Expand all nodes">Expand</button>
+        <button onclick="collapseAll()" aria-label="Collapse all nodes">Collapse</button>
+        <button id="deps-btn" onclick="toggleDeps()" aria-label="Toggle dependency edges" aria-pressed="false">Deps</button>
+        <button id="hide-rejected-btn" onclick="toggleHideRejected()" aria-label="Toggle visibility of rejected nodes" aria-pressed="false" title="Hide rejected nodes (R)">Hide rejected</button>
+        <button id="hide-shelved-btn"  onclick="toggleHideShelved()"  aria-label="Toggle visibility of shelved nodes"  aria-pressed="false" title="Hide shelved nodes (H)">Hide shelved</button>
+        <button id="refresh-data-btn" onclick="refreshData()" aria-label="Reload goal tree data">↻</button>
+        <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode" style="padding:5px 8px;font-size:14px;">🌙</button>
+        <button id="settings-btn" onclick="toggleSettingsPanel()" aria-label="Open settings (S)" title="Settings (S)" style="padding:5px 8px;font-size:14px;">⚙</button>
+        <span id="last-updated" style="font-size:10px;color:var(--text-muted);white-space:nowrap;padding:0 2px;"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="container" role="tree" aria-label="Telos goal tree visualization"></div>
+  <div id="list-view" role="list" aria-label="Node list view"></div>
+
+  <!-- Mobile bottom navigation -->
+  <nav id="bottom-nav" aria-label="Main navigation">
+    <button class="bnav-btn active" id="bnav-tree"    onclick="switchTab('tree')"  aria-label="Tree view">
+      <span class="bnav-icon">🌳</span><span>Tree</span>
+    </button>
+    <button class="bnav-btn" id="bnav-list"    onclick="switchTab('list')"  aria-label="List view">
+      <span class="bnav-icon">📋</span><span>List</span>
+    </button>
+    <button class="bnav-btn" id="bnav-ideas"   onclick="switchTab('ideas')" aria-label="Ideas">
+      <span class="bnav-icon">💡</span><span>Ideas</span>
+    </button>
+    <button class="bnav-btn" id="bnav-refresh" onclick="refreshData()"      aria-label="Refresh data">
+      <span class="bnav-icon">↻</span><span>Sync</span>
+    </button>
+  </nav>
+
+  <div id="detail-panel" role="complementary" aria-label="Node detail">
+    <div id="detail-panel-header">
+      <div id="detail-panel-title">—</div>
+      <button id="detail-panel-close" onclick="closeDetailPanel()" aria-label="Close detail panel">✕</button>
+    </div>
+    <div id="detail-panel-body"></div>
+  </div>
+
+  <div id="ideas-panel"  role="tabpanel" aria-label="Ideas backlog"></div>
+  <div id="tooltip"      role="tooltip"  aria-live="polite"></div>
+
+  <button id="legend-toggle" aria-label="Toggle legend" onclick="toggleLegend()">◑</button>
+  <div id="legend" role="complementary" aria-label="Status legend">
+    <div class="legend-inner">
+      <div class="legend-title">Status</div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--node-open);border-color:var(--border-open);"></div>
+        <span class="legend-label">Open</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--node-in_progress);border-color:var(--border-in_progress);"></div>
+        <span class="legend-label">In Progress</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--node-done);border-color:var(--border-done);"></div>
+        <span class="legend-label">Done</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--node-blocked);border-color:var(--border-blocked);"></div>
+        <span class="legend-label">Blocked</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--node-shelved);border-color:var(--border-shelved);"></div>
+        <span class="legend-label">Shelved</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--node-rejected);border-color:var(--border-rejected);"></div>
+        <span class="legend-label">Rejected</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--node-in_question);border-color:var(--border-in_question);"></div>
+        <span class="legend-label">In Question</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Settings Panel ───────────────────────────────────────── -->
+  <div id="settings-panel" role="dialog" aria-label="Visualization settings" aria-modal="false">
+    <div id="settings-header">
+      <span id="settings-title">⚙ Settings</span>
+      <button id="settings-close" onclick="closeSettingsPanel()" aria-label="Close settings">✕</button>
+    </div>
+    <div id="settings-body">
+
+      <div class="sp-section-title">Layout</div>
+      <div class="sp-group">
+        <select id="s-layout" class="sp-select" aria-label="Layout type">
+          <option value="tree">🌳 Tree (top-down)</option>
+          <option value="horizontal">➡ Horizontal (left-right)</option>
+          <option value="radial">◉ Radial</option>
+          <option value="force">⊛ Force-directed</option>
+        </select>
+      </div>
+
+      <div class="sp-section-title">Typography</div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Font scale</span><span class="sp-val" id="sv-fontSize">1.0</span></div>
+        <input type="range" id="s-fontSize" class="sp-slider" min="0.5" max="2.0" step="0.1" value="1.0" aria-label="Font scale">
+      </div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Label threshold</span><span class="sp-val" id="sv-labelThreshold">0.55</span></div>
+        <input type="range" id="s-labelThreshold" class="sp-slider" min="0" max="1.0" step="0.05" value="0.55" aria-label="Label hide threshold">
+      </div>
+
+      <div class="sp-section-title">Nodes</div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Node size</span><span class="sp-val" id="sv-nodeScale">0.7</span></div>
+        <input type="range" id="s-nodeScale" class="sp-slider" min="0.5" max="3.0" step="0.1" value="0.7" aria-label="Node size multiplier">
+      </div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Shape</span></div>
+        <select id="s-nodeShape" class="sp-select" aria-label="Node shape">
+          <option value="rect">▭ Rounded rect</option>
+          <option value="pill">⬭ Pill</option>
+          <option value="circle">⬤ Circle</option>
+        </select>
+      </div>
+      <div class="sp-row" id="sp-cornerRadius-row">
+        <div class="sp-row-header"><span>Corner radius</span><span class="sp-val" id="sv-nodeCornerRadius">8</span></div>
+        <input type="range" id="s-nodeCornerRadius" class="sp-slider" min="0" max="24" step="1" value="8" aria-label="Corner radius (rect only)">
+      </div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Secondary label</span></div>
+        <select id="s-secondaryField" class="sp-select" aria-label="Secondary label field">
+          <option value="none">None</option>
+          <option value="owner">Owner</option>
+          <option value="roi">ROI</option>
+          <option value="cost">Cost</option>
+          <option value="status">Status</option>
+          <option value="type">Type</option>
+        </select>
+      </div>
+
+      <div class="sp-section-title">Spacing</div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>H spacing</span><span class="sp-val" id="sv-spacingH">240</span></div>
+        <input type="range" id="s-spacingH" class="sp-slider" min="10" max="600" step="5" value="240" aria-label="Horizontal spacing">
+      </div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>V spacing</span><span class="sp-val" id="sv-spacingV">60</span></div>
+        <input type="range" id="s-spacingV" class="sp-slider" min="5" max="300" step="5" value="60" aria-label="Vertical spacing">
+      </div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Level spacing</span><span class="sp-val" id="sv-levelSpacing">80</span></div>
+        <input type="range" id="s-levelSpacing" class="sp-slider" min="10" max="400" step="5" value="80" aria-label="Level spacing">
+      </div>
+
+      <div class="sp-section-title">Edges</div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Thickness</span><span class="sp-val" id="sv-edgeWidth">2.0</span></div>
+        <input type="range" id="s-edgeWidth" class="sp-slider" min="0.5" max="5.0" step="0.5" value="2.0" aria-label="Edge thickness">
+      </div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Opacity</span><span class="sp-val" id="sv-edgeOpacity">0.60</span></div>
+        <input type="range" id="s-edgeOpacity" class="sp-slider" min="0.05" max="1.0" step="0.05" value="0.60" aria-label="Edge opacity">
+      </div>
+
+      <div class="sp-section-title">Label truncation</div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Min chars</span><span class="sp-val" id="sv-truncMinChars">8</span></div>
+        <input type="range" id="s-truncMinChars" class="sp-slider" min="4" max="20" step="1" value="8" aria-label="Minimum chars always shown">
+      </div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Max chars</span><span class="sp-val" id="sv-truncMaxChars">40</span></div>
+        <input type="range" id="s-truncMaxChars" class="sp-slider" min="10" max="80" step="1" value="40" aria-label="Maximum chars before forced cut">
+      </div>
+      <div class="sp-row">
+        <div class="sp-row-header"><span>Whitespace limit</span><span class="sp-val" id="sv-truncWhitespaceMax">28</span></div>
+        <input type="range" id="s-truncWhitespaceMax" class="sp-slider" min="8" max="60" step="1" value="28" aria-label="Truncate at nearest whitespace up to this length">
+      </div>
+
+      <div class="sp-section-title">Misc</div>
+      <div class="sp-toggle-row">
+        <span class="sp-toggle-label">Animations</span>
+        <label class="sp-toggle" aria-label="Toggle animations">
+          <input type="checkbox" id="s-animations" checked>
+          <span class="sp-toggle-track"></span>
+        </label>
+      </div>
+      <div class="sp-toggle-row">
+        <span class="sp-toggle-label">Node text color</span>
+        <input type="color" id="s-nodeTextColor" value="#c9d1d9"
+               aria-label="Node text color"
+               style="width:36px;height:24px;padding:1px 2px;border:1px solid var(--border-subtle);border-radius:4px;background:transparent;cursor:pointer;">
+      </div>
+
+    </div><!-- /settings-body -->
+    <div id="settings-footer">
+      <button onclick="exportSettings()" class="sp-footer-btn" aria-label="Export settings as JSON">↓ Export</button>
+      <button onclick="importSettings()" class="sp-footer-btn" aria-label="Import settings from JSON">↑ Import</button>
+      <button onclick="resetSettings()"  class="sp-footer-btn sp-footer-btn-danger" aria-label="Reset to defaults">Reset</button>
+    </div>
+  </div>
+
+  <!-- ── Context Menu ──────────────────────────────────────────── -->
+  <div id="ctx-menu" role="menu" aria-label="Node actions">
+    <button role="menuitem" onclick="ctxOpenDetail()">📋 Open details</button>
+    <button role="menuitem" onclick="ctxExpandAll()">＋ Expand all</button>
+    <button role="menuitem" onclick="ctxCollapseAll()">－ Collapse all</button>
+  </div>
+
+  <script src="viz.js"></script>
+</body>
+</html>
