@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T18:54:37.079Z",
+  "generated_at": "2026-02-27T20:06:00.160Z",
   "tree": [
     {
       "id": 1,
@@ -1177,7 +1177,7 @@
               "title": "Restrict Google Drive access to single folder (service account)",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "blocked",
               "value": 3000,
               "cost_estimate": 0,
               "cost_actual": null,
