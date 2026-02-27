@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T20:49:57.924Z",
+  "generated_at": "2026-02-27T20:57:47.038Z",
   "tree": [
     {
       "id": 1,
@@ -2193,6 +2193,51 @@
     }
   ],
   "ideas": [
+    {
+      "id": 5,
+      "title": "CC completion → OpenClaw system message routing",
+      "description": "Claude Code can emit a system message on task completion. Could enable CC as a true async subagent with push-based result delivery back into the agent graph. Trade-offs: Pro: zero-latency result delivery, native to CC. Con: session routing may not be deterministic — needs testing to confirm which agent receives the message.",
+      "rationale": "Unlocks CC as a first-class async subagent, not just a blocking tool call",
+      "status": "active",
+      "key_decisions": "Which agent session receives the system message? Can we specify target explicitly? Does it conflict with existing session routing?",
+      "tags": [
+        "claude-code",
+        "subagent",
+        "architecture"
+      ],
+      "created_at": 1772225819,
+      "updated_at": 1772225819
+    },
+    {
+      "id": 6,
+      "title": "MCP server wrapping OpenClaw tools for CC access",
+      "description": "Build a lightweight MCP server exposing sessions_send, message tool, and cron so CC can call them natively during any task. Turns CC into a full agent capable of cross-agent communication. Trade-offs: Pro: CC becomes fully autonomous agent. Con: MCP server is extra infra to maintain; /tools/invoke HTTP endpoint already exists and may be simpler.",
+      "rationale": "Removes the main limitation of CC-as-subagent: no OpenClaw tool access",
+      "status": "active",
+      "key_decisions": "MCP vs direct /tools/invoke HTTP? Auth model for MCP? Which tools are highest priority to expose?",
+      "tags": [
+        "claude-code",
+        "mcp",
+        "infrastructure"
+      ],
+      "created_at": 1772225819,
+      "updated_at": 1772225819
+    },
+    {
+      "id": 7,
+      "title": "CC as general-purpose smart subagent (beyond coding)",
+      "description": "Route analysis, planning, structured docs, and heavy reasoning tasks to CC instead of Sonnet API. Leverages Max 5x subscription headroom (~1080 turns/day capacity). Trade-offs: Pro: major cost reduction if Max 5x active; CC has strong reasoning, long context, file access. Con: no OpenClaw tool access natively (addressed by MCP idea); higher warm-up latency; less suited for conversational back-and-forth.",
+      "rationale": "Primary cost lever if Max 5x plan is adopted — offload inference from API billing to subscription",
+      "status": "active",
+      "key_decisions": "Which task types route well to CC? What's the quality delta vs Sonnet for non-coding tasks? How to handle tool-dependent tasks?",
+      "tags": [
+        "claude-code",
+        "cost",
+        "subagent"
+      ],
+      "created_at": 1772225819,
+      "updated_at": 1772225819
+    },
     {
       "id": 4,
       "title": "MarkdownLM — AI coding rules as MCP infrastructure",
