@@ -1,0 +1,32 @@
+{
+  "name": "telos",
+  "version": "0.1.0",
+  "description": "Hierarchical goal and task management with value-based prioritization",
+  "main": "src/cli.js",
+  "bin": {
+    "telos": "./src/cli.js"
+  },
+  "scripts": {
+    "init": "node src/cli.js init",
+    "start": "node server.js",
+    "api": "node api-server.js",
+    "test": "node src/cli.js list"
+  },
+  "keywords": [
+    "goal",
+    "task",
+    "management",
+    "prioritization",
+    "value",
+    "roi"
+  ],
+  "author": "Atlas (MacroHard)",
+  "license": "PROPRIETARY",
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
