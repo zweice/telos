@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T13:32:18.024Z",
+  "generated_at": "2026-02-27T13:37:04.280Z",
   "tree": [
     {
       "id": 1,
@@ -549,6 +549,26 @@
                 {
                   "id": 93,
                   "title": "Telos: CLI depend/bottlenecks commands + update next (constraint weight)",
+                  "type": "task",
+                  "owner": "forge",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": null,
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 98,
+                  "title": "Telos: Milestone gate locking (lock downstream nodes until gate condition met)",
                   "type": "task",
                   "owner": "forge",
                   "status": "open",
@@ -2009,6 +2029,46 @@
               "children": []
             }
           ]
+        },
+        {
+          "id": 97,
+          "title": "HumOps department node (legal signatures, banking, human networking)",
+          "type": "milestone",
+          "owner": "andreas",
+          "status": "open",
+          "value": 0,
+          "cost_estimate": 0,
+          "cost_actual": null,
+          "roi": 0,
+          "effort_hours_estimate": null,
+          "effort_hours_actual": null,
+          "start_date": null,
+          "end_date": null,
+          "completed_at": null,
+          "progress": 0,
+          "description": null,
+          "notes": [],
+          "children": []
+        },
+        {
+          "id": 99,
+          "title": "Milestone 0: Foundation gate (UG registered + first customer)",
+          "type": "milestone",
+          "owner": "andreas",
+          "status": "open",
+          "value": 0,
+          "cost_estimate": 0,
+          "cost_actual": null,
+          "roi": 0,
+          "effort_hours_estimate": null,
+          "effort_hours_actual": null,
+          "start_date": null,
+          "end_date": null,
+          "completed_at": null,
+          "progress": 0,
+          "description": null,
+          "notes": [],
+          "children": []
         }
       ]
     }
