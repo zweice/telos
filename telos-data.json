@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T17:18:52.694Z",
+  "generated_at": "2026-02-27T17:20:23.923Z",
   "tree": [
     {
       "id": 1,
@@ -738,7 +738,7 @@
                   "status": "done",
                   "value": 0,
                   "cost_estimate": 0,
-                  "cost_actual": 0.5,
+                  "cost_actual": 0.8,
                   "roi": 0,
                   "effort_hours_estimate": null,
                   "effort_hours_actual": 1.5,
@@ -746,7 +746,7 @@
                   "end_date": null,
                   "completed_at": 1772212724,
                   "progress": 0,
-                  "description": "## Closing Summary\n\n**Outcomes:** Implemented milestone gate locking. getLockedNodeIds() helper, locked nodes excluded from next, start rejects locked nodes, new locked command, telos-data.json includes locked flag, web viz shows gray + lock icon.\n\n**Decisions:** Locked status is derived (not stored) — computed at query time from dep chain to avoid state sync bugs.\n\n**Spawned work:** none\n\n**Artifacts:** src/cli.js, src/db.js, web/viz.js, web/index.html",
+                  "description": "## Closing Summary\n\n**Outcomes:** Implemented milestone gate locking. getLockedNodeIds() BFS helper in db.js derives locked state from dep chain at query time (not stored). `next` excludes locked nodes. `start` rejects with descriptive error naming the blocking milestone. `list` appends [LOCKED] to status. New `locked` command lists all locked nodes + which milestone blocks each. viz.js marks locked:true in telos-data.json. Web viz: gray fill + 🔒 prefix in tree, locked badge in list view, tooltip shows blocking milestone.\n\n**Decisions:** Locked status derived, not stored — avoids state sync bugs. BFS traversal handles transitive locking correctly.\n\n**Spawned work:** None.\n\n**Artifacts:** src/db.js, src/cli.js, src/viz.js, web/viz.js, web/index.html. Commit: c01ff92.",
                   "notes": [],
                   "children": []
                 }
