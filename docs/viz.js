@@ -1611,22 +1611,19 @@
     const allNodes = root.descendants();
     const radii    = computeNodeRadius(allNodes.length);
 
-    // Group deps by TARGET (blocker_id) — multiple edges converging on same node should fan out
-    // Sort each group by the angle from target to source so they spread cleanly
+    // Group deps by TARGET (blocker_id) — spread arrival points along target node edge
+    // Sort each group by angle from target so arrival points are spatially ordered
     const tgtGroups = new Map();
     deps.forEach(dep => {
       if (!nodeMap.get(dep.blocker_id) || !nodeMap.get(dep.blocked_id)) return;
       if (!tgtGroups.has(dep.blocker_id)) tgtGroups.set(dep.blocker_id, []);
       tgtGroups.get(dep.blocker_id).push(dep);
     });
-    // Sort each group by angle so fan indices are spatially ordered
     tgtGroups.forEach(group => {
       group.sort((a, b) => {
         const na = nodeMap.get(a.blocked_id), nb = nodeMap.get(b.blocked_id);
         const ta = nodeMap.get(a.blocker_id);
-        const angA = Math.atan2(na.y - ta.y, na.x - ta.x);
-        const angB = Math.atan2(nb.y - ta.y, nb.x - ta.x);
-        return angA - angB;
+        return Math.atan2(na.y - ta.y, na.x - ta.x) - Math.atan2(nb.y - ta.y, nb.x - ta.x);
       });
     });
 
@@ -1638,39 +1635,59 @@
       const sx = blocked.x, sy = blocked.y;
       const dx = blocker.x, dy = blocker.y;
 
-      // Index-based symmetric fan: edges converging on same target spread evenly (40px per step)
-      const group     = tgtGroups.get(dep.blocker_id);
-      const idx       = group.indexOf(dep);
-      const fanOffset = (idx - (group.length - 1) / 2) * 40;
+      const group = tgtGroups.get(dep.blocker_id);
+      const idx   = group.indexOf(dep);
+      const n     = group.length;
 
-      const lineLen = Math.sqrt((dx - sx) ** 2 + (dy - sy) ** 2);
-      const perpX   = lineLen > 1 ? -(dy - sy) / lineLen : 1;
-      const perpY   = lineLen > 1 ?  (dx - sx) / lineLen : 0;
-      const cpx     = (sx + dx) / 2 + perpX * fanOffset;
-      const cpy     = (sy + dy) / 2 + perpY * fanOffset;
-
-      // Compute boundary points: source = edge of blocked toward ctrl pt, target = edge of blocker toward ctrl pt
+      // Spread arrival points along the target node edge, departure points toward target entry
       let ssx, ssy, ddx, ddy;
+
       if (settings.nodeShape === 'circle') {
-        const srcR = (radii[blocked.data.type] || radii.task) + 2;
         const tgtR = (radii[blocker.data.type] || radii.task) + 2;
-        const s2cx = cpx - sx, s2cy = cpy - sy;
-        const s2cLen = Math.sqrt(s2cx * s2cx + s2cy * s2cy) || 1;
-        ssx = sx + (s2cx / s2cLen) * srcR;
-        ssy = sy + (s2cy / s2cLen) * srcR;
-        const c2dx = dx - cpx, c2dy = dy - cpy;
-        const c2dLen = Math.sqrt(c2dx * c2dx + c2dy * c2dy) || 1;
-        ddx = dx - (c2dx / c2dLen) * tgtR;
-        ddy = dy - (c2dy / c2dLen) * tgtR;
+        const srcR = (radii[blocked.data.type] || radii.task) + 2;
+        // Spread entry angle around the base approach angle
+        const baseAngle  = Math.atan2(sy - dy, sx - dx);
+        const spreadStep = n > 1 ? Math.min(0.35, (n * 0.15)) : 0;
+        const entryAngle = baseAngle + (idx - (n - 1) / 2) * spreadStep;
+        ddx = dx + Math.cos(entryAngle) * tgtR;
+        ddy = dy + Math.sin(entryAngle) * tgtR;
+        // Source exits toward the target entry point
+        const s2dLen = Math.sqrt((ddx - sx) ** 2 + (ddy - sy) ** 2) || 1;
+        ssx = sx + ((ddx - sx) / s2dLen) * srcR;
+        ssy = sy + ((ddy - sy) / s2dLen) * srcR;
       } else {
-        // rect or pill — use axis-aligned boundary intersection
-        const srcDims = nodeRectDims(blocked, settings);
+        // rect / pill: spread entry points along the target face
         const tgtDims = nodeRectDims(blocker, settings);
-        const srcPt   = rectEdgePoint(sx, sy, srcDims.w, srcDims.h, cpx, cpy);
-        const tgtPt   = rectEdgePoint(dx, dy, tgtDims.w, tgtDims.h, cpx, cpy);
+        const tw = tgtDims.w / 2, th = tgtDims.h / 2;
+        const ax = dx - sx, ay = dy - sy;
+
+        if (Math.abs(ax) >= Math.abs(ay)) {
+          // Approach is mostly horizontal — enter left or right face, spread vertically
+          const faceX   = dx + (ax > 0 ? -tw : tw);
+          const maxSpan = (th * 2 - 8) * 0.85;          // 85% of face height
+          const step    = n > 1 ? maxSpan / (n - 1) : 0;
+          ddx = faceX;
+          ddy = Math.max(dy - th + 4, Math.min(dy + th - 4,
+                  dy + (idx - (n - 1) / 2) * step));
+        } else {
+          // Approach is mostly vertical — enter top or bottom face, spread horizontally
+          const faceY   = dy + (ay > 0 ? -th : th);
+          const maxSpan = (tw * 2 - 8) * 0.85;
+          const step    = n > 1 ? maxSpan / (n - 1) : 0;
+          ddx = Math.max(dx - tw + 4, Math.min(dx + tw - 4,
+                  dx + (idx - (n - 1) / 2) * step));
+          ddy = faceY;
+        }
+
+        // Source exits toward the target entry point
+        const srcDims = nodeRectDims(blocked, settings);
+        const srcPt   = rectEdgePoint(sx, sy, srcDims.w, srcDims.h, ddx, ddy);
         ssx = srcPt.x; ssy = srcPt.y;
-        ddx = tgtPt.x; ddy = tgtPt.y;
       }
+
+      // Control point at midpoint — straight line (spread entry/exit is enough visual separation)
+      const cpx = (ssx + ddx) / 2;
+      const cpy = (ssy + ddy) / 2;
 
       gDepEdges.append('path')
         .attr('d',          `M ${ssx} ${ssy} Q ${cpx} ${cpy} ${ddx} ${ddy}`)
