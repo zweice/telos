@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T08:06:45.636Z",
+  "generated_at": "2026-02-27T08:08:29.045Z",
   "tree": [
     {
       "id": 1,
@@ -1748,7 +1748,7 @@
               "title": "Book notary appointment (online or in-person)",
               "type": "task",
               "owner": "atlas",
-              "status": "done",
+              "status": "in_progress",
               "value": 0,
               "cost_estimate": 200,
               "cost_actual": 0,
@@ -1760,7 +1760,12 @@
               "completed_at": 1772114602,
               "progress": 0,
               "description": "Find a notary for UG founding. 1-person UG with Musterprotokoll = cheapest route (~€105-165 notary fees). Online notary possible since 2023 (e.g. notar.de, notartermin.de) — saves travel. Prepare: full name, address, Stammkapital amount, company name, business purpose (Unternehmensgegenstand). Andreas must attend (physically or video).",
-              "notes": [],
+              "notes": [
+                {
+                  "ts": 1772179705,
+                  "text": "2026-02-27: Andreas initiated process on notar.de. Waiting for notary to schedule appointment."
+                }
+              ],
               "children": []
             },
             {
@@ -1980,6 +1985,18 @@
       "blocked_id": 41,
       "blocker_id": 39,
       "type": "hard"
+    },
+    {
+      "id": 13,
+      "blocked_id": 47,
+      "blocker_id": 37,
+      "type": "soft"
+    },
+    {
+      "id": 14,
+      "blocked_id": 20,
+      "blocker_id": 37,
+      "type": "soft"
     }
   ]
 }
