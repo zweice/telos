@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T14:15:06.277Z",
+  "generated_at": "2026-02-27T14:16:03.145Z",
   "tree": [
     {
       "id": 1,
@@ -1452,7 +1452,7 @@
                   "title": "Build Outreach Performance Analytics Dashboard",
                   "type": "task",
                   "owner": "atlas",
-                  "status": "open",
+                  "status": "shelved",
                   "value": 13,
                   "cost_estimate": 15,
                   "cost_actual": null,
@@ -1472,7 +1472,7 @@
                   "title": "Market Expansion Research: Adjacent Verticals",
                   "type": "task",
                   "owner": "atlas",
-                  "status": "open",
+                  "status": "shelved",
                   "value": 8,
                   "cost_estimate": 5,
                   "cost_actual": null,
@@ -1815,7 +1815,7 @@
               "title": "Customer Success Playbooks v1",
               "type": "task",
               "owner": "atlas",
-              "status": "open",
+              "status": "shelved",
               "value": 13,
               "cost_estimate": 8,
               "cost_actual": null,
@@ -1876,7 +1876,7 @@
               "title": "Book notary appointment (online or in-person)",
               "type": "task",
               "owner": "atlas",
-              "status": "blocked",
+              "status": "in_progress",
               "value": 0,
               "cost_estimate": 0,
               "cost_actual": null,
