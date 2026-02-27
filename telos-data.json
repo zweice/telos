@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T14:30:41.657Z",
+  "generated_at": "2026-02-27T14:31:02.456Z",
   "tree": [
     {
       "id": 1,
@@ -1876,7 +1876,7 @@
               "title": "Book notary appointment (online or in-person)",
               "type": "task",
               "owner": "atlas",
-              "status": "done",
+              "status": "in_progress",
               "value": 0,
               "cost_estimate": 0,
               "cost_actual": 0,
@@ -1936,7 +1936,7 @@
               "title": "Handelsregister registration (via notary)",
               "type": "task",
               "owner": "atlas",
-              "status": "in_progress",
+              "status": "blocked",
               "value": 0,
               "cost_estimate": 0,
               "cost_actual": null,
