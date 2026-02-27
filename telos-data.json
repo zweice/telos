@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T08:01:48.645Z",
+  "generated_at": "2026-02-27T08:03:34.889Z",
   "tree": [
     {
       "id": 1,
@@ -1209,7 +1209,7 @@
               "title": "Shadow Pilot Execution",
               "type": "task",
               "owner": "forge",
-              "status": "in_progress",
+              "status": "blocked",
               "value": 400000,
               "cost_estimate": 100,
               "cost_actual": null,
