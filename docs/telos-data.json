@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T20:57:47.038Z",
+  "generated_at": "2026-02-27T21:04:25.602Z",
   "tree": [
     {
       "id": 1,
@@ -1183,9 +1183,34 @@
                 {
                   "ts": 1772224658,
                   "text": "Andreas analysis (2026-02-27): Current CC cost ~7/day. Max 5x plan = 00/month. Break-even math: 45 turns/5h window × 5x = 225 turns/window × (24/5) windows = ~1080 turns/day capacity vs current 388 turns/day total. Break-even <6 days at current burn rate. Strategic angle: use CC as smart subagent beyond coding tasks (structured analysis, planning, doc processing) to offload inference cost from API. Revisit decision: March 11 (14 days stabilized data)."
+                },
+                {
+                  "ts": 1772226263,
+                  "text": "Decision deferred: cost trend data needed before deciding. Child task added to track 30-day costs. Pro/Max subscription only makes sense if CC usage consistently exceeds break-even threshold."
                 }
               ],
-              "children": []
+              "children": [
+                {
+                  "id": 111,
+                  "title": "Track Claude Code vs API costs for 30 days",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 13,
+                  "cost_estimate": 2,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Collect daily cost data for Claude Code API usage vs subscription pricing (Pro/Max 5x). After 30 days, bring data to decision on #84. Track in Finance/ on Drive.",
+                  "notes": [],
+                  "children": []
+                }
+              ]
             },
             {
               "id": 88,
@@ -1512,7 +1537,12 @@
                   "notes": [],
                   "children": []
                 }
-              ]
+              ],
+              "locked": true,
+              "locked_by": {
+                "id": 103,
+                "title": "Milestone 0: Foundation gate (UG registered + first customer)"
+              }
             },
             {
               "id": 30,
@@ -2127,7 +2157,12 @@
           "progress": 0,
           "description": "Gate: first 10 paying customers reached and €5k/month recurring revenue. Unlocks: process standardization, team tooling, scale infrastructure.",
           "notes": [],
-          "children": []
+          "children": [],
+          "locked": true,
+          "locked_by": {
+            "id": 103,
+            "title": "Milestone 0: Foundation gate (UG registered + first customer)"
+          }
         },
         {
           "id": 106,
@@ -2147,7 +2182,12 @@
           "progress": 0,
           "description": "Gate: delivery process documented and repeatable, 10+ active customers. Unlocks: hiring, enterprise tooling, vertical expansion.",
           "notes": [],
-          "children": []
+          "children": [],
+          "locked": true,
+          "locked_by": {
+            "id": 103,
+            "title": "Milestone 0: Foundation gate (UG registered + first customer)"
+          }
         },
         {
           "id": 107,
@@ -2167,7 +2207,12 @@
           "progress": 0,
           "description": "Gate: 50+ customers, operations largely automated, team expanding. Unlocks: M&A, international, full platform play.",
           "notes": [],
-          "children": []
+          "children": [],
+          "locked": true,
+          "locked_by": {
+            "id": 103,
+            "title": "Milestone 0: Foundation gate (UG registered + first customer)"
+          }
         },
         {
           "id": 108,
@@ -2356,12 +2401,6 @@
       "type": "hard"
     },
     {
-      "id": 12,
-      "blocked_id": 47,
-      "blocker_id": 37,
-      "type": "soft"
-    },
-    {
       "id": 13,
       "blocked_id": 20,
       "blocker_id": 37,
@@ -2383,6 +2422,36 @@
       "id": 18,
       "blocked_id": 41,
       "blocker_id": 42,
+      "type": "hard"
+    },
+    {
+      "id": 19,
+      "blocked_id": 47,
+      "blocker_id": 37,
+      "type": "hard"
+    },
+    {
+      "id": 20,
+      "blocked_id": 105,
+      "blocker_id": 103,
+      "type": "hard"
+    },
+    {
+      "id": 21,
+      "blocked_id": 22,
+      "blocker_id": 103,
+      "type": "hard"
+    },
+    {
+      "id": 22,
+      "blocked_id": 106,
+      "blocker_id": 103,
+      "type": "hard"
+    },
+    {
+      "id": 23,
+      "blocked_id": 107,
+      "blocker_id": 103,
       "type": "hard"
     }
   ]
