@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T02:02:35.398Z",
+  "generated_at": "2026-02-27T08:01:48.645Z",
   "tree": [
     {
       "id": 1,
@@ -1284,7 +1284,7 @@
                   "title": "Outreach Wave 1: Send faxes to 8 HOT leads",
                   "type": "task",
                   "owner": "atlas",
-                  "status": "open",
+                  "status": "blocked",
                   "value": 400000,
                   "cost_estimate": 10,
                   "cost_actual": null,
@@ -1304,7 +1304,7 @@
                   "title": "Track + follow up Wave 1 responses",
                   "type": "task",
                   "owner": "atlas",
-                  "status": "open",
+                  "status": "blocked",
                   "value": 400000,
                   "cost_estimate": 5,
                   "cost_actual": null,
@@ -1324,7 +1324,7 @@
                   "title": "Outreach Wave 2: 20 warm leads (no active trigger)",
                   "type": "task",
                   "owner": "atlas",
-                  "status": "open",
+                  "status": "blocked",
                   "value": 200000,
                   "cost_estimate": 20,
                   "cost_actual": null,
