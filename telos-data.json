@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T15:55:13.047Z",
+  "generated_at": "2026-02-27T17:18:34.315Z",
   "tree": [
     {
       "id": 1,
@@ -58,7 +58,12 @@
               "progress": 0,
               "description": null,
               "notes": [],
-              "children": []
+              "children": [],
+              "locked": true,
+              "locked_by": {
+                "id": 37,
+                "title": "Found Pyfio UG (haftungsbeschränkt)"
+              }
             },
             {
               "id": 4,
@@ -98,7 +103,12 @@
               "progress": 0,
               "description": null,
               "notes": [],
-              "children": []
+              "children": [],
+              "locked": true,
+              "locked_by": {
+                "id": 37,
+                "title": "Found Pyfio UG (haftungsbeschränkt)"
+              }
             },
             {
               "id": 85,
@@ -1301,7 +1311,12 @@
               "progress": 0,
               "description": null,
               "notes": [],
-              "children": []
+              "children": [],
+              "locked": true,
+              "locked_by": {
+                "id": 37,
+                "title": "Found Pyfio UG (haftungsbeschränkt)"
+              }
             },
             {
               "id": 21,
@@ -1321,7 +1336,12 @@
               "progress": 0,
               "description": null,
               "notes": [],
-              "children": []
+              "children": [],
+              "locked": true,
+              "locked_by": {
+                "id": 37,
+                "title": "Found Pyfio UG (haftungsbeschränkt)"
+              }
             },
             {
               "id": 22,
@@ -1360,7 +1380,12 @@
                   "progress": 0,
                   "description": null,
                   "notes": [],
-                  "children": []
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 37,
+                    "title": "Found Pyfio UG (haftungsbeschränkt)"
+                  }
                 },
                 {
                   "id": 62,
@@ -1380,7 +1405,12 @@
                   "progress": 0,
                   "description": null,
                   "notes": [],
-                  "children": []
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 37,
+                    "title": "Found Pyfio UG (haftungsbeschränkt)"
+                  }
                 },
                 {
                   "id": 63,
@@ -1400,7 +1430,12 @@
                   "progress": 0,
                   "description": null,
                   "notes": [],
-                  "children": []
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 37,
+                    "title": "Found Pyfio UG (haftungsbeschränkt)"
+                  }
                 },
                 {
                   "id": 80,
@@ -1970,7 +2005,12 @@
               "progress": 0,
               "description": null,
               "notes": [],
-              "children": []
+              "children": [],
+              "locked": true,
+              "locked_by": {
+                "id": 37,
+                "title": "Found Pyfio UG (haftungsbeschränkt)"
+              }
             },
             {
               "id": 68,
