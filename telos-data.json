@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T08:03:34.889Z",
+  "generated_at": "2026-02-27T08:06:45.636Z",
   "tree": [
     {
       "id": 1,
@@ -922,7 +922,7 @@
               "title": "Claude Code subscription: evaluate Pro vs Max 5x vs API",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "blocked",
               "value": 15000,
               "cost_estimate": 20,
               "cost_actual": null,
