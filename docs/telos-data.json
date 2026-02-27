@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T20:37:49.255Z",
+  "generated_at": "2026-02-27T20:49:57.924Z",
   "tree": [
     {
       "id": 1,
@@ -188,7 +188,12 @@
               "progress": 0,
               "description": null,
               "notes": [],
-              "children": []
+              "children": [],
+              "locked": true,
+              "locked_by": {
+                "id": 95,
+                "title": "Andreas: Approve Atlas→Jared handover (gate — blocks COO formalization)"
+              }
             },
             {
               "id": 94,
@@ -228,7 +233,12 @@
               "progress": 0,
               "description": null,
               "notes": [],
-              "children": []
+              "children": [],
+              "locked": true,
+              "locked_by": {
+                "id": 95,
+                "title": "Andreas: Approve Atlas→Jared handover (gate — blocks COO formalization)"
+              }
             }
           ]
         },
@@ -256,7 +266,7 @@
               "title": "Telos",
               "type": "milestone",
               "owner": "conductor",
-              "status": "in_progress",
+              "status": "done",
               "value": 30000,
               "cost_estimate": 0,
               "cost_actual": null,
@@ -265,7 +275,7 @@
               "effort_hours_actual": null,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772225367,
               "progress": 0,
               "description": null,
               "notes": [],
@@ -1157,7 +1167,7 @@
               "title": "Claude Code subscription: evaluate Pro vs Max 5x vs API",
               "type": "task",
               "owner": "conductor",
-              "status": "blocked",
+              "status": "open",
               "value": 15000,
               "cost_estimate": 0,
               "cost_actual": null,
@@ -1182,7 +1192,7 @@
               "title": "Restrict Google Drive access to single folder (service account)",
               "type": "task",
               "owner": "conductor",
-              "status": "blocked",
+              "status": "in_progress",
               "value": 3000,
               "cost_estimate": 0,
               "cost_actual": null,
@@ -1224,7 +1234,7 @@
           "title": "Business Development",
           "type": "milestone",
           "owner": "atlas",
-          "status": "open",
+          "status": "in_progress",
           "value": 500000,
           "cost_estimate": 0,
           "cost_actual": null,
@@ -1831,7 +1841,7 @@
               "title": "Found Pyfio UG (haftungsbeschränkt)",
               "type": "milestone",
               "owner": "andreas",
-              "status": "open",
+              "status": "in_progress",
               "value": 500000,
               "cost_estimate": 0,
               "cost_actual": null,
@@ -1934,7 +1944,7 @@
                   "id": 42,
                   "title": "Handelsregister registration (via notary)",
                   "type": "task",
-                  "owner": "atlas",
+                  "owner": "andreas",
                   "status": "blocked",
                   "value": 0,
                   "cost_estimate": 0,
@@ -1964,7 +1974,7 @@
                   "id": 43,
                   "title": "Gewerbeanmeldung at Gewerbeamt",
                   "type": "task",
-                  "owner": "atlas",
+                  "owner": "andreas",
                   "status": "blocked",
                   "value": 0,
                   "cost_estimate": 0,
@@ -1989,7 +1999,7 @@
                   "id": 44,
                   "title": "Steuerliche Erfassung → Finanzamt → Steuernummer",
                   "type": "task",
-                  "owner": "atlas",
+                  "owner": "andreas",
                   "status": "blocked",
                   "value": 0,
                   "cost_estimate": 0,
@@ -2277,12 +2287,6 @@
       "type": "soft"
     },
     {
-      "id": 7,
-      "blocked_id": 63,
-      "blocker_id": 68,
-      "type": "soft"
-    },
-    {
       "id": 8,
       "blocked_id": 21,
       "blocker_id": 20,
@@ -2317,6 +2321,24 @@
       "blocked_id": 20,
       "blocker_id": 37,
       "type": "soft"
+    },
+    {
+      "id": 16,
+      "blocked_id": 96,
+      "blocker_id": 95,
+      "type": "hard"
+    },
+    {
+      "id": 17,
+      "blocked_id": 90,
+      "blocker_id": 95,
+      "type": "hard"
+    },
+    {
+      "id": 18,
+      "blocked_id": 41,
+      "blocker_id": 42,
+      "type": "hard"
     }
   ]
 }
