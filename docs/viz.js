@@ -251,6 +251,7 @@
     gNodes.selectAll('.node').remove();
     update(root);
     setTimeout(resetView, 400);
+    if (typeof renderListView === 'function') renderListView();
   };
 
   window.toggleHideShelved = function () {
@@ -276,6 +277,7 @@
     gNodes.selectAll('.node').remove();
     update(root);
     setTimeout(resetView, 400);
+    if (typeof renderListView === 'function') renderListView();
   };
   window.toggleHideBlocked = function () {
     hideBlocked = !hideBlocked;
@@ -301,6 +303,7 @@
     gNodes.selectAll('.node').remove();
     update(root);
     setTimeout(resetView, 400);
+    if (typeof renderListView === 'function') renderListView();
   };
 
   // ── State ────────────────────────────────────────────────────────────────
@@ -877,6 +880,10 @@
       .transition(t)
       .attr('transform', d => `translate(${d.x},${d.y})`)
       .attr('class',     d => `node status-${d.data.status}${d.data.locked ? ' locked' : ''}`);
+
+    nodeMerge.style('display', d =>
+      (hideBlocked && (d.data.locked || d.data.status === 'blocked')) ? 'none' : null
+    );
 
     // Size hit-target rect to exactly match the visible node, min 44px for touch
     nodeMerge.select('.hit-target').each(function(d) {
