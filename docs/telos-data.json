@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-28T09:47:40.011Z",
+  "generated_at": "2026-02-28T11:46:52.117Z",
   "tree": [
     {
       "id": 1,
@@ -1251,6 +1251,26 @@
               "description": null,
               "notes": [],
               "children": []
+            },
+            {
+              "id": 112,
+              "title": "Audit subagent spec templates: static-first ordering + state scoping",
+              "type": "task",
+              "owner": "conductor",
+              "status": "done",
+              "value": 2000,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": 0.3,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": 1772279211,
+              "progress": 0,
+              "description": "Review all subagent specs written by Conductor (and patterns in HEARTBEAT.md). Ensure: (1) static instructions/SOPs always precede dynamic context (task params, current state, outputs) — cache matches on prefix so mixed ordering kills cache hit rate; (2) specs don't include unnecessary session history or background context — scope to active task only. Update spec templates in HEARTBEAT.md and SOUL.md with a static-first rule.",
+              "notes": [],
+              "children": []
             }
           ]
         },
@@ -2232,7 +2252,28 @@
           "progress": 0,
           "description": "Parking lot for tools, integrations, and ideas to evaluate at the right milestone. Not actionable yet.",
           "notes": [],
-          "children": []
+          "children": [
+            {
+              "id": 113,
+              "title": "Evaluate DOM/log minification pipeline",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 500,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Check actual usage: are Atlas or Forge agents injecting raw browser DOMs or large log files into context? If yes (>10k tokens of DOM/log input regularly), assess ROI of building a pre-processor to strip whitespace, boilerplate CSS, and redundant structure before injection. Only build if usage data justifies it.",
+              "notes": [],
+              "children": []
+            }
+          ]
         }
       ]
     }
