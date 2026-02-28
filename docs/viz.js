@@ -199,7 +199,7 @@
     if (!node) return node;
     if (!node.children || node.children.length === 0) return node;
     node.children = node.children
-      .filter(c => c.status !== 'blocked')
+      .filter(c => c.status !== 'blocked' && !c.locked)
       .map(c => applyBlockedFilter(c));
     return node;
   }
