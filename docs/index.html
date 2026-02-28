@@ -224,6 +224,12 @@
     [data-theme="light"] .node.locked .node-circle,
     [data-theme="light"] .node.locked .node-rect { fill: #e5e7eb; stroke: #6b7280; opacity: 0.72; }
 
+    /* Hide-blocked toggle — CSS brute-force override */
+    body.hide-blocked .node.locked,
+    body.hide-blocked .node.status-blocked { display: none !important; }
+    body.hide-blocked .lv-card-locked,
+    body.hide-blocked .lv-group:has(> .lv-group-title + div:empty) { display: none !important; }
+
     .node text {
       font-family: inherit;
       font-weight: 500;

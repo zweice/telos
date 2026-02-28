@@ -225,6 +225,7 @@
     btn.textContent = hideBlocked ? 'Show blocked' : '🔒 Hide blocked';
     btn.classList.toggle('btn-active', hideBlocked);
     btn.setAttribute('aria-pressed', String(hideBlocked));
+    document.body.classList.toggle('hide-blocked', hideBlocked);
   }
 
   window.toggleHideRejected = function () {
@@ -280,6 +281,7 @@
     hideBlocked = !hideBlocked;
     saveCookie('telos_hide_blocked', hideBlocked);
     syncHideBlockedBtn();
+    document.body.classList.toggle('hide-blocked', hideBlocked);
     if (!rawTreeData) return;
     let copy = JSON.parse(JSON.stringify(rawTreeData));
     const cutoff = getCutoffSecs(doneFilterDays);
@@ -1568,6 +1570,7 @@
     };
     const statusGroups = {};
     allNodes
+      .filter(n => !hideBlocked || (n.status !== 'blocked' && !n.locked))
       .filter(n => n.type === 'task' || n.type === 'milestone')
       .sort((a, b) => {
         const so = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9);
