@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-27T21:04:25.602Z",
+  "generated_at": "2026-02-28T09:47:40.011Z",
   "tree": [
     {
       "id": 1,
@@ -1217,16 +1217,16 @@
               "title": "Restrict Google Drive access to single folder (service account)",
               "type": "task",
               "owner": "conductor",
-              "status": "in_progress",
+              "status": "done",
               "value": 3000,
               "cost_estimate": 0,
               "cost_actual": null,
               "roi": 0,
               "effort_hours_estimate": null,
-              "effort_hours_actual": null,
+              "effort_hours_actual": 0.5,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772272059,
               "progress": 0,
               "description": null,
               "notes": [],
@@ -2239,19 +2239,34 @@
   ],
   "ideas": [
     {
+      "id": 8,
+      "title": "/ghost Telegram command",
+      "description": "When Andreas types /ghost in Telegram, Jared detects the command, passes (1) current session key and (2) the /ghost message_id as anchor to Ghost via sessions_spawn. Ghost calls sessions_history(sessionKey, limit=N) internally to read back from the anchor — Ghost decides how much context to consume. Ghost responds as Andreas would. Jared presents as '👻 Ghost: <reply>'. Correction loop updates Ghost MEMORY.md. Trade-offs: Pro: Ghost reads raw messages (preserves tone/texture for impersonation), Ghost controls context window, no Conductor-summary bias. Con: one extra tool call inside Ghost session. Better than inline paste (fewer tokens) and better than summary (higher fidelity).",
+      "rationale": "Zero-friction way to invoke Ghost mid-conversation without explaining the full context manually. Feels native to Telegram UX.",
+      "status": "active",
+      "key_decisions": "Default limit for sessions_history? Suggest 15-20 messages. Should Ghost read further if conversation references earlier decisions? Yes — Ghost's call. Register /ghost in channels.telegram.customCommands for native Telegram menu entry.",
+      "tags": [
+        "ghost",
+        "telegram",
+        "ux"
+      ],
+      "created_at": 1772228355,
+      "updated_at": 1772228954
+    },
+    {
       "id": 5,
       "title": "CC completion → OpenClaw system message routing",
-      "description": "Claude Code can emit a system message on task completion. Could enable CC as a true async subagent with push-based result delivery back into the agent graph. Trade-offs: Pro: zero-latency result delivery, native to CC. Con: session routing may not be deterministic — needs testing to confirm which agent receives the message.",
+      "description": "TESTED 2026-02-27: CC can send to any OpenClaw agent session via curl to /tools/invoke. Routing is explicit — CC specifies the target sessionKey. Both paths confirmed working: (1) agent:conductor:telegram:direct:29216737 → delivers directly to Andreas Telegram; (2) agent:main:main → Jared relays to Telegram. CC reads gateway token from openclaw.json. No MCP needed for basic routing — raw HTTP sufficient. Trade-offs: Pro: works NOW with zero infra changes. Con: gateway token in CC context = security surface; MCP would be cleaner long-term.",
       "rationale": "Unlocks CC as a first-class async subagent, not just a blocking tool call",
       "status": "active",
-      "key_decisions": "Which agent session receives the system message? Can we specify target explicitly? Does it conflict with existing session routing?",
+      "key_decisions": "RESOLVED: routing is deterministic. Open: should token be passed via env var vs file read? MCP still worth doing for cleaner interface (idea #6).",
       "tags": [
         "claude-code",
         "subagent",
         "architecture"
       ],
       "created_at": 1772225819,
-      "updated_at": 1772225819
+      "updated_at": 1772226601
     },
     {
       "id": 6,
