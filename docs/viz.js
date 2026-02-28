@@ -176,6 +176,7 @@
   // ── Hide-rejected filter state ───────────────────────────────────────────
   let hideRejected = loadCookie('telos_hide_rejected', 'false') === 'true';
   let hideShelved  = loadCookie('telos_hide_shelved',  'false') === 'true';
+  let hideBlocked  = loadCookie('telos_hide_blocked',  'false') === 'true';
 
   function applyRejectedFilter(node) {
     if (!node) return node;
@@ -194,6 +195,14 @@
       .map(c => applyShelvedFilter(c));
     return node;
   }
+  function applyBlockedFilter(node) {
+    if (!node) return node;
+    if (!node.children || node.children.length === 0) return node;
+    node.children = node.children
+      .filter(c => c.status !== 'blocked')
+      .map(c => applyBlockedFilter(c));
+    return node;
+  }
 
   function syncHideRejectedBtn() {
     const btn = document.getElementById('hide-rejected-btn');
@@ -210,6 +219,13 @@
     btn.classList.toggle('btn-active', hideShelved);
     btn.setAttribute('aria-pressed', String(hideShelved));
   }
+  function syncHideBlockedBtn() {
+    const btn = document.getElementById('hide-blocked-btn');
+    if (!btn) return;
+    btn.textContent = hideBlocked ? 'Show blocked' : '🔒 Hide blocked';
+    btn.classList.toggle('btn-active', hideBlocked);
+    btn.setAttribute('aria-pressed', String(hideBlocked));
+  }
 
   window.toggleHideRejected = function () {
     hideRejected = !hideRejected;
@@ -221,6 +237,7 @@
     if (cutoff > 0) applyDoneFilter(copy, cutoff);
     if (hideRejected) applyRejectedFilter(copy);
     if (hideShelved)  applyShelvedFilter(copy);
+    if (hideBlocked)  applyBlockedFilter(copy);
     const newRoot = d3.hierarchy(copy, d => d.children && d.children.length ? d.children : null);
     newRoot.x0 = width / 2;
     newRoot.y0 = height / 2;
@@ -245,6 +262,31 @@
     if (cutoff > 0) applyDoneFilter(copy, cutoff);
     if (hideRejected) applyRejectedFilter(copy);
     if (hideShelved)  applyShelvedFilter(copy);
+    if (hideBlocked)  applyBlockedFilter(copy);
+    const newRoot = d3.hierarchy(copy, d => d.children && d.children.length ? d.children : null);
+    newRoot.x0 = width / 2;
+    newRoot.y0 = height / 2;
+    newRoot.descendants().forEach(d => {
+      if (d.depth > 1) { d._children = d.children; d.children = null; }
+    });
+    root = newRoot;
+    window._telosRoot = root;
+    gLinks.selectAll('.link').remove();
+    gNodes.selectAll('.node').remove();
+    update(root);
+    setTimeout(resetView, 400);
+  };
+  window.toggleHideBlocked = function () {
+    hideBlocked = !hideBlocked;
+    saveCookie('telos_hide_blocked', hideBlocked);
+    syncHideBlockedBtn();
+    if (!rawTreeData) return;
+    let copy = JSON.parse(JSON.stringify(rawTreeData));
+    const cutoff = getCutoffSecs(doneFilterDays);
+    if (cutoff > 0) applyDoneFilter(copy, cutoff);
+    if (hideRejected) applyRejectedFilter(copy);
+    if (hideShelved)  applyShelvedFilter(copy);
+    if (hideBlocked)  applyBlockedFilter(copy);
     const newRoot = d3.hierarchy(copy, d => d.children && d.children.length ? d.children : null);
     newRoot.x0 = width / 2;
     newRoot.y0 = height / 2;
@@ -354,6 +396,7 @@
     if (cutoff > 0) applyDoneFilter(treeData, cutoff);
     if (hideRejected) applyRejectedFilter(treeData);
     if (hideShelved)  applyShelvedFilter(treeData);
+    if (hideBlocked)  applyBlockedFilter(treeData);
 
     root = d3.hierarchy(treeData, d => d.children && d.children.length ? d.children : null);
     root.x0 = width  / 2;
@@ -434,6 +477,7 @@
       );
       if (hideRejected) applyRejectedFilter(filtered);
       if (hideShelved)  applyShelvedFilter(filtered);
+    if (hideBlocked)  applyBlockedFilter(filtered);
       const newRoot = d3.hierarchy(filtered, d => d.children && d.children.length ? d.children : null);
       newRoot.x0 = width  / 2;
       newRoot.y0 = height / 2;
@@ -1840,6 +1884,7 @@
         );
         if (hideRejected) applyRejectedFilter(filtered);
         if (hideShelved)  applyShelvedFilter(filtered);
+    if (hideBlocked)  applyBlockedFilter(filtered);
 
         root = d3.hierarchy(filtered, d => d.children && d.children.length ? d.children : null);
         root.x0 = width  / 2;
