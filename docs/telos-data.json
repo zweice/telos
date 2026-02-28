@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-02-28T19:47:25.990Z",
+  "generated_at": "2026-02-28T20:03:03.725Z",
   "tree": [
     {
       "id": 1,
@@ -1930,7 +1930,7 @@
                   "title": "Book notary appointment (online or in-person)",
                   "type": "task",
                   "owner": "atlas",
-                  "status": "in_progress",
+                  "status": "blocked",
                   "value": 0,
                   "cost_estimate": 0,
                   "cost_actual": 0,
@@ -1942,7 +1942,12 @@
                   "completed_at": 1772202620,
                   "progress": 0,
                   "description": null,
-                  "notes": [],
+                  "notes": [
+                    {
+                      "ts": 1772308979,
+                      "text": "Online notary option available: online.notar.de supports UG formation via video notarization (since Aug 2022). Musterprotokoll eligible → notary fee ~€115 at €25k Stammkapital. Booking requires Andreas to schedule directly (video ID verification). Recommend: visit online.notar.de, select UG formation, pick slot. In-person alternative: Notariat Rothenbaumchaussee Hamburg."
+                    }
+                  ],
                   "children": []
                 },
                 {
