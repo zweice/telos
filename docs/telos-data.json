@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-01T14:47:18.297Z",
+  "generated_at": "2026-03-01T15:41:37.617Z",
   "tree": [
     {
       "id": 1,
@@ -200,16 +200,16 @@
               "title": "Investigate WIP limits + session reset mechanism",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "done",
               "value": 2,
               "cost_estimate": 2,
-              "cost_actual": null,
+              "cost_actual": 0.05,
               "roi": 0,
               "effort_hours_estimate": null,
-              "effort_hours_actual": null,
+              "effort_hours_actual": 0.3,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772379697,
               "progress": 0,
               "description": null,
               "notes": [],
