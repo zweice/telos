@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-01T08:39:21.377Z",
+  "generated_at": "2026-03-01T09:47:29.487Z",
   "tree": [
     {
       "id": 1,
@@ -1274,7 +1274,12 @@
               "completed_at": 1772279211,
               "progress": 0,
               "description": "Review all subagent specs written by Conductor (and patterns in HEARTBEAT.md). Ensure: (1) static instructions/SOPs always precede dynamic context (task params, current state, outputs) — cache matches on prefix so mixed ordering kills cache hit rate; (2) specs don't include unnecessary session history or background context — scope to active task only. Update spec templates in HEARTBEAT.md and SOUL.md with a static-first rule.",
-              "notes": [],
+              "notes": [
+                {
+                  "ts": 1772355031,
+                  "text": "Outcome: Added static-first spec ordering rule to HEARTBEAT.md and SOUL.md. Rule: every sessions_spawn spec must put static instructions/SOPs/background first (cacheable prefix), dynamic task params last. Also added explicit state-scoping rule: never include main session history in subagent specs. Changes committed in 676ac25. Skill subagent-ops NOT updated at time of completion — requires follow-up update."
+                }
+              ],
               "children": []
             },
             {
@@ -1293,7 +1298,7 @@
               "end_date": null,
               "completed_at": null,
               "progress": 0,
-              "description": "Convention change: value and cost fields should use Fibonacci-ish scale 0-100 (valid values: 0,1,2,3,5,8,13,21,34,55,89). ROI is computed as value/cost. Migration needed: (1) re-score all existing nodes on 0-100 scale relative to each other, (2) fill in cost estimates for all nodes currently at 0, (3) enforce convention in CLI (add constraint or docs). ROI field should be auto-computed or at least documented as value/cost.",
+              "description": "Convention change: value and cost fields should use Fibonacci-ish scale 0-100 (valid values: 0,1,2,3,5,8,13,21,34,55,89). ROI is computed as value/cost. Tasks: (1) re-score all existing nodes on 0-100 scale relative to each other, (2) fill in cost estimates for all nodes currently at 0, (3) enforce convention in CLI (add constraint or docs), (4) update telos-workflow skill (all agents) to document the value/cost/ROI convention so agents add nodes correctly going forward, (5) add closing discipline to telos-workflow skill: every task completion requires a closing comment with outcome, links to artifacts (commits, Drive files, docs), key decisions made, and trade-offs considered.",
               "notes": [],
               "children": []
             }
