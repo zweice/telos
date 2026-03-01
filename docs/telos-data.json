@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-01T08:06:10.912Z",
+  "generated_at": "2026-03-01T08:39:21.377Z",
   "tree": [
     {
       "id": 1,
@@ -1274,6 +1274,26 @@
               "completed_at": 1772279211,
               "progress": 0,
               "description": "Review all subagent specs written by Conductor (and patterns in HEARTBEAT.md). Ensure: (1) static instructions/SOPs always precede dynamic context (task params, current state, outputs) — cache matches on prefix so mixed ordering kills cache hit rate; (2) specs don't include unnecessary session history or background context — scope to active task only. Update spec templates in HEARTBEAT.md and SOUL.md with a static-first rule.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 114,
+              "title": "Normalize value + cost fields to Fibonacci 0-100 scale; ROI = value/cost",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 8,
+              "cost_estimate": 3,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Convention change: value and cost fields should use Fibonacci-ish scale 0-100 (valid values: 0,1,2,3,5,8,13,21,34,55,89). ROI is computed as value/cost. Migration needed: (1) re-score all existing nodes on 0-100 scale relative to each other, (2) fill in cost estimates for all nodes currently at 0, (3) enforce convention in CLI (add constraint or docs). ROI field should be auto-computed or at least documented as value/cost.",
               "notes": [],
               "children": []
             }
