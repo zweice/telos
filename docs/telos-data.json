@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-01T15:41:37.617Z",
+  "generated_at": "2026-03-01T20:28:01.632Z",
   "tree": [
     {
       "id": 1,
@@ -175,25 +175,25 @@
               "title": "Jared → Chief of Staff redesign",
               "type": "task",
               "owner": "conductor",
-              "status": "blocked",
+              "status": "done",
               "value": 0,
               "cost_estimate": 0,
-              "cost_actual": null,
+              "cost_actual": 0,
               "roi": 0,
               "effort_hours_estimate": null,
-              "effort_hours_actual": null,
+              "effort_hours_actual": 0.1,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772396881,
               "progress": 0,
               "description": null,
-              "notes": [],
-              "children": [],
-              "locked": true,
-              "locked_by": {
-                "id": 95,
-                "title": "Andreas: Approve Atlas→Jared handover (gate — blocks COO formalization)"
-              }
+              "notes": [
+                {
+                  "ts": 1772396881,
+                  "text": "SOUL.md updated with Chief of Staff section. Model already on Sonnet 4.6. AGENTS.md updated in atlas, conductor, workspace. Committed 562a030."
+                }
+              ],
+              "children": []
             },
             {
               "id": 94,
@@ -233,12 +233,7 @@
               "progress": 0,
               "description": null,
               "notes": [],
-              "children": [],
-              "locked": true,
-              "locked_by": {
-                "id": 95,
-                "title": "Andreas: Approve Atlas→Jared handover (gate — blocks COO formalization)"
-              }
+              "children": []
             }
           ]
         },
@@ -2157,7 +2152,7 @@
               "title": "Andreas: Approve Atlas→Jared handover (gate — blocks COO formalization)",
               "type": "task",
               "owner": "andreas",
-              "status": "open",
+              "status": "done",
               "value": 5,
               "cost_estimate": 1,
               "cost_actual": null,
@@ -2166,10 +2161,15 @@
               "effort_hours_actual": null,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772395941,
               "progress": 0,
               "description": null,
-              "notes": [],
+              "notes": [
+                {
+                  "ts": 1772395943,
+                  "text": "Andreas approved 2026-03-01 via Telegram"
+                }
+              ],
               "children": []
             }
           ]
