@@ -7,6 +7,17 @@ const TelosDB = require('./db');
 const TelosQueries = require('./queries');
 const { exportForViz } = require('./viz');
 
+// Fibonacci scale validation
+const FIBONACCI_SCALE = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
+
+function validateFibonacci(value, fieldName) {
+  if (value === undefined || value === null) return true;
+  if (!Number.isInteger(value) || !FIBONACCI_SCALE.includes(value)) {
+    throw new Error(`❌ ${fieldName} must be on Fibonacci scale: ${FIBONACCI_SCALE.join(', ')}`);
+  }
+  return true;
+}
+
 const program = new Command();
 
 program
@@ -43,6 +54,9 @@ program
   .option('--start-date <date>', 'Planned start date (YYYY-MM-DD)')
   .option('--end-date <date>', 'Planned end date / deadline (YYYY-MM-DD)')
   .action((title, options) => {
+    // Validate Fibonacci scale values
+    if (options.value !== undefined) validateFibonacci(Math.round(options.value), 'value');
+    if (options.cost !== undefined) validateFibonacci(Math.round(options.cost), 'cost');
     const db = new TelosDB();
     const result = db.add({
       title,
@@ -180,6 +194,9 @@ program
   .option('--end-date <date>', 'Planned end date / deadline (YYYY-MM-DD)')
   .option('--progress <n>', 'Progress percent (0-100)', parseInt)
   .action((id, options) => {
+    // Validate Fibonacci scale values
+    if (options.value !== undefined) validateFibonacci(Math.round(options.value), 'value');
+    if (options.cost !== undefined) validateFibonacci(Math.round(options.cost), 'cost');
     const db = new TelosDB();
     const updates = {};
     if (options.title) updates.title = options.title;
@@ -459,6 +476,9 @@ idea
   .option('-k, --key-decisions <text>', 'Key decisions or open questions')
   .option('--tags <tags>', 'Comma-separated tags')
   .action((title, options) => {
+    // Validate Fibonacci scale values
+    if (options.value !== undefined) validateFibonacci(options.value, 'value');
+    if (options.cost !== undefined) validateFibonacci(options.cost, 'cost');
     const db = new TelosDB();
     db.ensureIdeasTable();
     const tags = options.tags ? options.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
@@ -536,6 +556,9 @@ idea
   .option('-k, --key-decisions <text>', 'New key decisions')
   .option('--tags <tags>', 'Comma-separated tags (replaces existing)')
   .action((id, options) => {
+    // Validate Fibonacci scale values
+    if (options.value !== undefined) validateFibonacci(options.value, 'value');
+    if (options.cost !== undefined) validateFibonacci(options.cost, 'cost');
     const db = new TelosDB();
     db.ensureIdeasTable();
     const updates = {};
