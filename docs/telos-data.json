@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-01T20:28:01.632Z",
+  "generated_at": "2026-03-02T02:31:48.048Z",
   "tree": [
     {
       "id": 1,
@@ -220,7 +220,7 @@
               "title": "Formalize Atlas as COO-Agent (SOUL.md, AGENTS.md, RACI)",
               "type": "task",
               "owner": "conductor",
-              "status": "blocked",
+              "status": "open",
               "value": 8,
               "cost_estimate": 3,
               "cost_actual": null,
@@ -1954,8 +1954,8 @@
                   "id": 39,
                   "title": "Book notary appointment (online or in-person)",
                   "type": "task",
-                  "owner": "atlas",
-                  "status": "blocked",
+                  "owner": "andreas",
+                  "status": "open",
                   "value": 5,
                   "cost_estimate": 2,
                   "cost_actual": 0,
@@ -2501,18 +2501,6 @@
       "blocked_id": 20,
       "blocker_id": 37,
       "type": "soft"
-    },
-    {
-      "id": 16,
-      "blocked_id": 96,
-      "blocker_id": 95,
-      "type": "hard"
-    },
-    {
-      "id": 17,
-      "blocked_id": 90,
-      "blocker_id": 95,
-      "type": "hard"
     },
     {
       "id": 18,
