@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-02T02:31:48.048Z",
+  "generated_at": "2026-03-02T07:05:13.665Z",
   "tree": [
     {
       "id": 1,
@@ -89,7 +89,7 @@
               "id": 5,
               "title": "Financial automation (invoice parsing)",
               "type": "task",
-              "owner": "forge",
+              "owner": "conductor",
               "status": "blocked",
               "value": 13,
               "cost_estimate": 8,
@@ -1382,7 +1382,7 @@
               "id": 20,
               "title": "Shadow Pilot Execution",
               "type": "task",
-              "owner": "forge",
+              "owner": "conductor",
               "status": "blocked",
               "value": 21,
               "cost_estimate": 8,
