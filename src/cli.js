@@ -8,7 +8,7 @@ const TelosQueries = require('./queries');
 const { exportForViz } = require('./viz');
 
 // Fibonacci scale validation
-const FIBONACCI_SCALE = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
+const FIBONACCI_SCALE = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 100];
 
 function validateFibonacci(value, fieldName) {
   if (value === undefined || value === null) return true;
