@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-03T06:50:38.320Z",
+  "generated_at": "2026-03-03T06:51:33.104Z",
   "tree": [
     {
       "id": 1,
@@ -2319,6 +2319,17 @@
     }
   ],
   "ideas": [
+    {
+      "id": 9,
+      "title": "Telos DB health check: alert on node count divergence",
+      "description": "If telos.db node count vs API node count diverges by >10, alert Andreas. Root cause: DB can be deleted/replaced on disk while API process holds it open via fd — silent divergence. Happened 2026-03-03 during gdrive migration work.",
+      "rationale": "Prevents silent data divergence between CLI and web app going undetected",
+      "status": "active",
+      "key_decisions": "What threshold triggers alert? Suggested >10 nodes. Where does check run — audit cron or dedicated monitor?",
+      "tags": [],
+      "created_at": 1772520690,
+      "updated_at": 1772520690
+    },
     {
       "id": 8,
       "title": "/ghost Telegram command",
