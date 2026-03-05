@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-05T02:31:21.753Z",
+  "generated_at": "2026-03-05T02:31:47.697Z",
   "tree": [
     {
       "id": 1,
@@ -8,7 +8,7 @@
       "type": "goal",
       "owner": "andreas",
       "status": "in_progress",
-      "value": 89,
+      "value": 100,
       "cost_estimate": 0,
       "cost_actual": null,
       "roi": 0,
