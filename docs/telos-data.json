@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-06T20:04:53.729Z",
+  "generated_at": "2026-03-06T20:09:41.757Z",
   "tree": [
     {
       "id": 1,
@@ -1941,7 +1941,7 @@
               "title": "Define shadow pilot pricing model",
               "type": "task",
               "owner": "atlas",
-              "status": "open",
+              "status": "done",
               "value": 21,
               "cost_estimate": 2,
               "cost_actual": null,
@@ -1950,7 +1950,7 @@
               "effort_hours_actual": null,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772827781,
               "progress": 0,
               "description": "Decide: Is the shadow pilot free or paid? What triggers conversion to paid (#21)? Define pricing tiers (per document, per month, per seat). Must be decided before first outreach goes out — prospects will ask.",
               "notes": [],
@@ -1981,7 +1981,7 @@
               "title": "Define shadow pilot success criteria + write pilot brief",
               "type": "task",
               "owner": "atlas",
-              "status": "open",
+              "status": "done",
               "value": 21,
               "cost_estimate": 2,
               "cost_actual": null,
@@ -1990,7 +1990,7 @@
               "effort_hours_actual": null,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1772827781,
               "progress": 0,
               "description": "Define: (1) specific test the pilot must pass (e.g. retrieve 5 random docs in <30s each), (2) time limit (2-4 weeks), (3) conversion trigger ('if pilot passes, 20-min call to discuss ongoing access'). Write a 1-page pilot brief for prospects. This must exist before first outreach is sent.",
               "notes": [],
