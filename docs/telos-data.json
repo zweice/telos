@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-06T02:31:37.884Z",
+  "generated_at": "2026-03-06T19:14:14.632Z",
   "tree": [
     {
       "id": 1,
@@ -1336,7 +1336,28 @@
               "progress": 0,
               "description": null,
               "notes": [],
-              "children": []
+              "children": [
+                {
+                  "id": 119,
+                  "title": "Confirm parser supports Pain B UX (fast document retrieval)",
+                  "type": "task",
+                  "owner": "andreas",
+                  "status": "open",
+                  "value": 34,
+                  "cost_estimate": 5,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Validate that the freight parser MVP output enables a freight forwarder employee to search by shipment number / customer name and retrieve all associated documents in <30 seconds. This is the core UX requirement for the shadow pilot to succeed. If not present, it must be built before pilot launch.",
+                  "notes": [],
+                  "children": []
+                }
+              ]
             },
             {
               "id": 18,
@@ -1887,6 +1908,66 @@
               "completed_at": null,
               "progress": 0,
               "description": null,
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 118,
+              "title": "Reposition offer: 'Claims Response Intelligence' framing",
+              "type": "task",
+              "owner": "atlas",
+              "status": "open",
+              "value": 21,
+              "cost_estimate": 3,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Rewrite all sales/pitch materials (one-pager, fax copy, shadow pilot brief) to center on Pain B: 'When a customer complaint arrives, retrieve the document in 30 seconds.' Remove all 'document parser / data entry automation' language as lead hooks.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 120,
+              "title": "Define shadow pilot pricing model",
+              "type": "task",
+              "owner": "atlas",
+              "status": "open",
+              "value": 21,
+              "cost_estimate": 2,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Decide: Is the shadow pilot free or paid? What triggers conversion to paid (#21)? Define pricing tiers (per document, per month, per seat). Must be decided before first outreach goes out — prospects will ask.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 121,
+              "title": "Create Blue Ocean value innovation canvas",
+              "type": "task",
+              "owner": "atlas",
+              "status": "open",
+              "value": 13,
+              "cost_estimate": 2,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Map MacroHard vs Shipamax vs status quo across key competitive dimensions: price, target segment, pain angle, channel, sales model, product complexity. Produces: a positioning document that defines our uncontested market space and guards against Red Ocean drift.",
               "notes": [],
               "children": []
             }
