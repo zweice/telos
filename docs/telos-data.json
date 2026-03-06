@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-05T02:31:47.697Z",
+  "generated_at": "2026-03-06T02:31:37.884Z",
   "tree": [
     {
       "id": 1,
@@ -579,9 +579,9 @@
                   "id": 77,
                   "title": "Telos v2: DAG layer + Theory of Constraints",
                   "type": "milestone",
-                  "owner": "forge",
+                  "owner": "conductor",
                   "status": "done",
-                  "value": 50000,
+                  "value": 34,
                   "cost_estimate": 0,
                   "cost_actual": null,
                   "roi": 0,
