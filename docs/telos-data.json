@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-07T02:05:27.902Z",
+  "generated_at": "2026-03-07T02:31:27.008Z",
   "tree": [
     {
       "id": 1,
@@ -175,7 +175,7 @@
               "title": "Jared → Chief of Staff redesign",
               "type": "task",
               "owner": "conductor",
-              "status": "done",
+              "status": "shelved",
               "value": 0,
               "cost_estimate": 0,
               "cost_actual": 0,
@@ -1473,7 +1473,7 @@
                   "title": "Outreach Wave 1: Send faxes to 8 HOT leads",
                   "type": "task",
                   "owner": "atlas",
-                  "status": "blocked",
+                  "status": "open",
                   "value": 21,
                   "cost_estimate": 5,
                   "cost_actual": null,
@@ -1486,12 +1486,7 @@
                   "progress": 0,
                   "description": null,
                   "notes": [],
-                  "children": [],
-                  "locked": true,
-                  "locked_by": {
-                    "id": 47,
-                    "title": "Andreas: approve outreach launch (first wave 8 companies)"
-                  }
+                  "children": []
                 },
                 {
                   "id": 62,
@@ -2619,12 +2614,6 @@
       "id": 3,
       "blocked_id": 44,
       "blocker_id": 43,
-      "type": "hard"
-    },
-    {
-      "id": 4,
-      "blocked_id": 61,
-      "blocker_id": 47,
       "type": "hard"
     },
     {
