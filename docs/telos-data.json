@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-08T02:32:27.411Z",
+  "generated_at": "2026-03-14T14:51:00.320Z",
   "tree": [
     {
       "id": 1,
@@ -1486,7 +1486,12 @@
                   "progress": 0,
                   "description": null,
                   "notes": [],
-                  "children": []
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 47,
+                    "title": "Andreas: approve outreach launch (first wave 8 companies)"
+                  }
                 },
                 {
                   "id": 62,
@@ -2471,6 +2476,17 @@
   ],
   "ideas": [
     {
+      "id": 10,
+      "title": "MemoryHub — shared global memory network for AI agents",
+      "description": "A global memory layer that any agent can tap into. All agent memory lives there and is refined over time. Network effect: the more agents participate, the better it gets. Like Facebook but for agent memories. Privacy layer built in to prevent leaking non-public/personal info. Agents contribute anonymized/sanitized memories and benefit from the collective knowledge of all participating agents.",
+      "rationale": "Current agent memory is siloed per-agent, per-deployment. A shared substrate would eliminate cold-start problems, enable cross-deployment learning, and create a defensible network-effect moat. MacroHard is already building memory infrastructure — this is a natural productization path.",
+      "status": "active",
+      "key_decisions": "Privacy architecture: how to strip PII before contributing? Opt-in vs opt-out contribution model? Federated vs centralized? Monetization: API access fees, premium tiers? How to prevent poisoning/manipulation of shared memory? What's the trust model for contributed memories?",
+      "tags": [],
+      "created_at": 1773499852,
+      "updated_at": 1773499852
+    },
+    {
       "id": 9,
       "title": "Telos DB health check: alert on node count divergence",
       "description": "If telos.db node count vs API node count diverges by >10, alert Andreas. Root cause: DB can be deleted/replaced on disk while API process holds it open via fd — silent divergence. Happened 2026-03-03 during gdrive migration work.",
@@ -2698,6 +2714,12 @@
       "id": 24,
       "blocked_id": 68,
       "blocker_id": 37,
+      "type": "hard"
+    },
+    {
+      "id": 25,
+      "blocked_id": 61,
+      "blocker_id": 47,
       "type": "hard"
     }
   ]
