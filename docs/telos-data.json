@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-14T18:42:38.104Z",
+  "generated_at": "2026-03-14T18:46:27.910Z",
   "tree": [
     {
       "id": 1,
@@ -259,16 +259,16 @@
                   "title": "Verify OpenClaw hook API (before_prompt_build + agent_end)",
                   "type": "task",
                   "owner": "atlas",
-                  "status": "open",
+                  "status": "done",
                   "value": 8,
                   "cost_estimate": 1,
-                  "cost_actual": null,
+                  "cost_actual": 0.05,
                   "roi": 0,
                   "effort_hours_estimate": null,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 0.5,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1773513984,
                   "progress": 0,
                   "description": "Confirm before_prompt_build and agent_end hooks exist and are plugin-accessible in current OpenClaw version. Check docs + source. This gates the entire architecture.",
                   "notes": [],
