@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-14T20:14:54.867Z",
+  "generated_at": "2026-03-14T23:11:39.233Z",
   "tree": [
     {
       "id": 1,
@@ -1441,7 +1441,7 @@
               "title": "Migrate agent threads from Telegram to Discord",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "in_progress",
               "value": 0,
               "cost_estimate": 0,
               "cost_actual": null,
