@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-14T19:24:59.498Z",
+  "generated_at": "2026-03-14T19:56:36.893Z",
   "tree": [
     {
       "id": 1,
@@ -2218,7 +2218,12 @@
               "completed_at": null,
               "progress": 0,
               "description": null,
-              "notes": [],
+              "notes": [
+                {
+                  "ts": 1773518193,
+                  "text": "2026-03-14: Notary appointment completed. Now 'in Gründung' — waiting for Handelsregister confirmation letter."
+                }
+              ],
               "children": [
                 {
                   "id": 38,
