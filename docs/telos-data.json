@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-08T02:32:27.411Z",
+  "generated_at": "2026-03-14T20:14:54.867Z",
   "tree": [
     {
       "id": 1,
@@ -234,6 +234,141 @@
               "description": null,
               "notes": [],
               "children": []
+            },
+            {
+              "id": 125,
+              "title": "MemoryHub",
+              "type": "milestone",
+              "owner": "conductor",
+              "status": "open",
+              "value": 55,
+              "cost_estimate": 13,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Push-based persistent memory layer for OpenClaw agents. Solves context loss, enables cross-agent knowledge sharing. LanceDB embedded + Haiku async extraction + before_prompt_build injection. Phase 1: personal tool / OpenClaw plugin. Phase 2: ClawHub distribution. Phase 3: enterprise on-prem product.",
+              "notes": [],
+              "children": [
+                {
+                  "id": 126,
+                  "title": "Verify OpenClaw hook API (before_prompt_build + agent_end)",
+                  "type": "task",
+                  "owner": "atlas",
+                  "status": "done",
+                  "value": 8,
+                  "cost_estimate": 1,
+                  "cost_actual": 0.05,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": 0.5,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": 1773514064,
+                  "progress": 0,
+                  "description": "Confirm before_prompt_build and agent_end hooks exist and are plugin-accessible in current OpenClaw version. Check docs + source. This gates the entire architecture.",
+                  "notes": [
+                    {
+                      "ts": 1773514064,
+                      "text": "Hook API verified. before_prompt_build and agent_end DO NOT EXIST (hallucinated by the doc). Available hooks for MemoryHub: message:preprocessed (read path - fires before agent sees msg), message:sent (write path trigger), session:compact:before (save before compaction), agent:bootstrap (can mutate bootstrap files). CRITICAL FIND: LanceDB memory plugin already bundled in OpenClaw (plugins.slots.memory = memory-lancedb). Must evaluate before building custom."
+                    }
+                  ],
+                  "children": []
+                },
+                {
+                  "id": 127,
+                  "title": "Design LanceDB schema + multi-agent partitioning",
+                  "type": "task",
+                  "owner": "atlas",
+                  "status": "done",
+                  "value": 13,
+                  "cost_estimate": 2,
+                  "cost_actual": 1,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": 0.5,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": 1773514867,
+                  "progress": 0,
+                  "description": "Define Arrow schema: id, vector, content, memory_type, tenant_id, agent_id, is_shared, timestamp. Validate ClawVault ontology types (fact/decision/lesson/preference/commitment/relationship/project).",
+                  "notes": [
+                    {
+                      "ts": 1773514509,
+                      "text": "Bundled plugin analysis complete. memory-lancedb exists and is 60% of what we need. \n\nWHAT IT ALREADY HAS:\n- LanceDB embedded, in-process, no daemon\n- before_agent_start hook for auto-recall (injects <relevant-memories> block as prependContext)\n- agent_end hook for auto-capture (user messages only, rule-based trigger filters)\n- memory_recall / memory_store / memory_forget tools\n- Prompt injection protection (escaping + pattern detection)\n- Categories: preference, fact, decision, entity, other\n- openclaw ltm CLI commands\n\nGAPS vs MemoryHub vision:\n1. Auto-capture is rule-based regex triggers (MEMORY_TRIGGERS) + 500 char limit — misses most important context\n2. No Haiku/LLM consolidation layer — can't extract structured facts from long conversations\n3. No agent_id partitioning — single shared DB for all agents (context pollution risk)\n4. No is_shared cross-agent memory flag\n5. captureMaxChars cap of 500 chars means most meaningful exchanges are SKIPPED\n6. No session:compact:before hook to save context before compaction\n\nSTRATEGY: Extend the bundled plugin rather than build from scratch.\n- Enable it now with autoRecall=true, autoCapture=true as baseline\n- Build MemoryHub as a second plugin that: (a) adds Haiku consolidation on agent_end, (b) adds agent_id scoping, (c) removes the 500-char cap limitation"
+                    },
+                    {
+                      "ts": 1773514862,
+                      "text": "Schema design complete based on gap analysis:\n\nFINAL LANCEDB SCHEMA (Arrow):\n- id: string (UUID)\n- vector: float32[1536] (text-embedding-3-small) or float32[1024] (voyage-3)\n- content: string (full memory text, no char cap)\n- memory_type: string (fact/decision/lesson/preference/commitment/relationship/project)\n- agent_id: string (atlas/main/conductor/forge + '__shared__' for cross-agent)\n- is_shared: bool (cross-agent visible flag)\n- session_key: string (source session)\n- timestamp: int64 (unix ms)\n- importance: float (0.0-1.0)\n- source_turns: string[] (turn IDs that contributed to this memory)\n\nPARTITIONING STRATEGY:\n- Single LanceDB table 'agent_memories' with agent_id column for filtering\n- Query: WHERE agent_id = '{current_agent}' OR is_shared = true\n- No separate tables per agent — simpler, still fast at expected scale (<100k rows)\n- Full-text index on content for BM25 hybrid search\n\nEXTENSION APPROACH: Build on bundled memory-lancedb plugin, not from scratch."
+                    }
+                  ],
+                  "children": []
+                },
+                {
+                  "id": 128,
+                  "title": "Build write path: agent_end hook + Haiku extraction + LanceDB ingestion",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "in_progress",
+                  "value": 21,
+                  "cost_estimate": 5,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Auto-capture pipeline: QMD JSONL delta -> Haiku consolidation (with prompt injection defense) -> Voyage-3/text-embedding-3-small vectorization -> LanceDB write. Runs async, does not block agent turn.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 129,
+                  "title": "Build read path: before_prompt_build hook + hybrid retrieval + context injection",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "done",
+                  "value": 21,
+                  "cost_estimate": 5,
+                  "cost_actual": 4,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": 3,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": 1773516297,
+                  "progress": 0,
+                  "description": "Per-turn memory injection: extract latest user msg -> vectorize -> LanceDB hybrid search (vector + BM25, filtered by agent_id + is_shared) -> inject as volatile system context block. Bypasses chat history array to avoid compaction.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 130,
+                  "title": "Ship as ClawHub plugin + dogfood on Atlas/Jared",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "done",
+                  "value": 34,
+                  "cost_estimate": 3,
+                  "cost_actual": 6,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": 8,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": 1773516203,
+                  "progress": 0,
+                  "description": "Package as publishable OpenClaw plugin. Deploy on Atlas and Jared first. Track: context retention quality, retrieval relevance, token overhead per turn. Publish to ClawHub when stable.",
+                  "notes": [],
+                  "children": []
+                }
+              ]
             }
           ]
         },
@@ -1170,7 +1305,7 @@
               "effort_hours_estimate": null,
               "effort_hours_actual": null,
               "start_date": null,
-              "end_date": null,
+              "end_date": 1775001600,
               "completed_at": null,
               "progress": 0,
               "description": null,
@@ -1182,6 +1317,10 @@
                 {
                   "ts": 1772226263,
                   "text": "Decision deferred: cost trend data needed before deciding. Child task added to track 30-day costs. Pro/Max subscription only makes sense if CC usage consistently exceeds break-even threshold."
+                },
+                {
+                  "ts": 1773507720,
+                  "text": "2026-03-14: Reviewed. Recommendation: stay on API. No volume spike justifying Pro/Max. Revisit April 1."
                 }
               ],
               "children": [
@@ -1294,6 +1433,26 @@
               "completed_at": 1772376387,
               "progress": 0,
               "description": "\n## Closing Summary\n\n**Outcomes:** \n- Successfully re-scored all 94 existing task nodes from wildly inconsistent values (0-500,000,000) to coherent Fibonacci scale (0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89)\n- Filled cost estimates for all nodes using Fibonacci scale representing implementation effort in days (previously most were 0)\n- Value distribution is now meaningful: 2 tasks at 34 (major initiatives), 5 at 21 (major drivers), 13 at 13 (significant enablers), with long tail of smaller items\n- Added Fibonacci scale validation to CLI—prevents future bad values via validateFibonacci() in add/update commands\n- Updated telos-workflow SKILL.md for all 5 agents (atlas, forge, main, conductor, ghost) with complete value/cost/ROI convention and enhanced closing discipline template\n\n**Key decisions:**\n- Fibonacci scale chosen over linear: natural clustering, reduces false precision, aligned with planning literature\n- Normalized to 0-89 range (not 0-100): keeps values on discrete Fibonacci numbers, prevents interpolation\n- Cost = implementation effort in days, NOT euros: better for technical planning, independent of labor rates\n- ROI = value/cost (not stored, computed): prevents data sync bugs\n- Value/cost validation in CLI, not database: easier to iterate, clear user feedback, fails fast\n- Closing discipline template made specific: outcome + decisions + trade-offs + artifacts. This trains agents to document context for future reviewers\n\n**Trade-offs:**\n- Historical task names/descriptions don't perfectly align with new scale (e.g., task #15 'Freight Parser' is high-value, not just technical)—but the new values are more defensible than old ones\n- Validation is strict (only Fibonacci values accepted)—could be looser but consistency is more important than flexibility\n- Cost scale is effort in days, not calendar time—multiplier for team size must be applied externally\n\n**Spawned work:** None. Task 114 is self-contained.\n\n**Artifacts:**\n- Telos database rescored: ~/code/macrohard/telos/telos.db\n- CLI validation code: ~/code/macrohard/telos/src/cli.js (git commit a738d77)\n- Updated skill: ~/.openclaw/agents/{atlas,conductor,forge,main,ghost}/skills/telos-workflow/SKILL.md\n",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 131,
+              "title": "Migrate agent threads from Telegram to Discord",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Evaluate and migrate the agent thread setup (Jared, Atlas, Conductor heartbeat/work cycle threads) from Telegram topics to Discord. Discord threads have better ACP topic binding support, native thread management, and the recent 2026.3.7 improvements align better with Discord's model. Plan migration path, update cron session keys, test routing.",
               "notes": [],
               "children": []
             }
@@ -1486,7 +1645,12 @@
                   "progress": 0,
                   "description": null,
                   "notes": [],
-                  "children": []
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 47,
+                    "title": "Andreas: approve outreach launch (first wave 8 companies)"
+                  }
                 },
                 {
                   "id": 62,
@@ -2074,7 +2238,12 @@
               "completed_at": null,
               "progress": 0,
               "description": null,
-              "notes": [],
+              "notes": [
+                {
+                  "ts": 1773518193,
+                  "text": "2026-03-14: Notary appointment completed. Now 'in Gründung' — waiting for Handelsregister confirmation letter."
+                }
+              ],
               "children": [
                 {
                   "id": 38,
@@ -2471,6 +2640,17 @@
   ],
   "ideas": [
     {
+      "id": 10,
+      "title": "MemoryHub — shared global memory network for AI agents",
+      "description": "A global memory layer that any agent can tap into. All agent memory lives there and is refined over time. Network effect: the more agents participate, the better it gets. Like Facebook but for agent memories. Privacy layer built in to prevent leaking non-public/personal info. Agents contribute anonymized/sanitized memories and benefit from the collective knowledge of all participating agents.",
+      "rationale": "Current agent memory is siloed per-agent, per-deployment. A shared substrate would eliminate cold-start problems, enable cross-deployment learning, and create a defensible network-effect moat. MacroHard is already building memory infrastructure — this is a natural productization path.",
+      "status": "active",
+      "key_decisions": "Privacy architecture: how to strip PII before contributing? Opt-in vs opt-out contribution model? Federated vs centralized? Monetization: API access fees, premium tiers? How to prevent poisoning/manipulation of shared memory? What's the trust model for contributed memories?",
+      "tags": [],
+      "created_at": 1773499852,
+      "updated_at": 1773499852
+    },
+    {
       "id": 9,
       "title": "Telos DB health check: alert on node count divergence",
       "description": "If telos.db node count vs API node count diverges by >10, alert Andreas. Root cause: DB can be deleted/replaced on disk while API process holds it open via fd — silent divergence. Happened 2026-03-03 during gdrive migration work.",
@@ -2698,6 +2878,12 @@
       "id": 24,
       "blocked_id": 68,
       "blocker_id": 37,
+      "type": "hard"
+    },
+    {
+      "id": 25,
+      "blocked_id": 61,
+      "blocker_id": 47,
       "type": "hard"
     }
   ]
