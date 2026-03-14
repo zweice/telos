@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-14T20:02:46.539Z",
+  "generated_at": "2026-03-14T20:14:54.867Z",
   "tree": [
     {
       "id": 1,
@@ -1433,6 +1433,26 @@
               "completed_at": 1772376387,
               "progress": 0,
               "description": "\n## Closing Summary\n\n**Outcomes:** \n- Successfully re-scored all 94 existing task nodes from wildly inconsistent values (0-500,000,000) to coherent Fibonacci scale (0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89)\n- Filled cost estimates for all nodes using Fibonacci scale representing implementation effort in days (previously most were 0)\n- Value distribution is now meaningful: 2 tasks at 34 (major initiatives), 5 at 21 (major drivers), 13 at 13 (significant enablers), with long tail of smaller items\n- Added Fibonacci scale validation to CLI—prevents future bad values via validateFibonacci() in add/update commands\n- Updated telos-workflow SKILL.md for all 5 agents (atlas, forge, main, conductor, ghost) with complete value/cost/ROI convention and enhanced closing discipline template\n\n**Key decisions:**\n- Fibonacci scale chosen over linear: natural clustering, reduces false precision, aligned with planning literature\n- Normalized to 0-89 range (not 0-100): keeps values on discrete Fibonacci numbers, prevents interpolation\n- Cost = implementation effort in days, NOT euros: better for technical planning, independent of labor rates\n- ROI = value/cost (not stored, computed): prevents data sync bugs\n- Value/cost validation in CLI, not database: easier to iterate, clear user feedback, fails fast\n- Closing discipline template made specific: outcome + decisions + trade-offs + artifacts. This trains agents to document context for future reviewers\n\n**Trade-offs:**\n- Historical task names/descriptions don't perfectly align with new scale (e.g., task #15 'Freight Parser' is high-value, not just technical)—but the new values are more defensible than old ones\n- Validation is strict (only Fibonacci values accepted)—could be looser but consistency is more important than flexibility\n- Cost scale is effort in days, not calendar time—multiplier for team size must be applied externally\n\n**Spawned work:** None. Task 114 is self-contained.\n\n**Artifacts:**\n- Telos database rescored: ~/code/macrohard/telos/telos.db\n- CLI validation code: ~/code/macrohard/telos/src/cli.js (git commit a738d77)\n- Updated skill: ~/.openclaw/agents/{atlas,conductor,forge,main,ghost}/skills/telos-workflow/SKILL.md\n",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 131,
+              "title": "Migrate agent threads from Telegram to Discord",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Evaluate and migrate the agent thread setup (Jared, Atlas, Conductor heartbeat/work cycle threads) from Telegram topics to Discord. Discord threads have better ACP topic binding support, native thread management, and the recent 2026.3.7 improvements align better with Discord's model. Plan migration path, update cron session keys, test routing.",
               "notes": [],
               "children": []
             }
