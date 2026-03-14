@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-14T19:56:36.893Z",
+  "generated_at": "2026-03-14T20:02:46.539Z",
   "tree": [
     {
       "id": 1,
@@ -239,7 +239,7 @@
               "id": 125,
               "title": "MemoryHub",
               "type": "milestone",
-              "owner": "atlas",
+              "owner": "conductor",
               "status": "open",
               "value": 55,
               "cost_estimate": 13,
@@ -312,7 +312,7 @@
                   "id": 128,
                   "title": "Build write path: agent_end hook + Haiku extraction + LanceDB ingestion",
                   "type": "task",
-                  "owner": "atlas",
+                  "owner": "conductor",
                   "status": "in_progress",
                   "value": 21,
                   "cost_estimate": 5,
@@ -332,7 +332,7 @@
                   "id": 129,
                   "title": "Build read path: before_prompt_build hook + hybrid retrieval + context injection",
                   "type": "task",
-                  "owner": "atlas",
+                  "owner": "conductor",
                   "status": "done",
                   "value": 21,
                   "cost_estimate": 5,
@@ -352,7 +352,7 @@
                   "id": 130,
                   "title": "Ship as ClawHub plugin + dogfood on Atlas/Jared",
                   "type": "task",
-                  "owner": "atlas",
+                  "owner": "conductor",
                   "status": "done",
                   "value": 34,
                   "cost_estimate": 3,
