@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-14T18:46:27.910Z",
+  "generated_at": "2026-03-14T18:47:48.154Z",
   "tree": [
     {
       "id": 1,
@@ -268,10 +268,15 @@
                   "effort_hours_actual": 0.5,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": 1773513984,
+                  "completed_at": 1773514064,
                   "progress": 0,
                   "description": "Confirm before_prompt_build and agent_end hooks exist and are plugin-accessible in current OpenClaw version. Check docs + source. This gates the entire architecture.",
-                  "notes": [],
+                  "notes": [
+                    {
+                      "ts": 1773514064,
+                      "text": "Hook API verified. before_prompt_build and agent_end DO NOT EXIST (hallucinated by the doc). Available hooks for MemoryHub: message:preprocessed (read path - fires before agent sees msg), message:sent (write path trigger), session:compact:before (save before compaction), agent:bootstrap (can mutate bootstrap files). CRITICAL FIND: LanceDB memory plugin already bundled in OpenClaw (plugins.slots.memory = memory-lancedb). Must evaluate before building custom."
+                    }
+                  ],
                   "children": []
                 },
                 {
