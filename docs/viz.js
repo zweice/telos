@@ -4,7 +4,7 @@
 
   // ── Constants ────────────────────────────────────────────────────────────
   const EDGE_TREE_STROKE  = 'rgba(99,120,150,0.35)';
-  const EDGE_DEP_COLOR    = '#f97316';
+  const EDGE_DEP_COLOR    = 'var(--edge-dep, #f97316)';
   const EDGE_DIM_OPACITY  = 0.15;
 
   // Border glow colors per status
@@ -41,6 +41,21 @@
     secondaryField:     'none',
     hideShelved:        false,
     nodeTextColor:      '#c9d1d9',
+    viewMode:           'combined-tree',
+    scaleTextToFit:     false,
+    // Edge colors
+    treeEdgeColor:      '#637896',
+    depEdgeColor:       '#f97316',
+    // Status colors (border)
+    colorOpen:          '#6366f1',
+    colorInProgress:    '#3b82f6',
+    colorDone:          '#10b981',
+    colorBlocked:       '#ef4444',
+    colorShelved:       '#71717a',
+    colorRejected:      '#475569',
+    colorRefused:       '#475569',
+    colorInQuestion:    '#f59e0b',
+    colorOutOfBudget:   '#e11d48',
   };
 
   // ── Cookie helpers ────────────────────────────────────────────────────────
@@ -96,7 +111,8 @@
     const scale    = s.nodeScale || 1;
     const fontSize = 11 * s.fontSize;
     const charW    = fontSize * 0.58;
-    const label    = `#${d.data.id} ${d.data.title || ''}`;
+    const lockPrefix = d.data.locked ? '🔒 ' : '';
+    const label    = `${lockPrefix}#${d.data.id} ${d.data.title || ''}`;
     const text1    = smartTruncate(label, s);
     const w1       = text1.length * charW + 32;
     const hasSec   = s.secondaryField && s.secondaryField !== 'none';
@@ -568,8 +584,8 @@
 
     simulation = d3.forceSimulation(nodes)
       .force('link', d3.forceLink(links)
-        .id(d => d.data.id)
-        .distance(d => isMobile ? 40 : 80 + d.target.depth * 20)
+        .id(d => String(d.data.id))
+        .distance(d => isMobile ? 40 : 80 + (d.target.depth || 0) * 20)
         .strength(0.4))
       .force('charge', d3.forceManyBody()
         .strength(d => {
@@ -581,7 +597,7 @@
         const base = nodeCollisionR(d, radii, settings);
         return isMobile ? base + 8 : base + 12;
       }))
-      .force('x', d3.forceX(d => width * (0.15 + d.depth / maxDepth * 0.7))
+      .force('x', d3.forceX(d => width * (0.15 + (d.depth || 0) / maxDepth * 0.7))
         .strength(isMobile ? 0.2 : 0.12))
       .force('y', d3.forceY(height / 2).strength(0.03))
       .alphaDecay(0.03)
@@ -635,11 +651,49 @@
 
   // ── Layout dispatcher ─────────────────────────────────────────────────────
   function positionNodes(nodes, links) {
+    const view = settings.viewMode;
+    const hasDeps = cachedDeps && cachedDeps.length;
+    const nodeIds = new Set(nodes.map(d => String(d.data.id)));
+
+    // DAG or Combined-DAG modes use Force Layout
+    if ((view === 'dag' || view === 'combined-dag') && hasDeps) {
+      const forceLinks = [];
+      
+      // Filter dependencies: only include if BOTH nodes are in current tree view
+      cachedDeps.forEach(d => {
+        const s = String(d.blocked_id);
+        const t = String(d.blocker_id);
+        if (nodeIds.has(s) && nodeIds.has(t)) {
+          forceLinks.push({ source: s, target: t });
+        }
+      });
+
+      // If combined, also include tree hierarchy links
+      if (view === 'combined-dag') {
+        links.forEach(l => {
+          const s = String(l.source.data ? l.source.data.id : l.source);
+          const t = String(l.target.data ? l.target.data.id : l.target);
+          if (nodeIds.has(s) && nodeIds.has(t)) {
+            forceLinks.push({ source: s, target: t });
+          }
+        });
+      }
+
+      runForceLayout(nodes, forceLinks);
+      return;
+    }
+
+    // Default to hierarchical layouts
     switch (settings.layout) {
-      case 'force':      runForceLayout(nodes, links); break;
-      case 'horizontal': runHorizontalLayout();         break;
-      case 'radial':     runRadialLayout();             break;
-      default:           runTreeLayout();               break;
+      case 'force':      
+        runForceLayout(nodes, links.map(l => ({
+          source: String(l.source.data ? l.source.data.id : l.source),
+          target: String(l.target.data ? l.target.data.id : l.target)
+        }))); 
+        break;
+      case 'horizontal': runHorizontalLayout(); break;
+      case 'radial':     runRadialLayout();     break;
+      default:           runTreeLayout();       break;
     }
   }
 
@@ -665,7 +719,12 @@
   }
 
   // ── Edge style helpers ────────────────────────────────────────────────────
-  function edgeStroke()       { return `rgba(99,120,150,${settings.edgeOpacity})`; }
+  function edgeStroke() {
+    const c = settings.treeEdgeColor || '#637896';
+    // Parse hex to rgba with edgeOpacity
+    const r = parseInt(c.slice(1,3),16), g = parseInt(c.slice(3,5),16), b = parseInt(c.slice(5,7),16);
+    return `rgba(${r},${g},${b},${settings.edgeOpacity})`;
+  }
   function edgeStrokeWidth()  { return `${settings.edgeWidth}px`; }
 
   // ── Rebuild (re-render with current layout) ───────────────────────────────
@@ -759,17 +818,23 @@
   // ── Update / render ──────────────────────────────────────────────────────
   function update(source) {
     const nodes = root.descendants();
-    const links = root.links();
+    const allLinks = root.links();
+    // Only render tree links if viewMode is NOT 'dag'
+    const treeLinks = settings.viewMode === 'dag' ? [] : allLinks;
     const radii = computeNodeRadius(nodes.length);
     const dur   = settings.animations ? 350 : 0;
     const t     = d3.transition().duration(dur).ease(d3.easeCubicInOut);
     const r     = d => radii[d.data.type] || radii.task;
 
     // Position all nodes via selected layout
-    positionNodes(nodes, links);
+    positionNodes(nodes, allLinks);
+
+    // Dependency edge visibility
+    const showDeps = settings.viewMode !== 'tree' && depsVisible;
+    if (!showDeps) gDepEdges.selectAll('*').remove();
 
     // ── Tree links ──  (use .style() so inline style overrides CSS rules)
-    const link = gLinks.selectAll('.link').data(links, d => d.target.data.id);
+    const link = gLinks.selectAll('.link').data(treeLinks, d => d.target.data.id);
 
     const linkEnter = link.enter().append('path')
       .attr('class', 'link')
@@ -820,14 +885,13 @@
       .on('mousemove',  moveTooltip)
       .on('mouseleave', (e, d) => onNodeHoverEnd(e, d));
 
-    // Invisible hit-target — rect that exactly matches the visible node bounds
-    // Using rect for all shapes (rx=h/2 for circle/pill, rx=cornerRadius for rect)
+    // Invisible hit-target
     nodeEnter.append('rect')
       .attr('class',  'hit-target')
       .attr('fill',   'transparent')
       .attr('stroke', 'none');
 
-    // Bottleneck ring (behind main shape)
+    // Bottleneck ring
     nodeEnter.append('circle')
       .attr('class',        'bottleneck-ring')
       .attr('fill',         'none')
@@ -835,7 +899,7 @@
       .attr('stroke-width', 2)
       .attr('r', 0);
 
-    // Main shape — circle OR rect/pill based on settings.nodeShape
+    // Main shape
     if (settings.nodeShape === 'circle') {
       nodeEnter.append('circle')
         .attr('class', 'node-shape node-circle')
@@ -855,7 +919,7 @@
       .attr('dominant-baseline', 'central')
       .attr('pointer-events',    'none');
 
-    // Secondary label (shown when secondaryField !== 'none')
+    // Secondary label
     nodeEnter.append('text')
       .attr('class',             'secondary-label')
       .attr('text-anchor',       'middle')
@@ -863,8 +927,7 @@
       .attr('pointer-events',    'none')
       .style('display',          'none');
 
-
-    // Progress bar below node
+    // Progress bar
     const progG = nodeEnter.append('g').attr('class', 'progress-bar');
     progG.append('rect')
       .attr('class', 'progress-bg').attr('height', 3).attr('rx', 1.5)
@@ -885,7 +948,7 @@
       (hideBlocked && (d.data.locked || d.data.status === 'blocked')) ? 'none' : null
     );
 
-    // Size hit-target rect to exactly match the visible node, min 44px for touch
+    // Size hit-target
     nodeMerge.select('.hit-target').each(function(d) {
       let w, h, rx;
       if (settings.nodeShape === 'circle') {
@@ -918,11 +981,12 @@
       });
     }
 
+    // Update bottleneck rings
     nodeMerge.select('.bottleneck-ring')
       .classed('bottleneck-pulse', d => !!d.data.is_bottleneck)
       .transition(t)
       .attr('r', d => {
-        if (!d.data.is_bottleneck) return 0;
+        if (!d.data.is_bottleneck || d.data.status === 'done') return 0;
         if (settings.nodeShape === 'circle') return r(d) + 4;
         const { w, h } = nodeRectDims(d, settings);
         return Math.sqrt(w * w + h * h) / 2 + 4;
@@ -942,23 +1006,27 @@
       .transition(t)
       .attr('width', d => nodeHalfWidth(d, radii, settings) * 2 * ((d.data.progress || 0) / 100));
 
+    // Sync dependency arrows
+    if (showDeps && cachedDeps) {
+       t.on('end.deps', () => { drawDepEdges(cachedDeps); });
+       setTimeout(() => drawDepEdges(cachedDeps), dur + 50);
+    }
+
     node.exit()
       .transition(t)
       .attr('transform', `translate(${source.x},${source.y})`)
+      .style('opacity',   0)
       .remove();
 
     root.descendants().forEach(d => { d.x0 = d.x; d.y0 = d.y; });
-
-    if (depsVisible && cachedDeps) drawDepEdges(cachedDeps);
-
     updateLabels();
   }
 
-  // ── Zoom-invariant labels (with smart truncation + secondary text) ─────────
+  // ── Labels ─────────
   function updateLabels() {
     if (!gNodes) return;
     const zoom      = currentZoom;
-    const fontSize  = 11 * settings.fontSize / zoom;
+    const fontSize  = settings.scaleTextToFit ? (11 * settings.fontSize) : (11 * settings.fontSize / zoom);
     const fsStr     = fontSize + 'px';
     const threshold = settings.labelThreshold;
     const hasSec    = settings.secondaryField && settings.secondaryField !== 'none';
@@ -995,11 +1063,11 @@
       if (!hasSec) { el.style('display', 'none'); return; }
       const kids = (d.children || []).length + (d._children || []).length;
       const isImportant = d.data.type === 'goal' || d.data.type === 'milestone' || kids >= 3;
-      if (zoom < threshold && !isImportant) { el.style('display', 'none'); return; }
+      if (!settings.scaleTextToFit && zoom < threshold && !isImportant) { el.style('display', 'none'); return; }
       const text = getSecondaryText(d, settings);
       if (!text) { el.style('display', 'none'); return; }
       el.style('display', null);
-      const secFs = (11 * settings.fontSize * 0.8 / zoom) + 'px';
+      const secFs = settings.scaleTextToFit ? (11 * settings.fontSize * 0.8) + 'px' : (11 * settings.fontSize * 0.8 / zoom) + 'px';
       el.attr('font-size', secFs)
         .attr('fill', 'var(--text-muted, #7d8590)');
       el.selectAll('tspan').remove();
@@ -1122,7 +1190,7 @@
     });
 
     if (depsVisible) {
-      gDepEdges.selectAll('path').each(function () {
+      gDepEdges.selectAll('.dep-link').each(function () {
         const src    = +d3.select(this).attr('data-src');
         const tgt    = +d3.select(this).attr('data-tgt');
         const isConn = connected.has(src) || connected.has(tgt);
@@ -1137,7 +1205,7 @@
     gNodes.selectAll('.node').style('opacity', null);
     gLinks.selectAll('.link').style('opacity', null);
     if (depsVisible) {
-      gDepEdges.selectAll('path').style('opacity', null);
+      gDepEdges.selectAll('.dep-link').style('opacity', null);
     }
   }
 
@@ -1304,6 +1372,7 @@
     const setTxt = (id, v) => { const el = get(id); if (el) el.textContent = v; };
 
     setV('s-layout',            settings.layout);
+    setV('s-viewMode',          settings.viewMode);
     setV('s-fontSize',          settings.fontSize);
     setV('s-labelThreshold',    settings.labelThreshold);
     setV('s-nodeScale',         settings.nodeScale);
@@ -1313,6 +1382,7 @@
     setV('s-edgeWidth',         settings.edgeWidth);
     setV('s-edgeOpacity',       settings.edgeOpacity);
     setChk('s-animations',      settings.animations);
+    setChk('s-scaleTextToFit',  settings.scaleTextToFit);
     setV('s-nodeShape',         settings.nodeShape);
     setV('s-nodeCornerRadius',  settings.nodeCornerRadius);
     setV('s-truncMinChars',     settings.truncMinChars);
@@ -1321,6 +1391,27 @@
     setV('s-secondaryField',    settings.secondaryField);
     const colorEl = document.getElementById('s-nodeTextColor');
     if (colorEl) colorEl.value = settings.nodeTextColor || '#c9d1d9';
+
+    // Edge colors
+    setV('s-treeEdgeColor', settings.treeEdgeColor || '#637896');
+    setV('s-depEdgeColor',  settings.depEdgeColor  || '#f97316');
+
+    // Status colors
+    const statusColorMap = {
+      's-colorOpen':        'colorOpen',
+      's-colorInProgress':  'colorInProgress',
+      's-colorDone':        'colorDone',
+      's-colorBlocked':     'colorBlocked',
+      's-colorShelved':     'colorShelved',
+      's-colorRejected':    'colorRejected',
+      's-colorRefused':     'colorRefused',
+      's-colorInQuestion':  'colorInQuestion',
+      's-colorOutOfBudget': 'colorOutOfBudget',
+    };
+    for (const [elId, key] of Object.entries(statusColorMap)) {
+      const el = document.getElementById(elId);
+      if (el) el.value = settings[key] || DEFAULT_SETTINGS[key];
+    }
 
     setTxt('sv-fontSize',          fmtSettingVal('fontSize',          settings.fontSize));
     setTxt('sv-labelThreshold',    fmtSettingVal('labelThreshold',    settings.labelThreshold));
@@ -1338,6 +1429,35 @@
     // Show corner-radius row only when shape = rect
     const crRow = document.getElementById('sp-cornerRadius-row');
     if (crRow) crRow.style.display = settings.nodeShape === 'rect' ? '' : 'none';
+
+    const modeEl = document.getElementById('s-viewMode');
+    if (modeEl) modeEl.value = settings.viewMode || 'combined-tree';
+
+    applyStatusColors();
+  }
+
+  // Apply status colors from settings to CSS variables on :root
+  function applyStatusColors() {
+    const root = document.documentElement;
+    const map = {
+      open:          settings.colorOpen          || DEFAULT_SETTINGS.colorOpen,
+      in_progress:   settings.colorInProgress    || DEFAULT_SETTINGS.colorInProgress,
+      done:          settings.colorDone          || DEFAULT_SETTINGS.colorDone,
+      blocked:       settings.colorBlocked       || DEFAULT_SETTINGS.colorBlocked,
+      shelved:       settings.colorShelved       || DEFAULT_SETTINGS.colorShelved,
+      rejected:      settings.colorRejected      || DEFAULT_SETTINGS.colorRejected,
+      refused:       settings.colorRefused       || DEFAULT_SETTINGS.colorRefused,
+      in_question:   settings.colorInQuestion    || DEFAULT_SETTINGS.colorInQuestion,
+      out_of_budget: settings.colorOutOfBudget   || DEFAULT_SETTINGS.colorOutOfBudget,
+    };
+    for (const [status, color] of Object.entries(map)) {
+      root.style.setProperty(`--border-${status}`, color);
+      // Compute a subtle fill from the border color at 15% opacity
+      const r = parseInt(color.slice(1,3),16), g = parseInt(color.slice(3,5),16), b = parseInt(color.slice(5,7),16);
+      root.style.setProperty(`--node-${status}`, `rgba(${r},${g},${b},0.15)`);
+    }
+    // Update the dep edge CSS variable too
+    root.style.setProperty('--edge-dep', settings.depEdgeColor || DEFAULT_SETTINGS.depEdgeColor);
   }
 
   function initSettingsPanel() {
@@ -1384,6 +1504,26 @@
       layoutEl.addEventListener('change', () => { window.setLayout(layoutEl.value); });
     }
 
+    // View mode select
+    const modeEl = document.getElementById('s-viewMode');
+    if (modeEl) {
+      modeEl.addEventListener('change', () => {
+        settings.viewMode = modeEl.value;
+        saveSettings(settings);
+        rebuildLayout();
+      });
+    }
+
+    // Scale text toggle
+    const scaleTextEl = document.getElementById('s-scaleTextToFit');
+    if (scaleTextEl) {
+      scaleTextEl.addEventListener('change', () => {
+        settings.scaleTextToFit = scaleTextEl.checked;
+        saveSettings(settings);
+        updateLabels();
+      });
+    }
+
     // Node shape select
     const shapeEl = document.getElementById('s-nodeShape');
     if (shapeEl) {
@@ -1413,6 +1553,50 @@
         saveSettings(settings);
         updateLabels();
       });
+    }
+
+    // Tree edge color picker
+    const treeColorEl = document.getElementById('s-treeEdgeColor');
+    if (treeColorEl) {
+      treeColorEl.addEventListener('input', () => {
+        settings.treeEdgeColor = treeColorEl.value;
+        saveSettings(settings);
+        updateEdgeStyles();
+      });
+    }
+
+    // Dep edge color picker
+    const depColorEl = document.getElementById('s-depEdgeColor');
+    if (depColorEl) {
+      depColorEl.addEventListener('input', () => {
+        settings.depEdgeColor = depColorEl.value;
+        saveSettings(settings);
+        applyStatusColors();
+        if (depsVisible && cachedDeps) drawDepEdges(cachedDeps);
+      });
+    }
+
+    // Status color pickers
+    const statusColorInputs = {
+      's-colorOpen':        'colorOpen',
+      's-colorInProgress':  'colorInProgress',
+      's-colorDone':        'colorDone',
+      's-colorBlocked':     'colorBlocked',
+      's-colorShelved':     'colorShelved',
+      's-colorRejected':    'colorRejected',
+      's-colorRefused':     'colorRefused',
+      's-colorInQuestion':  'colorInQuestion',
+      's-colorOutOfBudget': 'colorOutOfBudget',
+    };
+    for (const [elId, key] of Object.entries(statusColorInputs)) {
+      const el = document.getElementById(elId);
+      if (el) {
+        el.addEventListener('input', () => {
+          settings[key] = el.value;
+          saveSettings(settings);
+          applyStatusColors();
+        });
+      }
     }
 
     // Export
@@ -1658,7 +1842,8 @@
   // ── Dependency edges ─────────────────────────────────────────────────────
   function drawDepEdges(deps) {
     cachedDeps = deps;
-    gDepEdges.selectAll('path').remove();
+    if (!gDepEdges) return;
+    gDepEdges.selectAll('*').remove();
     if (!deps || !deps.length || !root) return;
 
     const nodeMap  = new Map(root.descendants().map(d => [d.data.id, d]));
@@ -1666,7 +1851,6 @@
     const radii    = computeNodeRadius(allNodes.length);
 
     // Group deps by TARGET (blocker_id) — spread arrival points along target node edge
-    // Sort each group by angle from target so arrival points are spatially ordered
     const tgtGroups = new Map();
     deps.forEach(dep => {
       if (!nodeMap.get(dep.blocker_id) || !nodeMap.get(dep.blocked_id)) return;
@@ -1681,6 +1865,10 @@
       });
     });
 
+    const arrowLength = 10;
+    const arrowHalfW  = 4;
+    const depColor    = settings.depEdgeColor || '#f97316';
+
     deps.forEach(dep => {
       const blocker = nodeMap.get(dep.blocker_id);
       const blocked = nodeMap.get(dep.blocked_id);
@@ -1689,73 +1877,99 @@
       const sx = blocked.x, sy = blocked.y;
       const dx = blocker.x, dy = blocker.y;
 
-      const group = tgtGroups.get(dep.blocker_id);
-      const idx   = group.indexOf(dep);
-      const n     = group.length;
+      const groupIdx = tgtGroups.get(dep.blocker_id).indexOf(dep);
+      const groupCount = tgtGroups.get(dep.blocker_id).length;
 
-      // Spread arrival points along the target node edge, departure points toward target entry
       let ssx, ssy, ddx, ddy;
 
       if (settings.nodeShape === 'circle') {
         const tgtR = (radii[blocker.data.type] || radii.task) + 2;
         const srcR = (radii[blocked.data.type] || radii.task) + 2;
-        // Spread entry angle around the base approach angle
         const baseAngle  = Math.atan2(sy - dy, sx - dx);
-        const spreadStep = n > 1 ? Math.min(0.35, (n * 0.15)) : 0;
-        const entryAngle = baseAngle + (idx - (n - 1) / 2) * spreadStep;
+        const spreadStep = groupCount > 1 ? Math.min(0.35, (groupCount * 0.15)) : 0;
+        const entryAngle = baseAngle + (groupIdx - (groupCount - 1) / 2) * spreadStep;
         ddx = dx + Math.cos(entryAngle) * tgtR;
         ddy = dy + Math.sin(entryAngle) * tgtR;
-        // Source exits toward the target entry point
         const s2dLen = Math.sqrt((ddx - sx) ** 2 + (ddy - sy) ** 2) || 1;
         ssx = sx + ((ddx - sx) / s2dLen) * srcR;
         ssy = sy + ((ddy - sy) / s2dLen) * srcR;
       } else {
-        // rect / pill: spread entry points along the target face
         const tgtDims = nodeRectDims(blocker, settings);
         const tw = tgtDims.w / 2, th = tgtDims.h / 2;
         const ax = dx - sx, ay = dy - sy;
 
         if (Math.abs(ax) >= Math.abs(ay)) {
-          // Approach is mostly horizontal — enter left or right face, spread vertically
           const faceX   = dx + (ax > 0 ? -tw : tw);
-          const maxSpan = (th * 2 - 8) * 0.85;          // 85% of face height
-          const step    = n > 1 ? maxSpan / (n - 1) : 0;
+          const maxSpan = (th * 2 - 8) * 0.85;
+          const step    = groupCount > 1 ? maxSpan / (groupCount - 1) : 0;
           ddx = faceX;
           ddy = Math.max(dy - th + 4, Math.min(dy + th - 4,
-                  dy + (idx - (n - 1) / 2) * step));
+                  dy + (groupIdx - (groupCount - 1) / 2) * step));
         } else {
-          // Approach is mostly vertical — enter top or bottom face, spread horizontally
           const faceY   = dy + (ay > 0 ? -th : th);
           const maxSpan = (tw * 2 - 8) * 0.85;
-          const step    = n > 1 ? maxSpan / (n - 1) : 0;
+          const step    = groupCount > 1 ? maxSpan / (groupCount - 1) : 0;
           ddx = Math.max(dx - tw + 4, Math.min(dx + tw - 4,
-                  dx + (idx - (n - 1) / 2) * step));
+                  dx + (groupIdx - (groupCount - 1) / 2) * step));
           ddy = faceY;
         }
 
-        // Source exits toward the target entry point
         const srcDims = nodeRectDims(blocked, settings);
         const srcPt   = rectEdgePoint(sx, sy, srcDims.w, srcDims.h, ddx, ddy);
         ssx = srcPt.x; ssy = srcPt.y;
       }
 
-      // Control point at midpoint — straight line (spread entry/exit is enough visual separation)
-      const cpx = (ssx + ddx) / 2;
-      const cpy = (ssy + ddy) / 2;
+      const totalDist = Math.hypot(ddx - ssx, ddy - ssy);
+      const curveDist = totalDist * 0.35;
 
-      gDepEdges.append('path')
-        .attr('d',          `M ${ssx} ${ssy} Q ${cpx} ${cpy} ${ddx} ${ddy}`)
+      const ovx1 = ssx - sx, ovy1 = ssy - sy;
+      const len1  = Math.hypot(ovx1, ovy1) || 1;
+      const cp1x  = ssx + (ovx1 / len1) * curveDist;
+      const cp1y  = ssy + (ovy1 / len1) * curveDist;
+
+      const ovx2  = ddx - dx, ovy2 = ddy - dy;
+      const len2  = Math.hypot(ovx2, ovy2) || 1;
+      const cp2x  = ddx + (ovx2 / len2) * curveDist;
+      const cp2y  = ddy + (ovy2 / len2) * curveDist;
+
+      const pathData = `M ${ssx} ${ssy} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${ddx} ${ddy}`;
+
+      // Create a link group with group-level opacity for perfect anti-overlap rendering
+      const linkG = gDepEdges.append('g')
+        .attr('class', 'dep-link')
+        .style('opacity', 0.45)
+        .attr('data-src', dep.blocked_id)
+        .attr('data-tgt', dep.blocker_id);
+
+      const pathEl = linkG.append('path')
+        .attr('d',          pathData)
         .attr('fill',       'none')
-        .attr('stroke',     EDGE_DEP_COLOR)
-        .style('stroke-width', settings.edgeWidth + 'px')
-        .style('opacity',   0.65)
-        .attr('marker-end', 'url(#dep-arrow)')
-        .attr('data-src',   dep.blocked_id)
-        .attr('data-tgt',   dep.blocker_id);
+        .attr('stroke',     depColor)
+        .style('stroke-width', settings.edgeWidth + 'px');
+
+      const pathNode = pathEl.node();
+      const totalLen = pathNode.getTotalLength();
+      if (totalLen < arrowLength) return;
+
+      // Clip the stroke but extend slightly into polygon to avoid gaps
+      pathEl.attr('stroke-dasharray', `${totalLen - arrowLength + 4} ${totalLen}`);
+
+      const tipPt  = pathNode.getPointAtLength(totalLen);
+      const basePt = pathNode.getPointAtLength(totalLen - arrowLength);
+
+      const adx = tipPt.x - basePt.x, ady = tipPt.y - basePt.y;
+      const aLen = Math.hypot(adx, ady) || 1;
+      const ux = adx / aLen, uy = ady / aLen, px = -uy, py = ux;
+
+      linkG.append('polygon')
+        .attr('points', `${tipPt.x},${tipPt.y} ${basePt.x + px * arrowHalfW},${basePt.y + py * arrowHalfW} ${basePt.x - px * arrowHalfW},${basePt.y - py * arrowHalfW}`)
+        .attr('fill', depColor);
     });
 
-    // Always keep dep edges on top — re-append to end of gAll
-    if (gAll && gDepEdges) gAll.node().appendChild(gDepEdges.node());
+    // Keep dep edges below nodes but above tree links
+    if (gAll && gDepEdges && gNodes) {
+      gAll.node().insertBefore(gDepEdges.node(), gNodes.node());
+    }
   }
 
   window.toggleDeps = function toggleDeps() {
@@ -1764,7 +1978,7 @@
     saveCookie('telos_deps_visible', String(depsVisible), 365);
 
     if (!depsVisible) {
-      gDepEdges.selectAll('path').remove();
+      gDepEdges.selectAll('*').remove();
       if (btn) { btn.classList.remove('btn-active'); btn.setAttribute('aria-pressed', 'false'); }
       return;
     }

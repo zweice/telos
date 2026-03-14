@@ -1,5 +1,5 @@
-// Telos Service Worker — cache-first for static assets, network-first for data
-const CACHE = 'telos-v1';
+// Telos Service Worker — network-first for local iteration
+const CACHE = 'telos-v2-dev';
 const STATIC = [
   '/',
   '/index.html',
@@ -26,28 +26,16 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
-  // Network-first for API data (always try fresh)
-  if (DATA_URLS.some(u => url.pathname.endsWith(u.replace(/^\//, '')))) {
-    e.respondWith(
-      fetch(e.request)
-        .then(res => {
+  // Network-first for everything to ensure aggressive updating during iteration
+  e.respondWith(
+    fetch(e.request)
+      .then(res => {
+        if (res.ok && e.request.url.startsWith('http')) {
           const clone = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
-          return res;
-        })
-        .catch(() => caches.match(e.request))
-    );
-    return;
-  }
-  // Cache-first for everything else
-  e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-      if (res.ok) {
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-      }
-      return res;
-    }))
+        }
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
