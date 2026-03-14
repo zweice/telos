@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-14T14:51:00.320Z",
+  "generated_at": "2026-03-14T17:02:10.193Z",
   "tree": [
     {
       "id": 1,
@@ -1170,7 +1170,7 @@
               "effort_hours_estimate": null,
               "effort_hours_actual": null,
               "start_date": null,
-              "end_date": null,
+              "end_date": 1775001600,
               "completed_at": null,
               "progress": 0,
               "description": null,
@@ -1182,6 +1182,10 @@
                 {
                   "ts": 1772226263,
                   "text": "Decision deferred: cost trend data needed before deciding. Child task added to track 30-day costs. Pro/Max subscription only makes sense if CC usage consistently exceeds break-even threshold."
+                },
+                {
+                  "ts": 1773507720,
+                  "text": "2026-03-14: Reviewed. Recommendation: stay on API. No volume spike justifying Pro/Max. Revisit April 1."
                 }
               ],
               "children": [
