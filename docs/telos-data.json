@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-15T21:34:02.187Z",
+  "generated_at": "2026-03-15T22:01:56.937Z",
   "tree": [
     {
       "id": 1,
@@ -645,6 +645,46 @@
                   "completed_at": 1773610439,
                   "progress": 0,
                   "description": "Currently the mid-session retrieval query is built from the last 3 user messages only. Investigate whether including agent replies improves recall. Trade-offs: agent replies contain retrieved memories (circular bias risk) vs. conversational context that could improve relevance. Test both and measure retrieval quality. Andreas flagged this as uncertain design.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 152,
+                  "title": "MemoryHub: Write-time dedup + conflict resolution",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Extractor cross-checks new memories against existing DB before writing. (1) Near-duplicate: cosine sim > 0.85 → skip or merge. (2) Conflict: same entity, different facts → update existing with newer version. Currently repeated queries (Mila/Eduard testing) created 5+ near-identical memories. Also need smart conflict detection: if new memory contradicts existing, prefer newer + log the conflict.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 153,
+                  "title": "MemoryHub: Memory usage tracking",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Track how often each memory is used to boost ranking of high-utility memories. Two modes: (1) Passive: increment injection_count every time a memory is injected; increment search_count every time found via memory_search tool. Use combined usage_score to boost ranking weight. (2) Active (future): lightweight memory-eval tool called by agent after turn, gives feedback on which injected memories were actually useful. Start with passive — add injection_count and search_count columns to DB, update on each injection/search hit, add configurable usage_weight to ranking formula.",
                   "notes": [],
                   "children": []
                 }
