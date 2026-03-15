@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-15T00:53:45.528Z",
+  "generated_at": "2026-03-15T02:46:24.681Z",
   "tree": [
     {
       "id": 1,
@@ -1492,7 +1492,7 @@
               "end_date": null,
               "completed_at": null,
               "progress": 0,
-              "description": "Three changes needed:\n\n1. INJECTION SANITIZATION (plugin-side):\n   - If no memories retrieved: omit the [MemoryHub] block entirely (or single-line max)\n   - If memories retrieved: cap at top N=3, ranked by relevance score\n   - Shorten the announcement prefix — current '[MemoryHub] Relevant memories for this task:' is verbose\n\n2. AGENT AWARENESS (MEMORY.md / system prompt):\n   - Agents need to know that auto-retrieved memories arrive as [MemoryHub] blocks\n   - Should understand: what they are, how to use them, not to treat as user input\n   - Add brief note to each agent's MEMORY.md or inject via system prompt template\n\n3. SURFACE PREFERENCE:\n   - When user requests surfacing, agents should quote injections cleanly\n   - Preference stored: 'Agent should surface MemoryHub injections when requested'\n\nImplementation:\n- Plugin change: src/index.ts injection formatter (top N + empty-block suppression)\n- Agent docs: add 1-2 line note to conductor/main/atlas MEMORY.md about MemoryHub blocks",
+              "description": "Changes needed:\n\n1. INJECTION SANITIZATION (plugin-side):\n   - If no memories retrieved: omit block entirely\n   - Cap at top N=3 (configurable: maxInjectMemories, default 3)\n   - Shorten prefix\n   - RECENCY BIAS: final_score = (relevance * 0.7) + (recency_score * 0.3)\n     recency_score = 1 / (1 + days_since_created)\n\n2. ROLLING WINDOW QUERY (plugin-side):\n   - Per-message retrieval uses last N messages (default: 3) concatenated as search query\n   - Catches pronoun/reference context from recent turns (e.g. 'his daughters' → finds Eduard)\n   - Config: memoryhub.injection.queryWindowMessages (default 3)\n   - Only affects per-message retrieval, not session-start injection\n\n3. AGENT AWARENESS (MEMORY.md / system prompt):\n   - Agents need to know that auto-retrieved memories arrive as [Memory] blocks\n   - Should understand: what they are, how to use them, not to treat as user input\n   - Add brief note to each agent MEMORY.md\n\n4. SURFACE PREFERENCE:\n   - When user requests surfacing, agents should quote injections cleanly\n\nImplementation:\n- Plugin change: src/index.js — rolling window query builder + recency blend + sanitization\n- Agent docs: add note to conductor/main/atlas MEMORY.md about [Memory] blocks",
               "notes": [],
               "children": [
                 {
@@ -1594,6 +1594,66 @@
               "completed_at": null,
               "progress": 0,
               "description": "Track confidence and staleness per memory entry.\n\nProblem: a memory written once 3 months ago may be outdated (e.g. user's job, location, preferences). No signal for how trustworthy or fresh a memory is.\n\nDesign:\n1. confidence: float 0-1 (starts at 0.8 on first write, boosted on corroboration, decays over time)\n2. last_seen: timestamp when memory was last referenced/confirmed in a session\n3. source_count: how many sessions have independently contributed this fact\n4. Staleness decay: configurable half-life (default 90 days) — old unconfirmed memories get lower retrieval weight\n5. Explicit confirmation: if user says 'yes that's right' near a retrieved memory, boost confidence\n6. Surface stale memories in dream cycle for review/archival\n\nPrerequisite: vector search (#132), dream cycle (#136).",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 139,
+              "title": "MemoryHub: Timestamp on memories + surface in injection",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Every memory entry needs a timestamp, surfaced in the injected context block so agents can judge staleness at inference time.\n\nChanges:\n1. Schema: add created_at + updated_at fields to LanceDB memory rows (ISO timestamps)\n2. Migration: backfill existing 49+ rows with created_at = now (approximate, better than null)\n3. Injection format: include age in injected string, e.g.:\n   '[fact | 3d ago] User speaks Russian poorly but practices with parents'\n   '[entity | 47d ago] Brother Eduard (Edik), wife Elena, daughters Mila + Alexandra'\n4. Age formatting: <1h='Xm ago', <48h='Xh ago', <30d='Xd ago', else='YYYY-MM-DD'\n5. Agent decision: agent sees '47d ago' and can decide if context is stale enough to re-confirm\n\nTies into #138 (staleness scoring) — timestamp is the prerequisite data for decay calculation.\nBundle with #132 (vector search) since both touch the schema.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 140,
+              "title": "MemoryHub: Proactive search tool for agents",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Expose a memory_search tool that agents can call proactively during a session.\n\nUse case: agent is mid-conversation and wants to recall something ('what's Andreas's brother's name?') — instead of relying on injection at session start, agent calls memory_search('brother') and gets results immediately.\n\nDesign:\n1. Tool name: memory_search\n2. Input: { query: string, limit?: number (default 5), agentId?: string }\n3. Output: array of { type, content, age, importance, score }\n4. Registered as a gateway tool (plugin registers tool in onLoad hook)\n5. Agents get it in their tool list automatically when memoryhub plugin is enabled\n6. Works alongside injection — injection for session context, search for on-demand recall\n\nImplementation:\n- Plugin registers tool via ctx.registerTool() or equivalent plugin API\n- Internally calls getDB().search() with embedded query vector\n- Returns formatted results with age strings (reuse formatAge())\n- Check OpenClaw plugin API for tool registration pattern (docs or other plugins as reference)\n\nPriority: high — this is what makes MemoryHub genuinely useful mid-session.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 141,
+              "title": "MemoryHub: Fix cross-agent memory leakage via is_shared",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Search query in db.js line 183 includes 'OR is_shared = true' — causes memories from main/atlas to bleed into conductor injection. Fix: 1. Default is_shared=false on all curator writes. 2. Add config flag memoryhub.crossAgentSharing (default: false). 3. Curator marks only explicit user-profile facts (name, family, language) as is_shared=true via memory_type='entity' heuristic or explicit curator prompt instruction. 4. When crossAgentSharing=false, strip the OR is_shared clause entirely.",
               "notes": [],
               "children": []
             }
