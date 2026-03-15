@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-15T02:50:36.116Z",
+  "generated_at": "2026-03-15T02:53:45.463Z",
   "tree": [
     {
       "id": 1,
@@ -367,6 +367,131 @@
                   "description": "Package as publishable OpenClaw plugin. Deploy on Atlas and Jared first. Track: context retention quality, retrieval relevance, token overhead per turn. Publish to ClawHub when stable.",
                   "notes": [],
                   "children": []
+                },
+                {
+                  "id": 132,
+                  "title": "MemoryHub: Vector search + smart curation pipeline",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Two-phase implementation:\n\nPHASE 1 — Vector Search (prerequisite):\nCurrent state: LanceDB table has no embedding functions registered. .search() falls back to non-semantic scan — vector search is effectively broken.\nFix:\n1. Embedding model: openai/text-embedding-3-small via OpenRouter (OpenAI-compatible API, single key, unified billing)\n2. Register embedding function on LanceDB table at write time\n3. Re-embed all existing memories (49+ rows)\n4. Verify: 'brother' retrieves Eduard/Edik entries\n\nPHASE 2 — Smart Curation Write Pipeline:\n1. Atomic chunking: one fact per entry, not compound blobs\n2. Merge with history: conflict/update detection with changelog (previously: X, updated: Y, timestamp: Z)\n3. Timestamp tracking: created_at + updated_at; auditable changes\n4. Semantic dedup on write: embed new memory, cosine similarity < 0.15 = merge/skip\n5. Importance scoring: curator rates each chunk; low-importance dupes dropped\n6. Curation prompt: dedicated system prompt enforcing all of the above\n\nRationale: vector search is prerequisite for dedup-on-write. Current table has no embeddings = search broken + 4x duplicate bloat.\nOpenRouter chosen over direct OpenAI: same model/price, one fewer API key dependency.",
+                  "notes": [],
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 125,
+                    "title": "MemoryHub"
+                  }
+                },
+                {
+                  "id": 134,
+                  "title": "MemoryHub: Onboarding pipeline (bulk ingest from .md + .jsonl)",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Ingest existing knowledge into MemoryHub from:\n1. .md files (MEMORY.md, SOUL.md, daily logs, AGENTS.md) — parse sections, extract facts/entities/preferences\n2. .jsonl session logs — replay conversation turns, extract memories the same way end-of-session curator does\n3. CLI: memoryhub ingest <path> [--type md|jsonl] [--agent <id>] [--dry-run]\n4. Dedup against existing memories before writing (Phase 1 vector search prereq)\n5. Progress reporting: 'X memories extracted, Y merged, Z new written'\nUse case: bootstrap MemoryHub for existing agents who have months of context in MEMORY.md but nothing in LanceDB.",
+                  "notes": [],
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 125,
+                    "title": "MemoryHub"
+                  }
+                },
+                {
+                  "id": 138,
+                  "title": "MemoryHub: Memory confidence + staleness scoring",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Track confidence and staleness per memory entry.\n\nProblem: a memory written once 3 months ago may be outdated (e.g. user's job, location, preferences). No signal for how trustworthy or fresh a memory is.\n\nDesign:\n1. confidence: float 0-1 (starts at 0.8 on first write, boosted on corroboration, decays over time)\n2. last_seen: timestamp when memory was last referenced/confirmed in a session\n3. source_count: how many sessions have independently contributed this fact\n4. Staleness decay: configurable half-life (default 90 days) — old unconfirmed memories get lower retrieval weight\n5. Explicit confirmation: if user says 'yes that's right' near a retrieved memory, boost confidence\n6. Surface stale memories in dream cycle for review/archival\n\nPrerequisite: vector search (#132), dream cycle (#136).",
+                  "notes": [],
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 125,
+                    "title": "MemoryHub"
+                  }
+                },
+                {
+                  "id": 139,
+                  "title": "MemoryHub: Timestamp on memories + surface in injection",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Every memory entry needs a timestamp, surfaced in the injected context block so agents can judge staleness at inference time.\n\nChanges:\n1. Schema: add created_at + updated_at fields to LanceDB memory rows (ISO timestamps)\n2. Migration: backfill existing 49+ rows with created_at = now (approximate, better than null)\n3. Injection format: include age in injected string, e.g.:\n   '[fact | 3d ago] User speaks Russian poorly but practices with parents'\n   '[entity | 47d ago] Brother Eduard (Edik), wife Elena, daughters Mila + Alexandra'\n4. Age formatting: <1h='Xm ago', <48h='Xh ago', <30d='Xd ago', else='YYYY-MM-DD'\n5. Agent decision: agent sees '47d ago' and can decide if context is stale enough to re-confirm\n\nTies into #138 (staleness scoring) — timestamp is the prerequisite data for decay calculation.\nBundle with #132 (vector search) since both touch the schema.",
+                  "notes": [],
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 125,
+                    "title": "MemoryHub"
+                  }
+                },
+                {
+                  "id": 140,
+                  "title": "MemoryHub: Proactive search tool for agents",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Expose a memory_search tool that agents can call proactively during a session.\n\nUse case: agent is mid-conversation and wants to recall something ('what's Andreas's brother's name?') — instead of relying on injection at session start, agent calls memory_search('brother') and gets results immediately.\n\nDesign:\n1. Tool name: memory_search\n2. Input: { query: string, limit?: number (default 5), agentId?: string }\n3. Output: array of { type, content, age, importance, score }\n4. Registered as a gateway tool (plugin registers tool in onLoad hook)\n5. Agents get it in their tool list automatically when memoryhub plugin is enabled\n6. Works alongside injection — injection for session context, search for on-demand recall\n\nImplementation:\n- Plugin registers tool via ctx.registerTool() or equivalent plugin API\n- Internally calls getDB().search() with embedded query vector\n- Returns formatted results with age strings (reuse formatAge())\n- Check OpenClaw plugin API for tool registration pattern (docs or other plugins as reference)\n\nPriority: high — this is what makes MemoryHub genuinely useful mid-session.",
+                  "notes": [],
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 125,
+                    "title": "MemoryHub"
+                  }
                 }
               ]
             }
@@ -1457,26 +1582,6 @@
               "children": []
             },
             {
-              "id": 132,
-              "title": "MemoryHub: Vector search + smart curation pipeline",
-              "type": "task",
-              "owner": "conductor",
-              "status": "open",
-              "value": 0,
-              "cost_estimate": 0,
-              "cost_actual": null,
-              "roi": 0,
-              "effort_hours_estimate": null,
-              "effort_hours_actual": null,
-              "start_date": null,
-              "end_date": null,
-              "completed_at": null,
-              "progress": 0,
-              "description": "Two-phase implementation:\n\nPHASE 1 — Vector Search (prerequisite):\nCurrent state: LanceDB table has no embedding functions registered. .search() falls back to non-semantic scan — vector search is effectively broken.\nFix:\n1. Embedding model: openai/text-embedding-3-small via OpenRouter (OpenAI-compatible API, single key, unified billing)\n2. Register embedding function on LanceDB table at write time\n3. Re-embed all existing memories (49+ rows)\n4. Verify: 'brother' retrieves Eduard/Edik entries\n\nPHASE 2 — Smart Curation Write Pipeline:\n1. Atomic chunking: one fact per entry, not compound blobs\n2. Merge with history: conflict/update detection with changelog (previously: X, updated: Y, timestamp: Z)\n3. Timestamp tracking: created_at + updated_at; auditable changes\n4. Semantic dedup on write: embed new memory, cosine similarity < 0.15 = merge/skip\n5. Importance scoring: curator rates each chunk; low-importance dupes dropped\n6. Curation prompt: dedicated system prompt enforcing all of the above\n\nRationale: vector search is prerequisite for dedup-on-write. Current table has no embeddings = search broken + 4x duplicate bloat.\nOpenRouter chosen over direct OpenAI: same model/price, one fewer API key dependency.",
-              "notes": [],
-              "children": []
-            },
-            {
               "id": 133,
               "title": "MemoryHub: Sanitize injection format + agent awareness",
               "type": "task",
@@ -1518,26 +1623,6 @@
               ]
             },
             {
-              "id": 134,
-              "title": "MemoryHub: Onboarding pipeline (bulk ingest from .md + .jsonl)",
-              "type": "task",
-              "owner": "conductor",
-              "status": "open",
-              "value": 0,
-              "cost_estimate": 0,
-              "cost_actual": null,
-              "roi": 0,
-              "effort_hours_estimate": null,
-              "effort_hours_actual": null,
-              "start_date": null,
-              "end_date": null,
-              "completed_at": null,
-              "progress": 0,
-              "description": "Ingest existing knowledge into MemoryHub from:\n1. .md files (MEMORY.md, SOUL.md, daily logs, AGENTS.md) — parse sections, extract facts/entities/preferences\n2. .jsonl session logs — replay conversation turns, extract memories the same way end-of-session curator does\n3. CLI: memoryhub ingest <path> [--type md|jsonl] [--agent <id>] [--dry-run]\n4. Dedup against existing memories before writing (Phase 1 vector search prereq)\n5. Progress reporting: 'X memories extracted, Y merged, Z new written'\nUse case: bootstrap MemoryHub for existing agents who have months of context in MEMORY.md but nothing in LanceDB.",
-              "notes": [],
-              "children": []
-            },
-            {
               "id": 135,
               "title": "MemoryHub: Haiku curation system prompt",
               "type": "task",
@@ -1574,66 +1659,6 @@
               "completed_at": 1773543035,
               "progress": 0,
               "description": "Dedicated background process for memory consolidation — analogous to Total Recall dream cycle.\n\nDesign:\n1. Scheduled cron (default: nightly 3 AM) — isolated session, low-cost model (Haiku/Flash)\n2. Reads all memories written since last dream cycle\n3. Consolidation pass: merge near-duplicate entries, update stale facts, flag contradictions\n4. Archival pass: demote importance-1 memories older than 30 days to archived status\n5. Summary report: 'Dream cycle complete — X merged, Y archived, Z contradictions flagged'\n6. Optional: cross-agent consolidation (e.g. Jared + Conductor share facts about Andreas)\n\nPrerequisite: vector search (#132) must be live for semantic dedup to work.\nPriority: lower — implement after #132 + #134 (ingest) are stable.",
-              "notes": [],
-              "children": []
-            },
-            {
-              "id": 138,
-              "title": "MemoryHub: Memory confidence + staleness scoring",
-              "type": "task",
-              "owner": "conductor",
-              "status": "open",
-              "value": 0,
-              "cost_estimate": 0,
-              "cost_actual": null,
-              "roi": 0,
-              "effort_hours_estimate": null,
-              "effort_hours_actual": null,
-              "start_date": null,
-              "end_date": null,
-              "completed_at": null,
-              "progress": 0,
-              "description": "Track confidence and staleness per memory entry.\n\nProblem: a memory written once 3 months ago may be outdated (e.g. user's job, location, preferences). No signal for how trustworthy or fresh a memory is.\n\nDesign:\n1. confidence: float 0-1 (starts at 0.8 on first write, boosted on corroboration, decays over time)\n2. last_seen: timestamp when memory was last referenced/confirmed in a session\n3. source_count: how many sessions have independently contributed this fact\n4. Staleness decay: configurable half-life (default 90 days) — old unconfirmed memories get lower retrieval weight\n5. Explicit confirmation: if user says 'yes that's right' near a retrieved memory, boost confidence\n6. Surface stale memories in dream cycle for review/archival\n\nPrerequisite: vector search (#132), dream cycle (#136).",
-              "notes": [],
-              "children": []
-            },
-            {
-              "id": 139,
-              "title": "MemoryHub: Timestamp on memories + surface in injection",
-              "type": "task",
-              "owner": "conductor",
-              "status": "open",
-              "value": 0,
-              "cost_estimate": 0,
-              "cost_actual": null,
-              "roi": 0,
-              "effort_hours_estimate": null,
-              "effort_hours_actual": null,
-              "start_date": null,
-              "end_date": null,
-              "completed_at": null,
-              "progress": 0,
-              "description": "Every memory entry needs a timestamp, surfaced in the injected context block so agents can judge staleness at inference time.\n\nChanges:\n1. Schema: add created_at + updated_at fields to LanceDB memory rows (ISO timestamps)\n2. Migration: backfill existing 49+ rows with created_at = now (approximate, better than null)\n3. Injection format: include age in injected string, e.g.:\n   '[fact | 3d ago] User speaks Russian poorly but practices with parents'\n   '[entity | 47d ago] Brother Eduard (Edik), wife Elena, daughters Mila + Alexandra'\n4. Age formatting: <1h='Xm ago', <48h='Xh ago', <30d='Xd ago', else='YYYY-MM-DD'\n5. Agent decision: agent sees '47d ago' and can decide if context is stale enough to re-confirm\n\nTies into #138 (staleness scoring) — timestamp is the prerequisite data for decay calculation.\nBundle with #132 (vector search) since both touch the schema.",
-              "notes": [],
-              "children": []
-            },
-            {
-              "id": 140,
-              "title": "MemoryHub: Proactive search tool for agents",
-              "type": "task",
-              "owner": "conductor",
-              "status": "open",
-              "value": 0,
-              "cost_estimate": 0,
-              "cost_actual": null,
-              "roi": 0,
-              "effort_hours_estimate": null,
-              "effort_hours_actual": null,
-              "start_date": null,
-              "end_date": null,
-              "completed_at": null,
-              "progress": 0,
-              "description": "Expose a memory_search tool that agents can call proactively during a session.\n\nUse case: agent is mid-conversation and wants to recall something ('what's Andreas's brother's name?') — instead of relying on injection at session start, agent calls memory_search('brother') and gets results immediately.\n\nDesign:\n1. Tool name: memory_search\n2. Input: { query: string, limit?: number (default 5), agentId?: string }\n3. Output: array of { type, content, age, importance, score }\n4. Registered as a gateway tool (plugin registers tool in onLoad hook)\n5. Agents get it in their tool list automatically when memoryhub plugin is enabled\n6. Works alongside injection — injection for session context, search for on-demand recall\n\nImplementation:\n- Plugin registers tool via ctx.registerTool() or equivalent plugin API\n- Internally calls getDB().search() with embedded query vector\n- Returns formatted results with age strings (reuse formatAge())\n- Check OpenClaw plugin API for tool registration pattern (docs or other plugins as reference)\n\nPriority: high — this is what makes MemoryHub genuinely useful mid-session.",
               "notes": [],
               "children": []
             },
@@ -3085,6 +3110,36 @@
       "id": 25,
       "blocked_id": 61,
       "blocker_id": 47,
+      "type": "hard"
+    },
+    {
+      "id": 26,
+      "blocked_id": 132,
+      "blocker_id": 125,
+      "type": "hard"
+    },
+    {
+      "id": 27,
+      "blocked_id": 134,
+      "blocker_id": 125,
+      "type": "hard"
+    },
+    {
+      "id": 28,
+      "blocked_id": 138,
+      "blocker_id": 125,
+      "type": "hard"
+    },
+    {
+      "id": 29,
+      "blocked_id": 139,
+      "blocker_id": 125,
+      "type": "hard"
+    },
+    {
+      "id": 30,
+      "blocked_id": 140,
+      "blocker_id": 125,
       "type": "hard"
     }
   ]
