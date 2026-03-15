@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-15T13:54:59.417Z",
+  "generated_at": "2026-03-15T13:55:21.000Z",
   "tree": [
     {
       "id": 1,
@@ -1814,6 +1814,26 @@
               "completed_at": 1773543035,
               "progress": 0,
               "description": "Search query in db.js line 183 includes 'OR is_shared = true' — causes memories from main/atlas to bleed into conductor injection. Fix: 1. Default is_shared=false on all curator writes. 2. Add config flag memoryhub.crossAgentSharing (default: false). 3. Curator marks only explicit user-profile facts (name, family, language) as is_shared=true via memory_type='entity' heuristic or explicit curator prompt instruction. 4. When crossAgentSharing=false, strip the OR is_shared clause entirely.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 150,
+              "title": "Fix LanceDB API version mismatch in memory_search dedup check",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Write-time dedup check in memory_search throws '_table.search(...).metricType is not a function' — LanceDB API version mismatch. Non-blocking but should be fixed. Flagged in logs on 2026-03-15 after #140 (memory_search) went live.",
               "notes": [],
               "children": []
             }
