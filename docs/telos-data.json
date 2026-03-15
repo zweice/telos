@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-15T22:11:45.188Z",
+  "generated_at": "2026-03-15T22:52:51.850Z",
   "tree": [
     {
       "id": 1,
@@ -685,6 +685,26 @@
                   "completed_at": null,
                   "progress": 0,
                   "description": "Track how often each memory is used to boost ranking of high-utility memories. Two modes: (1) Passive: increment injection_count every time a memory is injected; increment search_count every time found via memory_search tool. Use combined usage_score to boost ranking weight. (2) Active (future): lightweight memory-eval tool called by agent after turn, gives feedback on which injected memories were actually useful. Start with passive — add injection_count and search_count columns to DB, update on each injection/search hit, add configurable usage_weight to ranking formula.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 154,
+                  "title": "MemoryHub: Review Dream Cycle — integrate into #146 or repurpose for #152",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 5,
+                  "cost_estimate": 3,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "The dream cycle as implemented (src/dream.js) is a hybrid between reflection (#146) and dedup/consolidation (#152). It triggers after 5+ writes at session-end, which is too weak a condition. Decision needed: (1) Kill dream cycle and fold its consolidation logic into #152 (write-time dedup + conflict resolution), OR (2) Extend it into the full reflection/pattern-detection system intended by #146. Either way, the current half-implementation should not run in production until this is resolved. See README for current behavior description.",
                   "notes": [],
                   "children": []
                 }
