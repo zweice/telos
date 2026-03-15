@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-14T23:11:39.233Z",
+  "generated_at": "2026-03-15T00:33:13.584Z",
   "tree": [
     {
       "id": 1,
@@ -1453,6 +1453,26 @@
               "completed_at": null,
               "progress": 0,
               "description": "Evaluate and migrate the agent thread setup (Jared, Atlas, Conductor heartbeat/work cycle threads) from Telegram topics to Discord. Discord threads have better ACP topic binding support, native thread management, and the recent 2026.3.7 improvements align better with Discord's model. Plan migration path, update cron session keys, test routing.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 132,
+              "title": "MemoryHub: Smart memory curation prompt + write pipeline",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Design and implement a curation-aware memory write pipeline for MemoryHub.\n\n1. Atomic chunking: split extracted memories into minimal coherent units (one fact per entry, not compound blobs)\n2. Merge with history: if a memory conflicts/updates an existing one, update with changelog (previously: X, updated: Y, timestamp: Z)\n3. Timestamp tracking: created_at + updated_at per memory; changes are auditable\n4. Semantic dedup on write: embed new memory, search near-neighbors (cosine < 0.15), merge/skip if match found\n5. Importance scoring: curator rates each chunk; low-importance dupes dropped, high-importance updates win\n6. Curation prompt: dedicated system prompt for the curator LLM call enforcing all of the above\n\nRationale: current write path is a naive dump causing bloat (4x duplicate username entries), loss of change history, and poor retrieval quality.",
               "notes": [],
               "children": []
             }
