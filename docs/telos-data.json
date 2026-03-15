@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-15T13:44:09.180Z",
+  "generated_at": "2026-03-15T13:54:59.417Z",
   "tree": [
     {
       "id": 1,
@@ -453,7 +453,7 @@
                   "title": "MemoryHub: Proactive search tool for agents",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 0,
                   "cost_estimate": 0,
                   "cost_actual": null,
@@ -462,7 +462,7 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1773582899,
                   "progress": 0,
                   "description": "Expose a memory_search tool that agents can call proactively during a session.\n\nUse case: agent is mid-conversation and wants to recall something ('what's Andreas's brother's name?') — instead of relying on injection at session start, agent calls memory_search('brother') and gets results immediately.\n\nDesign:\n1. Tool name: memory_search\n2. Input: { query: string, limit?: number (default 5), agentId?: string }\n3. Output: array of { type, content, age, importance, score }\n4. Registered as a gateway tool (plugin registers tool in onLoad hook)\n5. Agents get it in their tool list automatically when memoryhub plugin is enabled\n6. Works alongside injection — injection for session context, search for on-demand recall\n\nImplementation:\n- Plugin registers tool via ctx.registerTool() or equivalent plugin API\n- Internally calls getDB().search() with embedded query vector\n- Returns formatted results with age strings (reuse formatAge())\n- Check OpenClaw plugin API for tool registration pattern (docs or other plugins as reference)\n\nPriority: high — this is what makes MemoryHub genuinely useful mid-session.",
                   "notes": [],
@@ -564,7 +564,7 @@
                   "end_date": null,
                   "completed_at": null,
                   "progress": 0,
-                  "description": "Periodic (weekly?) reflection pass using Sonnet or Opus over full memory DB. Goal: detect patterns, contradictions, evolving preferences, behavioral trends. Output: new high-importance synthetic memories ('User consistently prefers X', 'Pattern: ships late on Fridays'). Distinct from dream cycle (compacts/archives) — this synthesizes upward, creates meta-memories from clusters. Deferred until taxonomy + archival + retrieval tuning are stable.",
+                  "description": "Periodic (weekly?) reflection pass using Sonnet or Opus. Goal: detect patterns, contradictions, evolving preferences, behavioral trends from high-signal memories only.\n\nScope: NOT the full DB — query memories with importance >= 0.6 AND last_seen within 90 days. This keeps the context focused and cost-efficient.\n\nOutput:\n1. New high-importance synthetic meta-memories ('User consistently prefers X', 'Pattern: ships late on Fridays')\n2. Surface new insights/conclusions to the user via Telegram before writing them — user confirms, corrects, or dismisses before they land in DB\n3. On confirmation: write meta-memories + optionally update/retire the source memories they summarize\n\nDistinct from dream cycle (compacts/archives) — this synthesizes upward, creates meta-memories from clusters.\nDeferred until taxonomy + archival + retrieval tuning are stable.",
                   "notes": [],
                   "children": []
                 },
