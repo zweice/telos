@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-15T13:55:21.000Z",
+  "generated_at": "2026-03-15T14:19:37.679Z",
   "tree": [
     {
       "id": 1,
@@ -1822,7 +1822,7 @@
               "title": "Fix LanceDB API version mismatch in memory_search dedup check",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "done",
               "value": 0,
               "cost_estimate": 0,
               "cost_actual": null,
@@ -1831,7 +1831,7 @@
               "effort_hours_actual": null,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1773584377,
               "progress": 0,
               "description": "Write-time dedup check in memory_search throws '_table.search(...).metricType is not a function' — LanceDB API version mismatch. Non-blocking but should be fixed. Flagged in logs on 2026-03-15 after #140 (memory_search) went live.",
               "notes": [],
