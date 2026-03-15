@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-15T14:19:37.679Z",
+  "generated_at": "2026-03-15T18:46:34.177Z",
   "tree": [
     {
       "id": 1,
@@ -625,6 +625,26 @@
                   "completed_at": 1773581492,
                   "progress": 0,
                   "description": "Add a memory_write tool that agents can call mid-session to proactively store a fact/entity/preference/etc. Requirements: (1) auto-embed the content via the configured embedding model (no zero-vector hacks), (2) before writing, run a similarity search against existing memories for the same agent and surface top-3 related entries to the caller, (3) caller decides: insert new, update existing (by ID), or skip. This prevents naive duplicate dumps and gives the agent a chance to merge/correct. Tool signature: memory_write(content, memory_type, importance, agent_id?) -> { related: MemoryEntry[], inserted?: id, updated?: id }. Also fixes the zero-vector manual-insert problem — this becomes the canonical write path for all non-extraction writes.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 151,
+                  "title": "Investigate: include agent replies in MemoryHub embedding query window",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Currently the mid-session retrieval query is built from the last 3 user messages only. Investigate whether including agent replies improves recall. Trade-offs: agent replies contain retrieved memories (circular bias risk) vs. conversational context that could improve relevance. Test both and measure retrieval quality. Andreas flagged this as uncertain design.",
                   "notes": [],
                   "children": []
                 }
