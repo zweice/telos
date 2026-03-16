@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-16T16:27:32.863Z",
+  "generated_at": "2026-03-16T16:46:12.940Z",
   "tree": [
     {
       "id": 1,
@@ -653,16 +653,16 @@
                   "title": "MemoryHub: Write-time dedup + conflict resolution",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 0,
                   "cost_estimate": 0,
-                  "cost_actual": null,
+                  "cost_actual": 0.04,
                   "roi": 0,
                   "effort_hours_estimate": null,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 0.5,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1773679572,
                   "progress": 0,
                   "description": "Extractor cross-checks new memories against existing DB before writing. (1) Near-duplicate: cosine sim > 0.85 → skip or merge. (2) Conflict: same entity, different facts → update existing with newer version. Currently repeated queries (Mila/Eduard testing) created 5+ near-identical memories. Also need smart conflict detection: if new memory contradicts existing, prefer newer + log the conflict.",
                   "notes": [],
