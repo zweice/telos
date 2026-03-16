@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-16T16:46:12.940Z",
+  "generated_at": "2026-03-16T17:09:15.065Z",
   "tree": [
     {
       "id": 1,
@@ -733,16 +733,16 @@
                   "title": "MemoryHub: source_type field + session-scoped memory search",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 0,
                   "cost_estimate": 0,
-                  "cost_actual": null,
+                  "cost_actual": 0.04,
                   "roi": 0,
                   "effort_hours_estimate": null,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 0.5,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1773680954,
                   "progress": 0,
                   "description": "Two related improvements:\n\n1. source_type field (Haiku-classified at extraction):\n   - Add 'source_type' to ExtractedMemory schema: user_stated | agent_conclusion | system_event | external\n   - Add classification instruction to EXTRACTION_SYSTEM_PROMPT: Haiku identifies whether each memory came from something Andreas said directly vs. agent-derived conclusion vs. automated trigger\n   - At write time: user_stated gets +0.05 importance boost so it naturally floats above agent_conclusions in ranked results — no explicit filter logic needed in retrieval\n   - Add to DB schema (db.js) and schema.js\n\n2. source_session already stamped at write time (line 215 index.js) — expose + filter:\n   - Surface source_session in memory_search tool results\n   - Add optional session_id filter param to memory_search: memory_search(query, session_id=X) returns only memories from that session\n   - Enables traversal pattern: search by topic → get top result source_session → re-query filtered by that session → reconstructed conversation summary (e.g. 'What were key findings from the session about XYZ?')",
                   "notes": [],
