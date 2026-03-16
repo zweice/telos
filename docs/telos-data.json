@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-16T08:07:17.312Z",
+  "generated_at": "2026-03-16T14:05:35.959Z",
   "tree": [
     {
       "id": 1,
@@ -724,7 +724,7 @@
                   "end_date": null,
                   "completed_at": null,
                   "progress": 0,
-                  "description": "System files (SOUL.md, USER.md, AGENTS.md, IDENTITY.md, MEMORY.md, HEARTBEAT.md, TOOLS.md) are always injected into session context. The extractor currently processes them and stores their content as memories — they score high on importance+recency and crowd out real episodic memories. Fix: (1) Add extraction filter to skip content from known system files (fingerprinting or exclusion list in extract.js). (2) DB cleanup — audit and delete rows that are system-prompt paraphrases. (3) Consider source_type field to distinguish system vs episodic vs user-stated memories.",
+                  "description": "Three extraction filters needed in serializeMessages() in index.js:\n1. Skip m.role === 'system' — drops system prompt content (SOUL.md, USER.md, AGENTS.md, IDENTITY.md, MEMORY.md, HEARTBEAT.md, TOOLS.md etc.) which is always in context and scores artificially high\n2. Apply stripMetadataEnvelopes() to each message body — removes [Memory] injection blocks so Haiku doesn't re-extract already-stored memories\n3. Strip tool call/result content — tool_use and tool_result roles are verbose structural noise; the agent's natural-language summary to the user captures the same info more cleanly. Either skip these roles entirely or strip content to just the tool name.\nAlso: DB cleanup pass — audit and delete rows that are clearly system-prompt paraphrases (SOUL.md rules, AGENTS.md conventions, etc.)",
                   "notes": [],
                   "children": []
                 }
@@ -1275,7 +1275,7 @@
                   "title": "TelosHub: workflow plugin to auto-update Telos on each agent turn",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "in_progress",
                   "value": 3,
                   "cost_estimate": 0,
                   "cost_actual": null,
