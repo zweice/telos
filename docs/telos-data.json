@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-16T17:09:15.065Z",
+  "generated_at": "2026-03-16T17:18:37.802Z",
   "tree": [
     {
       "id": 1,
@@ -673,16 +673,16 @@
                   "title": "MemoryHub: Memory usage tracking",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 0,
                   "cost_estimate": 0,
-                  "cost_actual": null,
+                  "cost_actual": 0.04,
                   "roi": 0,
                   "effort_hours_estimate": null,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 0.5,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1773681517,
                   "progress": 0,
                   "description": "Track how often each memory is used to boost ranking of high-utility memories. Two modes: (1) Passive: increment injection_count every time a memory is injected; increment search_count every time found via memory_search tool. Use combined usage_score to boost ranking weight. (2) Active (future): lightweight memory-eval tool called by agent after turn, gives feedback on which injected memories were actually useful. Start with passive — add injection_count and search_count columns to DB, update on each injection/search hit, add configurable usage_weight to ranking formula.",
                   "notes": [],
