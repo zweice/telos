@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-15T23:52:07.513Z",
+  "generated_at": "2026-03-16T00:32:15.281Z",
   "tree": [
     {
       "id": 1,
@@ -3120,6 +3120,17 @@
     }
   ],
   "ideas": [
+    {
+      "id": 11,
+      "title": "Graph DB for memory: is it actually better than vector search?",
+      "description": "Andreas is skeptical that graph DBs (like in Mem0) provide real retrieval quality improvements over vector search. Relationships between entities are implicitly encoded in embedding space anyway. Our family facts retrieval problems were caused by a bug (wrong distance metric), not by absence of a graph. The question is whether there's actual empirical research showing graph+vector beats vector-only for personal assistant memory retrieval, or if it's architecture intuition that hasn't been validated.",
+      "rationale": "Before investing in graph layer for MemoryHub, should verify the improvement is real. Could be over-engineering.",
+      "status": "active",
+      "key_decisions": "Is there peer-reviewed research comparing graph+vector vs vector-only for personal memory retrieval? What's the actual retrieval quality delta? Is the complexity cost justified?",
+      "tags": [],
+      "created_at": 1773621133,
+      "updated_at": 1773621133
+    },
     {
       "id": 10,
       "title": "MemoryHub — shared global memory network for AI agents",
