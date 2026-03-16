@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-16T00:32:15.281Z",
+  "generated_at": "2026-03-16T01:57:11.522Z",
   "tree": [
     {
       "id": 1,
@@ -729,6 +729,26 @@
                   "children": []
                 }
               ]
+            },
+            {
+              "id": 156,
+              "title": "MemoryHub: Align extraction output limits + tumbling window for long sessions",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": 3,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Two issues with current extraction:\n\n1. Output token alignment: max_tokens=8192 (Haiku 4.5 max output). If a long session produces more memories than fit in 8192 output tokens, JSON array gets truncated mid-stream → parse failure → zero memories saved. Need to calculate how many structured memories fit in 8192 tokens (~80-100). If a session could yield more, need a fallback.\n\n2. Tumbling window extraction: For very long sessions (>50k chars), split transcript into overlapping windows (e.g. 30k chars with 5k overlap) and run multiple Haiku extraction calls. Deduplicate across windows using existing cosine similarity gate. Reduces per-call latency and avoids hitting output limits.\n\nBoth changes ensure no facts are lost from marathon sessions.",
+              "notes": [],
+              "children": []
             }
           ]
         },
