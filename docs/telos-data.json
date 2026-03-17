@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-17T20:25:42.225Z",
+  "generated_at": "2026-03-17T23:41:17.420Z",
   "tree": [
     {
       "id": 1,
@@ -3300,6 +3300,28 @@
     }
   ],
   "ideas": [
+    {
+      "id": 13,
+      "title": "/forget command: exclude recent content from memory extraction",
+      "description": "Two variants: (1) /forget_session — marks the entire current session as excluded from extraction at session_end. (2) /forget 5min — excludes everything said in the last N minutes from extraction. Implementation: write a 'forget marker' to session state (e.g. forget_until: timestamp or forget_session: true). The session_end extraction hook checks these markers before calling extractMemories — skips the session or filters out messages within the forget window. Could also retroactively delete already-extracted memories from a session if the command fires mid-session.",
+      "rationale": "Privacy control. User may share sensitive info (addresses, personal details, embarrassing context) mid-conversation and want it excluded from long-term memory. Natural UX — mirrors how humans say 'forget I said that'.",
+      "status": "active",
+      "key_decisions": "Retroactive vs prospective only? Should /forget 5min also delete already-written memories from that window (requires searching by source_session + timestamp)? Should there be a /forget_all to wipe all memories from current session? How to surface feedback — confirm message 'OK, last 5 min will not be remembered'?",
+      "tags": [],
+      "created_at": 1773790877,
+      "updated_at": 1773790877
+    },
+    {
+      "id": 12,
+      "title": "Single-pass backfill: compose summary from tumbling window mini-summaries",
+      "description": "Current backfill makes 2 separate passes: one for session_summary (summarizeSession), one for granular extraction (extractMemoriesInWindows). Should be one pass. Each tumbling window already processes a chunk — each window should also produce a mini-summary. Final session_summary is composed by combining mini-summaries. Eliminates redundant API calls and double-reading the conversation.",
+      "rationale": "Cuts Haiku API calls roughly in half for large sessions. Cleaner architecture — summary is derived from the same windows as granular extraction, so they stay in sync. Better quality: summary built bottom-up from window insights rather than top-down from raw conversation.",
+      "status": "active",
+      "key_decisions": "How to combine mini-summaries: concatenate + final Haiku pass to merge, or just join? Should mini-summaries be stored separately or only the composed final? Does this change the live extraction pipeline too (onSessionEnd) or only backfill?",
+      "tags": [],
+      "created_at": 1773787528,
+      "updated_at": 1773787528
+    },
     {
       "id": 11,
       "title": "Graph DB for memory: is it actually better than vector search?",
