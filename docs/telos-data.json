@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-17T18:42:06.464Z",
+  "generated_at": "2026-03-17T18:43:08.313Z",
   "tree": [
     {
       "id": 1,
@@ -824,7 +824,7 @@
                   "end_date": null,
                   "completed_at": null,
                   "progress": 0,
-                  "description": "During Haiku memory extraction, generate a 1-5 sentence session summary stored as a distinct memory with source_type='session_summary' tag. Enables multi-hop traversal: 1st hop = relevant memory, 2nd hop = session summary of that memory's source_session, 3rd hop = full memory_search scoped to that session_id. After implementation, backfill last few weeks of session history to populate summaries retroactively. Key decisions: (1) one summary per session_id, skip if exists; (2) store as normal memory row with reserved tag; (3) 2nd-hop injection configurable, off by default; (4) backfill script iterates JSONL files skipping already-summarized sessions.",
+                  "description": "During Haiku memory extraction, generate a 1-5 sentence session summary stored as a distinct memory with source_type='session_summary' tag. Enables multi-hop traversal: 1st hop = relevant memory, 2nd hop = session summary of that memory's source_session, 3rd hop = full memory_search scoped to that session_id.\n\nImplementation steps:\n1. Add session summary generation to extraction hook (1 summary per session, skip if exists)\n2. Store as normal memory row with source_type='session_summary' reserved tag\n3. Add tag filter to memory_search\n4. Implement 2nd-hop lookup (configurable, off by default)\n\nBackfill strategy:\n- Backup current DB (cp -r ~/.memoryhub/db ~/.memoryhub/db-backup-YYYYMMDD)\n- Start fresh DB (current DB contains noise: system file content, tool call stubs, injected memory blocks from pre-filter era)\n- Run backfill script over last 3+ weeks of JSONL session history with all current extraction filters active\n- Script skips sessions already summarized (idempotent)\n\nKey decisions: (1) one summary per session_id, dedup on write; (2) 2nd-hop injection off by default; (3) fresh DB mandatory — old DB is not worth cleaning, backfill from clean extraction is better.",
                   "notes": [],
                   "children": []
                 }
