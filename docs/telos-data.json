@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-17T23:41:17.420Z",
+  "generated_at": "2026-03-17T23:59:13.180Z",
   "tree": [
     {
       "id": 1,
@@ -3300,6 +3300,72 @@
     }
   ],
   "ideas": [
+    {
+      "id": 16,
+      "title": "MemoryHub: extract memories from Workflowy",
+      "description": "Sync Workflowy outline into memory DB. Parse bullet nodes as facts/preferences/commitments based on content. Workflowy has an OPML export and unofficial API. Could run as periodic sync — detect changed nodes, re-extract.",
+      "rationale": "Workflowy is likely a curated knowledge store — high-quality signal. Structured outlines map well to the typed memory model (decisions, facts, commitments).",
+      "status": "active",
+      "key_decisions": "Full re-sync or delta? Map Workflowy tags/mirrors to memory_type? How to handle deletions in Workflowy — delete from DB?",
+      "tags": [],
+      "created_at": 1773791948,
+      "updated_at": 1773791948
+    },
+    {
+      "id": 17,
+      "title": "MemoryHub: extract memories from YouTube watch history / transcripts",
+      "description": "For YouTube videos watched, fetch transcript via youtube-transcript API, run through summarization + extraction. Could hook into browser history or YouTube Takeout watch history. Extracts: topics of interest, learned facts, preferences (channels, subjects).",
+      "rationale": "Reveals interests and knowledge consumed passively. High-value for preference modeling.",
+      "status": "active",
+      "key_decisions": "Trigger: on-demand (/remember this video) vs automatic from watch history? Transcript quality varies. How to rate-limit (don't extract every cat video)?",
+      "tags": [],
+      "created_at": 1773791948,
+      "updated_at": 1773791948
+    },
+    {
+      "id": 18,
+      "title": "MemoryHub: calendar sync — store events as memories with context",
+      "description": "Sync calendar events into memory DB as commitment/entity memories. Upcoming events → commitments. Past events → facts (what happened, with whom). Could extract recurring patterns (weekly tennis, doctor appointments). Bidirectional: actionable memories could create calendar events.",
+      "rationale": "Calendar is ground truth for Andreas's schedule and social graph. Surfacing upcoming events in memory injection is more natural than raw calendar queries.",
+      "status": "active",
+      "key_decisions": "Which calendars? How far ahead to sync? How to handle recurring events (one memory or per-instance)? Privacy of sensitive events?",
+      "tags": [],
+      "created_at": 1773791948,
+      "updated_at": 1773791948
+    },
+    {
+      "id": 19,
+      "title": "MemoryHub: actionable memories — extract and surface action items from memories",
+      "description": "When extracting memories, identify if content implies a future action ('I'm going to the grocery store' → 'Buy milk next time Andreas goes to grocery store'). Store as memory_type='action' with trigger conditions. On injection, if action memory matches context (e.g. location, topic), surface it prominently. Could integrate with Telos task creation for high-priority actions.",
+      "rationale": "Closes the loop between passive memory and active assistance. Transforms MemoryHub from a recall system into a proactive assistant layer.",
+      "status": "active",
+      "key_decisions": "How to model trigger conditions (time-based, location-based, topic-based, contact-based)? Separate action_item memory type vs tag on existing types? When does an action expire/complete? Auto-create Telos task or just surface in injection?",
+      "tags": [],
+      "created_at": 1773791948,
+      "updated_at": 1773791948
+    },
+    {
+      "id": 14,
+      "title": "MemoryHub: extract memories from WhatsApp, Gmail, Telegram conversations",
+      "description": "Run extraction pipeline on external conversation sources: WhatsApp (via wacli), Gmail threads, Telegram history. Parse message threads into conversation format, feed through extractMemoriesInWindows(). WhatsApp already partially covered via relay sessions. Gmail needs agentmail or OAuth. Telegram history exportable via API.",
+      "rationale": "Massive signal source currently untapped. Personal conversations contain preferences, commitments, entity facts, decisions that never flow through agent sessions.",
+      "status": "active",
+      "key_decisions": "Incremental sync vs one-shot backfill? How to handle privacy (filter contacts)? Dedup against existing memories? Which contacts to include?",
+      "tags": [],
+      "created_at": 1773791947,
+      "updated_at": 1773791947
+    },
+    {
+      "id": 15,
+      "title": "MemoryHub: extract memories from ChatGPT/Gemini session exports",
+      "description": "Import conversation history exports from ChatGPT (conversations.json) and Gemini. Parse into role/content format, run through extractMemoriesInWindows(). ChatGPT exports available via data export feature. Gemini via Takeout.",
+      "rationale": "Years of prior context, decisions, preferences, and knowledge locked in other AI sessions. One-time import would massively bootstrap the memory DB.",
+      "status": "active",
+      "key_decisions": "How to attribute agent_id? Separate 'chatgpt-import' agent or merge into main? How to handle stale/outdated facts?",
+      "tags": [],
+      "created_at": 1773791947,
+      "updated_at": 1773791947
+    },
     {
       "id": 13,
       "title": "/forget command: exclude recent content from memory extraction",
