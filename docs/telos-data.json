@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-17T14:07:50.167Z",
+  "generated_at": "2026-03-17T18:42:06.464Z",
   "tree": [
     {
       "id": 1,
@@ -805,6 +805,26 @@
                   "completed_at": 1773756452,
                   "progress": 0,
                   "description": "Add to HEARTBEAT.md: (1) check if new memories arrived in last 24h (query DB for recent entries), (2) sample 3-5 random recent memories and spot-check content looks sensible (not system file content, not empty, not duplicates), (3) check injection_count distribution — are any memories being injected 10x+ (possible over-surfacing?), (4) flag if 0 memories written in last 24h on active agent. This is broader than the _similarity=undefined check — it's a sanity check on the whole pipeline.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 163,
+                  "title": "MemoryHub: Session summary memories + multi-hop traversal",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 5,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": 5,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "During Haiku memory extraction, generate a 1-5 sentence session summary stored as a distinct memory with source_type='session_summary' tag. Enables multi-hop traversal: 1st hop = relevant memory, 2nd hop = session summary of that memory's source_session, 3rd hop = full memory_search scoped to that session_id. After implementation, backfill last few weeks of session history to populate summaries retroactively. Key decisions: (1) one summary per session_id, skip if exists; (2) store as normal memory row with reserved tag; (3) 2nd-hop injection configurable, off by default; (4) backfill script iterates JSONL files skipping already-summarized sessions.",
                   "notes": [],
                   "children": []
                 }
