@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-16T22:36:01.600Z",
+  "generated_at": "2026-03-17T08:07:38.905Z",
   "tree": [
     {
       "id": 1,
@@ -2062,16 +2062,16 @@
               "title": "Fix CC completion notify: openclaw system event routing and session wake",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "done",
               "value": 3,
               "cost_estimate": 1,
-              "cost_actual": null,
+              "cost_actual": 0.05,
               "roi": 0,
               "effort_hours_estimate": null,
-              "effort_hours_actual": null,
+              "effort_hours_actual": 0.5,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1773734853,
               "progress": 0,
               "description": "Claude Code appends 'openclaw system event --text ... --mode now' as completion trigger but: (1) it may not be routing to the correct session (only wakes main, not thread sessions), (2) the CC meta-commentary 'Note: I did not schedule a reminder' keeps appearing suggesting the command isn't firing correctly. Fix: use the curl sessions_send approach exclusively, remove openclaw system event from CC prompts, document the correct notify pattern in SOUL.md and coding-agent skill.",
               "notes": [],
