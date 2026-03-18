@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-18T00:18:35.647Z",
+  "generated_at": "2026-03-18T01:01:32.430Z",
   "tree": [
     {
       "id": 1,
@@ -845,6 +845,26 @@
                   "completed_at": null,
                   "progress": 0,
                   "description": "Add optional session_id param to memory_search tool (filters to source_session field, combines with vector similarity). Add get_session_summary(session_id) — direct lookup of session_summary memory type for a session_id, no vector search needed. Enables agents to proactively reconstruct context from known sessions.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 165,
+                  "title": "MemoryHub: inject most recent session_summary at session-start",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "done",
+                  "value": 55,
+                  "cost_estimate": 0,
+                  "cost_actual": 0,
+                  "roi": 0,
+                  "effort_hours_estimate": 2,
+                  "effort_hours_actual": 1,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": 1773794948,
+                  "progress": 0,
+                  "description": "At session initialization, unconditionally inject the session_summary of the most recent prior session for that agent. Separate deterministic query: SELECT WHERE memory_type=session_summary AND agent_id=agentId ORDER BY created_at DESC LIMIT 1. Inject before top-N scored memories. Gives immediate continuity without relying on similarity scoring. Consider: last N summaries, per-channel scoping, additive vs within topN budget.",
                   "notes": [],
                   "children": []
                 }
@@ -3300,6 +3320,17 @@
     }
   ],
   "ideas": [
+    {
+      "id": 21,
+      "title": "MemoryHub: multi-pass query window + FTS hybrid retrieval",
+      "description": "Replace single 3+3 rolling window with multi-pass retrieval: Pass 1 (last 1 msg) for narrow/specific hits, Pass 2 (last 2+2) for relational context, Pass 3 (last 3+3) for thematic. Union all candidate sets, dedup by memory ID, re-rank by best score across passes. Add FTS (BM25/keyword) pass on last 1 user message only — catches exact IDs, names, Telos numbers that embeddings dilute. FTS hits get fixed similarity score (e.g. 0.6) to compete with vector results. Final ranking via RRF (Reciprocal Rank Fusion) combining vector + keyword scores.",
+      "rationale": "Current 3+3 window dilutes specific identifiers (#136, 'Matilda', 'Nilo') into thematic embeddings. Multi-pass + FTS directly fixes the observed failure mode where exact references miss the similarity threshold. RRF is proven (MemOS uses it).",
+      "status": "active",
+      "key_decisions": "How many candidates per pass before dedup? LanceDB supports FTS index (lance_full_text_search) — add to schema or use JS-side keyword filter as fallback? RRF k parameter tuning? Does multi-pass increase latency noticeably (3 parallel searches vs 1)?",
+      "tags": [],
+      "created_at": 1773795692,
+      "updated_at": 1773795692
+    },
     {
       "id": 20,
       "title": "MemoryHub: inject most recent session_summary at session-start",
