@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-18T05:52:36.595Z",
+  "generated_at": "2026-03-18T20:14:23.028Z",
   "tree": [
     {
       "id": 1,
@@ -1440,16 +1440,16 @@
                   "title": "TelosHub: workflow plugin to auto-update Telos on each agent turn",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "in_progress",
+                  "status": "done",
                   "value": 3,
                   "cost_estimate": 0,
-                  "cost_actual": null,
+                  "cost_actual": 0.5,
                   "roi": 0,
                   "effort_hours_estimate": 5,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 1.5,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1773864860,
                   "progress": 0,
                   "description": "A plugin similar to MemoryHub but for workflow state. On each agent turn (or agent_end), automatically detect Telos-relevant signals in the conversation and update task status:\n\n- Task mentions: detect when agent references a Telos task ID or task title\n- Status transitions: detect completion signals ('done', 'shipped', 'fixed', 'deployed'), blockers ('waiting for', 'blocked by'), and progress notes\n- Auto-complete tasks when agent declares something finished\n- Auto-add notes/progress updates to in_progress tasks\n- Cost tracking: auto-populate cost-actual from session token costs when completing tasks\n- Low-noise: only trigger on high-confidence signals to avoid spurious updates\n\nArchitecture ideas:\n- Hook into agent_end (like MemoryHub) — extract Telos signals via Haiku from transcript\n- Or: hook into each turn (before_prompt_build) for real-time tracking\n- Telos CLI wrapper or direct DB writes\n- Config: per-agent enable/disable, confidence threshold, which status transitions to auto-apply\n\nTrade-offs:\n- agent_end batch vs. per-turn real-time: batch is cheaper, per-turn is more accurate\n- Auto-completing tasks is risky if detection is wrong — maybe only auto-add notes, require explicit completion\n- May conflict with manual Telos workflow if agent and human disagree on status",
                   "notes": [],
