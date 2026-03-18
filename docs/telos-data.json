@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-17T23:59:13.180Z",
+  "generated_at": "2026-03-18T00:18:35.647Z",
   "tree": [
     {
       "id": 1,
@@ -3300,6 +3300,17 @@
     }
   ],
   "ideas": [
+    {
+      "id": 20,
+      "title": "MemoryHub: inject most recent session_summary at session-start",
+      "description": "At session initialization, always inject the session_summary of the most recent prior session for that agent as the first memory. This gives the agent immediate continuity — 'last time we spoke about X' — without relying on similarity scoring or recency weighting. Implementation: in the session-start injection path, run a separate query: SELECT * WHERE memory_type='session_summary' AND agent_id=agentId ORDER BY created_at DESC LIMIT 1. Inject this unconditionally before the top-N scored memories. Could also inject the most recent session_summary per channel/conversation if sessions are channel-scoped.",
+      "rationale": "Most natural form of continuity. Humans recap the last conversation before starting a new one. Session summaries are purpose-built for this — concise, agent-scoped, high signal. Currently session-start injection uses recency+importance scoring which surfaces operational noise instead.",
+      "status": "active",
+      "key_decisions": "One summary or last N (e.g. 3)? Should it count against the topN budget or be additive? Per-agent or per-conversation (channel-scoped)? Should it be shown via showInMessage or silent?",
+      "tags": [],
+      "created_at": 1773793115,
+      "updated_at": 1773793115
+    },
     {
       "id": 16,
       "title": "MemoryHub: extract memories from Workflowy",
