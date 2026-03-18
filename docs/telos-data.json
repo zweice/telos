@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-18T01:05:47.153Z",
+  "generated_at": "2026-03-18T05:52:36.595Z",
   "tree": [
     {
       "id": 1,
@@ -833,16 +833,16 @@
                   "title": "memory_search: optional session_id filter + session summary retrieval",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 0,
                   "cost_estimate": 0,
-                  "cost_actual": null,
+                  "cost_actual": 0.3,
                   "roi": 0,
                   "effort_hours_estimate": null,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 0.5,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1773812889,
                   "progress": 0,
                   "description": "Add optional session_id param to memory_search tool (filters to source_session field, combines with vector similarity). Add get_session_summary(session_id) — direct lookup of session_summary memory type for a session_id, no vector search needed. Enables agents to proactively reconstruct context from known sessions.",
                   "notes": [],
@@ -873,19 +873,24 @@
                   "title": "MemoryHub: multi-pass query window + FTS hybrid retrieval",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 55,
                   "cost_estimate": 0,
-                  "cost_actual": null,
+                  "cost_actual": 0.5,
                   "roi": 0,
                   "effort_hours_estimate": 4,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 2,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1773813156,
                   "progress": 0,
                   "description": "Replace single 3+3 rolling window with multi-pass retrieval: Pass 1 (last 1 msg) for narrow/specific hits, Pass 2 (last 2+2) for relational context, Pass 3 (last 3+3) for thematic. Union all candidate sets, dedup by memory ID, re-rank by best score. Key insight: candidates retrieved by narrower passes (Pass 1 > Pass 2 > Pass 3) get a specificity weight bonus in final RRF scoring — they survived a tighter query so they're more likely to be exactly what was asked for. Add FTS (BM25/keyword) pass on last 1 user message only — catches exact IDs, names, Telos numbers that embeddings dilute. FTS hits get fixed similarity score (e.g. 0.6) to compete with vector results. LanceDB has native FTS index (create_fts_index) — use that, no separate DB needed. Final ranking via RRF combining vector + keyword + specificity bonus.",
-                  "notes": [],
+                  "notes": [
+                    {
+                      "ts": 1773796311,
+                      "text": "Score normalization: use decay multipliers anchored at Pass 1 (×1.0), Pass 2 (×0.85), Pass 3 (×0.70) rather than boosting narrow passes above 1.0. Keeps all scores in [0,1] range so mid-session similarity gate (0.3 threshold) remains valid. FTS hits get fixed score ~0.60. All multipliers configurable."
+                    }
+                  ],
                   "children": []
                 }
               ]
