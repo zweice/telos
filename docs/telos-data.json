@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-19T10:56:26.244Z",
+  "generated_at": "2026-03-19T11:27:41.249Z",
   "tree": [
     {
       "id": 1,
@@ -997,7 +997,7 @@
                       "title": "LoCoMo benchmark integration + synthetic persona for edge cases",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "in_progress",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
@@ -1186,6 +1186,167 @@
                         "id": 177,
                         "title": "Benchmark runner with LoCoMo scoring + competitive comparison"
                       }
+                    }
+                  ]
+                },
+                {
+                  "id": 182,
+                  "title": "ToolSense — Memory-Augmented Tool Execution",
+                  "type": "milestone",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Memory-augmented tool execution: intercept tool calls via before_tool_call hook, search for relevant lessons/outcomes, inject feedback before execution. Agent can bypass with flag. Includes tool-outcome memory extraction from after_tool_call results. Toggle: memoryhub.toolSense.enabled. Goal: prevent repeated mistakes, surface relevant context at action-time not just query-time.",
+                  "notes": [],
+                  "children": [
+                    {
+                      "id": 183,
+                      "title": "Tool-outcome memory extraction (after_tool_call)",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Extract memories from tool call results via after_tool_call hook. Focus on: failures (exit code != 0), unexpected outputs, corrections. New memory fields: tool_name, tool_args_hash. New source_type value: 'tool_outcome'. Update extraction prompt with tool-specific guidance: extract the lesson, not the raw output. Whitelist/blacklist tools for extraction (skip read, memory_search, web_search). Config: memoryhub.toolSense.extractionTools[].",
+                      "notes": [],
+                      "children": []
+                    },
+                    {
+                      "id": 184,
+                      "title": "before_tool_call retrieval + feedback injection",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Hook into before_tool_call: embed tool name + args + last 2 messages as query context. Search memories filtered by tool_name match OR general lessons. If matches above threshold (configurable): pause tool call, inject memories as system message with format '[ToolSense] Before proceeding: <lesson>'. Agent sees feedback before tool executes. Skip list: read, memory_search, process, web_search (low-risk tools). Latency budget: <500ms including embedding.",
+                      "notes": [],
+                      "children": [],
+                      "locked": true,
+                      "locked_by": {
+                        "id": 183,
+                        "title": "Tool-outcome memory extraction (after_tool_call)"
+                      }
+                    },
+                    {
+                      "id": 185,
+                      "title": "ToolSense bypass mechanism",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Allow agent to proceed after seeing ToolSense feedback. Options to evaluate: (1) session-level flag set after feedback shown — next identical tool call passes through, (2) tool arg injection (bypassMemoryFeedback:true) if OC schema allows, (3) time-window bypass — same tool+args within 30s auto-passes. Must prevent infinite feedback loops. Must not block agent when it's already seen the lesson.",
+                      "notes": [],
+                      "children": [],
+                      "locked": true,
+                      "locked_by": {
+                        "id": 184,
+                        "title": "before_tool_call retrieval + feedback injection"
+                      }
+                    },
+                    {
+                      "id": 186,
+                      "title": "ToolSense config schema + toggle",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Add to openclaw.plugin.json: memoryhub.toolSense.enabled (default: false), toolSense.similarityThreshold (default: 0.35), toolSense.skipTools[] (default: [read, memory_search, process, web_search]), toolSense.extractionTools[] (default: [exec, sessions_send, sessions_spawn, message]). Update README with feature docs.",
+                      "notes": [],
+                      "children": [],
+                      "locked": true,
+                      "locked_by": {
+                        "id": 183,
+                        "title": "Tool-outcome memory extraction (after_tool_call)"
+                      }
+                    },
+                    {
+                      "id": 187,
+                      "title": "ToolSense benchmark: tool efficiency with/without feature",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Design and implement benchmark measuring agent tool efficiency with and without ToolSense. Metrics: (1) tool call success rate (fewer failures with ToolSense), (2) correction loops (agent retries same tool — should decrease), (3) time-to-correct (how fast agent recovers from errors), (4) false positive rate (ToolSense fires but lesson is irrelevant — should be <10%), (5) latency overhead per tool call. Test against recorded session logs with known tool failures. A/B comparison: same task set run with ToolSense on vs off.",
+                      "notes": [],
+                      "children": [],
+                      "locked": true,
+                      "locked_by": {
+                        "id": 184,
+                        "title": "before_tool_call retrieval + feedback injection"
+                      }
+                    },
+                    {
+                      "id": 188,
+                      "title": "Research: existing tool-augmented agent benchmarks",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Survey existing benchmarks for tool-using agents with memory. Check: ToolBench, API-Bank, BFCL (Berkeley Function Calling Leaderboard), AgentBench, T-Eval. Look for any that specifically measure memory-augmented tool execution or lesson learning from tool failures. Report: which benchmarks are adaptable, what metrics they use, any public datasets we can reuse.",
+                      "notes": [],
+                      "children": []
                     }
                   ]
                 }
@@ -4117,6 +4278,36 @@
       "id": 39,
       "blocked_id": 181,
       "blocker_id": 177,
+      "type": "hard"
+    },
+    {
+      "id": 40,
+      "blocked_id": 184,
+      "blocker_id": 183,
+      "type": "hard"
+    },
+    {
+      "id": 41,
+      "blocked_id": 185,
+      "blocker_id": 184,
+      "type": "hard"
+    },
+    {
+      "id": 42,
+      "blocked_id": 186,
+      "blocker_id": 183,
+      "type": "hard"
+    },
+    {
+      "id": 43,
+      "blocked_id": 187,
+      "blocker_id": 184,
+      "type": "hard"
+    },
+    {
+      "id": 44,
+      "blocked_id": 187,
+      "blocker_id": 188,
       "type": "hard"
     }
   ]
