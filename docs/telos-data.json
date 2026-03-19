@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-19T12:53:40.416Z",
+  "generated_at": "2026-03-19T16:11:17.519Z",
   "tree": [
     {
       "id": 1,
@@ -1391,7 +1391,12 @@
                       "completed_at": 1773924696,
                       "progress": 0,
                       "description": "Multi-hop at 75.7%. These need multiple memory pieces combined. Fix: (1) Extract entity relationships as separate memories (e.g. 'Caroline → therapist Dr. Kim'), (2) When query mentions entity, also retrieve related entities, (3) Consider entity-graph-augmented retrieval. Target: 75%→82%+.",
-                      "notes": [],
+                      "notes": [
+                        {
+                          "ts": 1773925194,
+                          "text": "Entity extraction regressed overall accuracy 77.4%→74.4%. INCORRECT doubled 17→30. Entity memories add noise to top-K. Consider: (1) lower weight for entity-type memories in ranking, (2) only retrieve entities when query mentions relationships, (3) revert entity extraction and focus on other improvements."
+                        }
+                      ],
                       "children": []
                     },
                     {
@@ -1435,6 +1440,26 @@
                       "children": []
                     }
                   ]
+                },
+                {
+                  "id": 196,
+                  "title": "AgenticMemoryBench",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 34,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": 13,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Design and build an agentic memory benchmark that tests the full pipeline, not just vector retrieval. LoCoMo only measures retrieval quality. Agentic benchmark should test: (1) multi-turn agent conversation with tool access, (2) questions requiring chained memory_search calls, (3) write quality — extraction, dedup, importance scoring, (4) temporal queries and contradiction handling, (5) end-to-end: conversation → extract → retrieve → answer with Sonnet/Opus judge. Publishing this would be a genuine differentiator — no competitor has one. Also serves as superior internal quality gate vs LoCoMo.",
+                  "notes": [],
+                  "children": []
                 }
               ]
             },
