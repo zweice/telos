@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-18T20:14:23.028Z",
+  "generated_at": "2026-03-19T07:12:55.773Z",
   "tree": [
     {
       "id": 1,
@@ -2161,6 +2161,46 @@
               "description": "Claude Code appends 'openclaw system event --text ... --mode now' as completion trigger but: (1) it may not be routing to the correct session (only wakes main, not thread sessions), (2) the CC meta-commentary 'Note: I did not schedule a reminder' keeps appearing suggesting the command isn't firing correctly. Fix: use the curl sessions_send approach exclusively, remove openclaw system event from CC prompts, document the correct notify pattern in SOUL.md and coding-agent skill.",
               "notes": [],
               "children": []
+            },
+            {
+              "id": 167,
+              "title": "Session continuity checkpoint: preserve context across gateway restart",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 8,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": 2,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "After restart, Andreas asks status and Conductor has no memory of what was in progress. Fix: write checkpoint to ~/.openclaw/agents/conductor/CHECKPOINT.md before restarting (current task, state, next step). Read at session start. Eliminates re-establishment overhead.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 168,
+              "title": "Post-restart agent wake: resume work after gateway restart",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 5,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": 3,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "After gateway restart the triggering agent isn't woken up. Options: (1) schedule 1-min cron before restarting, (2) write pending work to file + heartbeat picks it up, (3) native post-restart hook. Goal: resume mid-task work without human intervention.",
+              "notes": [],
+              "children": []
             }
           ]
         },
@@ -3345,6 +3385,22 @@
     }
   ],
   "ideas": [
+    {
+      "id": 22,
+      "title": "TelosHub v2: Task-Aware Signal Extraction",
+      "description": "Current TelosHub plugin (~/code/macrohard/teloshub/) fires on session_end, sends transcript to Haiku, extracts task signals. Currently 0/8 hit rate — Haiku has no task list so guesses titles instead of matching IDs; only reads assistant messages (misses user directives); no completion signal type; 8k char transcript cap truncates long sessions. Fix: inject open task list into extraction prompt, include both roles, add status_complete, raise cap. Plugin: ~/code/macrohard/teloshub/src/extract.js. Config: openclaw.json plugins.entries.teloshub.",
+      "rationale": "Agents reference Telos tasks constantly but manual CLI calls get skipped. Auto-capturing signals would keep Telos current at ~$0.01/session.",
+      "status": "active",
+      "key_decisions": "Inject task list per-call or cache? Confidence threshold after ID matching? Auto-complete tasks or just notes? Include user+assistant or assistant-only?",
+      "tags": [
+        "teloshub",
+        "telos",
+        "plugin",
+        "automation"
+      ],
+      "created_at": 1773904371,
+      "updated_at": 1773904371
+    },
     {
       "id": 21,
       "title": "MemoryHub: multi-pass query window + FTS hybrid retrieval",
