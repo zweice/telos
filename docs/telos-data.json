@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-19T16:11:17.519Z",
+  "generated_at": "2026-03-19T20:00:47.785Z",
   "tree": [
     {
       "id": 1,
@@ -1151,6 +1151,31 @@
                       "description": "Integrate MemoryAgentBench (Hu et al., 2025) evaluation for memory competencies LoCoMo doesn't cover: (1) Update — does the system correctly update a fact when corrected? (2) Forget — does archival/dream cycle properly remove stale ephemeral memories? (3) Store — does extraction capture the right facts at right importance? (4) Recall — covered by LoCoMo. This complements LoCoMo (retrieval focus) with write-path quality testing.",
                       "notes": [],
                       "children": []
+                    },
+                    {
+                      "id": 197,
+                      "title": "bench: per-conversation agent_id partitioning",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "done",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": 1773948717,
+                      "progress": 0,
+                      "description": null,
+                      "notes": [
+                        {
+                          "ts": 1773941081,
+                          "text": "Current design stores all 10 conv memories under single TEST_AGENT_ID. Cross-conv retrieval poisons results: conv-42 recall@5=1.2% vs conv-26=15.1% because conv-26's 215 memories dominate vector space. Fix: assign each conv its own agent_id (e.g. locomo-conv-42), seed with that id, pass matching agentId to db.search() in evaluate.js. Expected to raise conv-42/43 from 42% toward 70%+ and overall from 59.4% significantly."
+                        }
+                      ],
+                      "children": []
                     }
                   ]
                 },
@@ -1424,8 +1449,33 @@
                       "title": "Generate fixtures for all 10 LoCoMo conversations + full benchmark",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "in_progress",
+                      "status": "done",
                       "value": 3,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": 1773940947,
+                      "progress": 0,
+                      "description": "Current baseline uses only conv-26 (1 of 10 conversations). For publication-grade results, need all 10. Generate fixtures: ~3000 memories, ~1986 queries. Estimated Haiku cost: ~. Run full benchmark + save as official baseline.",
+                      "notes": [
+                        {
+                          "ts": 1773948717,
+                          "text": "Full 10-conv corrected baseline: 65.4% LLM accuracy (1986 queries) with per-conv agent_id partitioning. Breakdown: adversarial 93.6%, temporal 65.1%, multi-hop 56.1%, single-hop 54.3%, open-domain 48.4%. conv-42/43 now contributing (cross-contamination fixed). Saved: test/benchmark-results/2026-03-19-19-31-02.json"
+                        }
+                      ],
+                      "children": []
+                    },
+                    {
+                      "id": 198,
+                      "title": "Hybrid FTS+vector search",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
                       "roi": 0,
@@ -1435,7 +1485,112 @@
                       "end_date": null,
                       "completed_at": null,
                       "progress": 0,
-                      "description": "Current baseline uses only conv-26 (1 of 10 conversations). For publication-grade results, need all 10. Generate fixtures: ~3000 memories, ~1986 queries. Estimated Haiku cost: ~. Run full benchmark + save as official baseline.",
+                      "description": "Combine FTS and vector search in db.search(). FTS index already created on content column. Implement: (1) run vector search, (2) run FTS search on query text, (3) merge/re-rank results with RRF (Reciprocal Rank Fusion). Expected +8-12% on single-hop/open-domain. Benchmark: run full 10-conv with --llm-judge after.",
+                      "notes": [],
+                      "children": [],
+                      "locked": true,
+                      "locked_by": {
+                        "id": 203,
+                        "title": "Checkpoint/resume for benchmark"
+                      }
+                    },
+                    {
+                      "id": 199,
+                      "title": "Answer synthesis benchmark mode",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Add --synthesize flag to bench.js. When set, pass top-5 retrieved memories to Haiku with the query and ask for a direct answer, then judge that answer instead of raw retrieval. This measures retrieval+generation (closer to production). Expected: PARTIAL->CORRECT conversion +5-8%. Keep both modes for comparison.",
+                      "notes": [],
+                      "children": []
+                    },
+                    {
+                      "id": 200,
+                      "title": "Multi-query decomposition for multi-hop",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "For multi-hop queries (841 of 1986), decompose into sub-queries before retrieval. Use Haiku to split complex questions into 2-3 atomic queries, retrieve for each, merge results. Expected +5-7% on multi-hop category (56.1% baseline). Add --decompose flag to bench.",
+                      "notes": [],
+                      "children": []
+                    },
+                    {
+                      "id": 201,
+                      "title": "Re-ranking with Haiku cross-encoder",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "After vector retrieval of top-20, use Haiku to re-rank by relevance to the query. Return top-5 from re-ranked list. Expected +3-5%. Add as option in db.search() with rerank:true parameter.",
+                      "notes": [],
+                      "children": []
+                    },
+                    {
+                      "id": 202,
+                      "title": "Query expansion",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Before embedding, expand query with synonyms/alternative phrasings using Haiku. Embed expanded query for better recall on name/entity lookups. Low effort, expected +2-3%.",
+                      "notes": [],
+                      "children": []
+                    },
+                    {
+                      "id": 203,
+                      "title": "Checkpoint/resume for benchmark",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "in_progress",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Save per-query results to temp file every 100 queries. On restart, load checkpoint and skip completed queries. Prevents losing 30+ min of LLM judge calls on crash. Critical for iteration speed.",
                       "notes": [],
                       "children": []
                     }
@@ -4443,6 +4598,12 @@
       "id": 48,
       "blocked_id": 195,
       "blocker_id": 194,
+      "type": "hard"
+    },
+    {
+      "id": 49,
+      "blocked_id": 198,
+      "blocker_id": 203,
       "type": "hard"
     }
   ]
