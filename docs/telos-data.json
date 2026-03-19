@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-19T11:27:41.249Z",
+  "generated_at": "2026-03-19T12:01:50.365Z",
   "tree": [
     {
       "id": 1,
@@ -997,7 +997,7 @@
                       "title": "LoCoMo benchmark integration + synthetic persona for edge cases",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "in_progress",
+                      "status": "done",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
@@ -1006,7 +1006,7 @@
                       "effort_hours_actual": null,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": null,
+                      "completed_at": 1773919890,
                       "progress": 0,
                       "description": "Two-track approach: (1) PRIMARY: Integrate LoCoMo dataset (snap-research/locomo) as external benchmark — 10 conversations, 300 turns each, 35 sessions. Adopt their query categories: single-hop, multi-hop (cross-session), temporal reasoning, open-domain, adversarial. Gives direct comparability to Mem0 (66.9%), Zep (58.4%), Letta (74%), MemMachine (84.8%). (2) SECONDARY: Synthetic persona for MemoryHub-specific edge cases: cross-lingual (German/English/Russian), agent-specific memory types, importance calibration, dream cycle, contradictions. Output: LoCoMo adapter + synthetic seed file.",
                       "notes": [],
@@ -1017,7 +1017,7 @@
                       "title": "Isolated test DB environment",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "done",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
@@ -1026,23 +1026,18 @@
                       "effort_hours_actual": null,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": null,
+                      "completed_at": 1773920128,
                       "progress": 0,
                       "description": "Create test harness that spins up an isolated LanceDB instance (separate from production ~/.memoryhub/db). Load synthetic seed data. Provide setup/teardown helpers. Must never touch production DB. Config: TEST_DB_PATH env var or --test-db flag. Include a db-seed.js script that embeds and inserts all synthetic memories.",
                       "notes": [],
-                      "children": [],
-                      "locked": true,
-                      "locked_by": {
-                        "id": 174,
-                        "title": "LoCoMo benchmark integration + synthetic persona for edge cases"
-                      }
+                      "children": []
                     },
                     {
                       "id": 176,
                       "title": "Golden query set: LoCoMo categories + LLM-as-Judge + custom edge cases",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "done",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
@@ -1051,23 +1046,18 @@
                       "effort_hours_actual": null,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": null,
+                      "completed_at": 1773920497,
                       "progress": 0,
                       "description": "Adopt LoCoMo evaluation structure: single-hop, multi-hop, temporal, open-domain, adversarial query categories. Metrics: (1) LLM-as-Judge accuracy (primary — matches industry standard), (2) Recall@5/10, MRR (our internal metrics), (3) ROUGE-1, BERTScore, SentenceBERT similarity (LoCoMo-compatible). Add custom categories for our edge cases: cross-lingual retrieval, importance-gated recall, agent-scoped vs shared memory. 50+ LoCoMo-derived queries + 20+ custom queries.",
                       "notes": [],
-                      "children": [],
-                      "locked": true,
-                      "locked_by": {
-                        "id": 175,
-                        "title": "Isolated test DB environment"
-                      }
+                      "children": []
                     },
                     {
                       "id": 177,
                       "title": "Benchmark runner with LoCoMo scoring + competitive comparison",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "done",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
@@ -1076,23 +1066,18 @@
                       "effort_hours_actual": null,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": null,
+                      "completed_at": 1773921046,
                       "progress": 0,
                       "description": "CLI: 'node bench.js --config-a default --config-b experimental --dataset locomo'. Runs LoCoMo evaluation protocol: LLM-as-Judge + composite score (ROUGE+METEOR+BERTScore+SentenceBERT)/4. Produces: (1) Overall score comparable to Mem0/Zep/Letta leaderboard, (2) Per-category breakdown, (3) Config A vs B diff with regression detection (>5% drop = red flag). Store results in benchmark-results/ with timestamps. Support --baseline flag.",
                       "notes": [],
-                      "children": [],
-                      "locked": true,
-                      "locked_by": {
-                        "id": 176,
-                        "title": "Golden query set: LoCoMo categories + LLM-as-Judge + custom edge cases"
-                      }
+                      "children": []
                     },
                     {
                       "id": 178,
                       "title": "Extraction quality test suite",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "done",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
@@ -1101,23 +1086,18 @@
                       "effort_hours_actual": null,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": null,
+                      "completed_at": 1773920768,
                       "progress": 0,
                       "description": "Test the extraction pipeline (Haiku prompt → memory objects). Feed synthetic conversation transcripts, verify: correct memory_type assignment, importance calibration (10% at 0.8+), no inference beyond stated facts, proper dedup, person reference rule (name not 'the user'). Include regression tests for known bugs: backtick escaping, operational instruction extraction, task completion noise. 20+ test transcripts with expected extractions.",
                       "notes": [],
-                      "children": [],
-                      "locked": true,
-                      "locked_by": {
-                        "id": 175,
-                        "title": "Isolated test DB environment"
-                      }
+                      "children": []
                     },
                     {
                       "id": 179,
                       "title": "Experiment framework — hypothesis → benchmark → decision log",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "done",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
@@ -1126,23 +1106,18 @@
                       "effort_hours_actual": null,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": null,
+                      "completed_at": 1773921186,
                       "progress": 0,
                       "description": "Structured experiment workflow: (1) log hypothesis in experiments.json (what change, expected impact, metrics to watch), (2) run benchmark before, (3) apply change, (4) run benchmark after, (5) auto-generate diff report, (6) record decision (keep/revert/iterate). Track all experiments with IDs. Telos integration: link experiment to task ID.",
                       "notes": [],
-                      "children": [],
-                      "locked": true,
-                      "locked_by": {
-                        "id": 177,
-                        "title": "Benchmark runner with LoCoMo scoring + competitive comparison"
-                      }
+                      "children": []
                     },
                     {
                       "id": 180,
                       "title": "CI-ready test runner + pre-commit hook",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "done",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
@@ -1151,23 +1126,18 @@
                       "effort_hours_actual": null,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": null,
+                      "completed_at": 1773921478,
                       "progress": 0,
                       "description": "npm test runs full suite: extraction tests + retrieval benchmarks against golden set. Exit code 1 if any regression detected. Optional pre-commit hook that runs fast subset (10 queries). GitHub Actions workflow for PR checks. Must complete in <60s for fast feedback.",
                       "notes": [],
-                      "children": [],
-                      "locked": true,
-                      "locked_by": {
-                        "id": 179,
-                        "title": "Experiment framework — hypothesis → benchmark → decision log"
-                      }
+                      "children": []
                     },
                     {
                       "id": 181,
                       "title": "MemoryAgentBench integration — update & forget competencies",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "done",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
@@ -1176,16 +1146,11 @@
                       "effort_hours_actual": null,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": null,
+                      "completed_at": 1773921710,
                       "progress": 0,
                       "description": "Integrate MemoryAgentBench (Hu et al., 2025) evaluation for memory competencies LoCoMo doesn't cover: (1) Update — does the system correctly update a fact when corrected? (2) Forget — does archival/dream cycle properly remove stale ephemeral memories? (3) Store — does extraction capture the right facts at right importance? (4) Recall — covered by LoCoMo. This complements LoCoMo (retrieval focus) with write-path quality testing.",
                       "notes": [],
-                      "children": [],
-                      "locked": true,
-                      "locked_by": {
-                        "id": 177,
-                        "title": "Benchmark runner with LoCoMo scoring + competitive comparison"
-                      }
+                      "children": []
                     }
                   ]
                 },
@@ -1205,7 +1170,7 @@
                   "end_date": null,
                   "completed_at": null,
                   "progress": 0,
-                  "description": "Memory-augmented tool execution: intercept tool calls via before_tool_call hook, search for relevant lessons/outcomes, inject feedback before execution. Agent can bypass with flag. Includes tool-outcome memory extraction from after_tool_call results. Toggle: memoryhub.toolSense.enabled. Goal: prevent repeated mistakes, surface relevant context at action-time not just query-time.",
+                  "description": "Memory-augmented tool execution: intercept tool calls via before_tool_call hook, search for relevant lessons/outcomes, inject feedback before execution. Agent can bypass with flag. Includes tool-outcome memory extraction from after_tool_call results. Toggle: memoryhub.toolSense.enabled. Tool whitelist (skipTools): low-risk tools like read, memory_search, process, web_search bypass ToolSense entirely — no latency overhead, no false positives. Only tools with meaningful failure modes (exec, sessions_send, message, etc.) trigger retrieval. Goal: prevent repeated mistakes, surface relevant context at action-time not just query-time.",
                   "notes": [],
                   "children": [
                     {
