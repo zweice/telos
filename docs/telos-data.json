@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-19T10:48:58.886Z",
+  "generated_at": "2026-03-19T10:56:26.244Z",
   "tree": [
     {
       "id": 1,
@@ -994,7 +994,7 @@
                   "children": [
                     {
                       "id": 174,
-                      "title": "Synthetic test persona + seed memory dataset",
+                      "title": "LoCoMo benchmark integration + synthetic persona for edge cases",
                       "type": "task",
                       "owner": "conductor",
                       "status": "open",
@@ -1008,7 +1008,7 @@
                       "end_date": null,
                       "completed_at": null,
                       "progress": 0,
-                      "description": "Create a fictional persona (e.g. 'Max Fischer') with rich biographical data: family tree (5+ people), preferences (language, tools, food), work context (projects, colleagues), decisions, lessons, events with dates. Generate 200-300 memories spanning all types (fact, event, state, decision, lesson, preference, commitment, entity). Include edge cases: multilingual content (German+English+Russian), contradictions (corrected facts), temporal chains (events over weeks), relational queries (nieces, colleagues). Output: JSON seed file importable into LanceDB.",
+                      "description": "Two-track approach: (1) PRIMARY: Integrate LoCoMo dataset (snap-research/locomo) as external benchmark — 10 conversations, 300 turns each, 35 sessions. Adopt their query categories: single-hop, multi-hop (cross-session), temporal reasoning, open-domain, adversarial. Gives direct comparability to Mem0 (66.9%), Zep (58.4%), Letta (74%), MemMachine (84.8%). (2) SECONDARY: Synthetic persona for MemoryHub-specific edge cases: cross-lingual (German/English/Russian), agent-specific memory types, importance calibration, dream cycle, contradictions. Output: LoCoMo adapter + synthetic seed file.",
                       "notes": [],
                       "children": []
                     },
@@ -1034,12 +1034,12 @@
                       "locked": true,
                       "locked_by": {
                         "id": 174,
-                        "title": "Synthetic test persona + seed memory dataset"
+                        "title": "LoCoMo benchmark integration + synthetic persona for edge cases"
                       }
                     },
                     {
                       "id": 176,
-                      "title": "Golden query set with ground truth + evaluation metrics",
+                      "title": "Golden query set: LoCoMo categories + LLM-as-Judge + custom edge cases",
                       "type": "task",
                       "owner": "conductor",
                       "status": "open",
@@ -1053,7 +1053,7 @@
                       "end_date": null,
                       "completed_at": null,
                       "progress": 0,
-                      "description": "Define 50+ test queries with expected memory matches (ground truth). Categories: exact recall, relational, cross-lingual (German query → English memory), temporal, negation, multi-hop. Metrics: Recall@5, Recall@10, MRR (Mean Reciprocal Rank), Precision@5. Output: queries.json with {query, expected_ids[], category, difficulty}. Evaluation script: runs all queries, scores against ground truth, outputs report.",
+                      "description": "Adopt LoCoMo evaluation structure: single-hop, multi-hop, temporal, open-domain, adversarial query categories. Metrics: (1) LLM-as-Judge accuracy (primary — matches industry standard), (2) Recall@5/10, MRR (our internal metrics), (3) ROUGE-1, BERTScore, SentenceBERT similarity (LoCoMo-compatible). Add custom categories for our edge cases: cross-lingual retrieval, importance-gated recall, agent-scoped vs shared memory. 50+ LoCoMo-derived queries + 20+ custom queries.",
                       "notes": [],
                       "children": [],
                       "locked": true,
@@ -1064,7 +1064,7 @@
                     },
                     {
                       "id": 177,
-                      "title": "Benchmark runner — config comparison + regression detection",
+                      "title": "Benchmark runner with LoCoMo scoring + competitive comparison",
                       "type": "task",
                       "owner": "conductor",
                       "status": "open",
@@ -1078,13 +1078,13 @@
                       "end_date": null,
                       "completed_at": null,
                       "progress": 0,
-                      "description": "CLI tool: 'node bench.js --config-a default --config-b experimental'. Runs golden query set against both configs, produces side-by-side comparison with deltas per metric and per category. Detects regressions: if any category drops >5%, flag red. Store results in benchmark-results/ with timestamps for historical comparison. Support --baseline flag to save a reference point.",
+                      "description": "CLI: 'node bench.js --config-a default --config-b experimental --dataset locomo'. Runs LoCoMo evaluation protocol: LLM-as-Judge + composite score (ROUGE+METEOR+BERTScore+SentenceBERT)/4. Produces: (1) Overall score comparable to Mem0/Zep/Letta leaderboard, (2) Per-category breakdown, (3) Config A vs B diff with regression detection (>5% drop = red flag). Store results in benchmark-results/ with timestamps. Support --baseline flag.",
                       "notes": [],
                       "children": [],
                       "locked": true,
                       "locked_by": {
                         "id": 176,
-                        "title": "Golden query set with ground truth + evaluation metrics"
+                        "title": "Golden query set: LoCoMo categories + LLM-as-Judge + custom edge cases"
                       }
                     },
                     {
@@ -1134,7 +1134,7 @@
                       "locked": true,
                       "locked_by": {
                         "id": 177,
-                        "title": "Benchmark runner — config comparison + regression detection"
+                        "title": "Benchmark runner with LoCoMo scoring + competitive comparison"
                       }
                     },
                     {
@@ -1160,6 +1160,31 @@
                       "locked_by": {
                         "id": 179,
                         "title": "Experiment framework — hypothesis → benchmark → decision log"
+                      }
+                    },
+                    {
+                      "id": 181,
+                      "title": "MemoryAgentBench integration — update & forget competencies",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": 3,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Integrate MemoryAgentBench (Hu et al., 2025) evaluation for memory competencies LoCoMo doesn't cover: (1) Update — does the system correctly update a fact when corrected? (2) Forget — does archival/dream cycle properly remove stale ephemeral memories? (3) Store — does extraction capture the right facts at right importance? (4) Recall — covered by LoCoMo. This complements LoCoMo (retrieval focus) with write-path quality testing.",
+                      "notes": [],
+                      "children": [],
+                      "locked": true,
+                      "locked_by": {
+                        "id": 177,
+                        "title": "Benchmark runner with LoCoMo scoring + competitive comparison"
                       }
                     }
                   ]
@@ -4086,6 +4111,12 @@
       "id": 38,
       "blocked_id": 180,
       "blocker_id": 179,
+      "type": "hard"
+    },
+    {
+      "id": 39,
+      "blocked_id": 181,
+      "blocker_id": 177,
       "type": "hard"
     }
   ]
