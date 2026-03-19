@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-19T07:12:55.773Z",
+  "generated_at": "2026-03-19T08:05:45.763Z",
   "tree": [
     {
       "id": 1,
@@ -2167,16 +2167,16 @@
               "title": "Session continuity checkpoint: preserve context across gateway restart",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "done",
               "value": 8,
               "cost_estimate": 0,
-              "cost_actual": null,
+              "cost_actual": 0,
               "roi": 0,
               "effort_hours_estimate": 2,
-              "effort_hours_actual": null,
+              "effort_hours_actual": 0.25,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1773907542,
               "progress": 0,
               "description": "After restart, Andreas asks status and Conductor has no memory of what was in progress. Fix: write checkpoint to ~/.openclaw/agents/conductor/CHECKPOINT.md before restarting (current task, state, next step). Read at session start. Eliminates re-establishment overhead.",
               "notes": [],
