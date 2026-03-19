@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-19T20:00:47.785Z",
+  "generated_at": "2026-03-19T20:09:19.367Z",
   "tree": [
     {
       "id": 1,
@@ -1474,7 +1474,7 @@
                       "title": "Hybrid FTS+vector search",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "in_progress",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
@@ -1487,28 +1487,23 @@
                       "progress": 0,
                       "description": "Combine FTS and vector search in db.search(). FTS index already created on content column. Implement: (1) run vector search, (2) run FTS search on query text, (3) merge/re-rank results with RRF (Reciprocal Rank Fusion). Expected +8-12% on single-hop/open-domain. Benchmark: run full 10-conv with --llm-judge after.",
                       "notes": [],
-                      "children": [],
-                      "locked": true,
-                      "locked_by": {
-                        "id": 203,
-                        "title": "Checkpoint/resume for benchmark"
-                      }
+                      "children": []
                     },
                     {
                       "id": 199,
                       "title": "Answer synthesis benchmark mode",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "done",
                       "value": 0,
                       "cost_estimate": 0,
-                      "cost_actual": null,
+                      "cost_actual": 0.05,
                       "roi": 0,
                       "effort_hours_estimate": null,
-                      "effort_hours_actual": null,
+                      "effort_hours_actual": 0.5,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": null,
+                      "completed_at": 1773950956,
                       "progress": 0,
                       "description": "Add --synthesize flag to bench.js. When set, pass top-5 retrieved memories to Haiku with the query and ask for a direct answer, then judge that answer instead of raw retrieval. This measures retrieval+generation (closer to production). Expected: PARTIAL->CORRECT conversion +5-8%. Keep both modes for comparison.",
                       "notes": [],
@@ -1579,7 +1574,7 @@
                       "title": "Checkpoint/resume for benchmark",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "in_progress",
+                      "status": "done",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
@@ -1588,7 +1583,7 @@
                       "effort_hours_actual": null,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": null,
+                      "completed_at": 1773950690,
                       "progress": 0,
                       "description": "Save per-query results to temp file every 100 queries. On restart, load checkpoint and skip completed queries. Prevents losing 30+ min of LLM judge calls on crash. Critical for iteration speed.",
                       "notes": [],
