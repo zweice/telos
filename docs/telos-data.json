@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-19T09:35:36.011Z",
+  "generated_at": "2026-03-19T10:02:41.872Z",
   "tree": [
     {
       "id": 1,
@@ -898,7 +898,7 @@
                   "title": "MemoryHub: Lower mid-session similarity gate 0.30 → 0.25",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 0,
                   "cost_estimate": 0,
                   "cost_actual": null,
@@ -907,7 +907,7 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1773914561,
                   "progress": 0,
                   "description": "Audit found short/German queries filtered at 35-97% rate. Lowering midSessionSimilarityThreshold from 0.30 to 0.25 improves recall ~5%. Config change in openclaw.json.",
                   "notes": [],
@@ -918,7 +918,7 @@
                   "title": "MemoryHub: Tune extraction — long-term importance 2% → 10%",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 0,
                   "cost_estimate": 0,
                   "cost_actual": null,
@@ -927,7 +927,7 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1773914561,
                   "progress": 0,
                   "description": "Only 2% of memories scored 0.8+ importance (target 8-12%). Extraction prompt undervalues durable facts (family, identity, hard rules). Adjust importance scale guidance and add examples in EXTRACTION_SYSTEM_PROMPT.",
                   "notes": [],
@@ -955,7 +955,7 @@
                 },
                 {
                   "id": 172,
-                  "title": "MemoryHub: TTL/active forgetting for zero-injection memories",
+                  "title": "MemoryHub: Archive-only forgetting for ephemeral stale memories",
                   "type": "task",
                   "owner": "conductor",
                   "status": "open",
@@ -969,7 +969,7 @@
                   "end_date": null,
                   "completed_at": null,
                   "progress": 0,
-                  "description": "56% of memories (462/822) have zero injections — never retrieved. Implement decay: 0 injections after 30 days → importance halved; after 60 days → archived. Integrate into dream cycle.",
+                  "description": "Only archive memories meeting ALL criteria: (1) ephemeral importance 0.0-0.2, (2) zero injections AND zero searches, (3) older than 90 days. Archive = soft-delete (flagged, excluded from retrieval, recoverable). Never hard-delete. Higher-importance memories with zero retrieval must NOT be touched — absence of retrieval doesn't mean unimportant.",
                   "notes": [],
                   "children": []
                 }
