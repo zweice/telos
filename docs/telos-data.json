@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-19T10:02:41.872Z",
+  "generated_at": "2026-03-19T10:48:58.886Z",
   "tree": [
     {
       "id": 1,
@@ -938,7 +938,7 @@
                   "title": "MemoryHub: Lower dream compaction threshold 0.85 → 0.80",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 0,
                   "cost_estimate": 0,
                   "cost_actual": null,
@@ -947,7 +947,7 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1773916529,
                   "progress": 0,
                   "description": "Dream cycle cosine similarity threshold for merging near-duplicates is too conservative at 0.85. Lowering to 0.80 compresses ~10% more entries. Change in dream.js config.",
                   "notes": [],
@@ -958,7 +958,7 @@
                   "title": "MemoryHub: Archive-only forgetting for ephemeral stale memories",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 0,
                   "cost_estimate": 0,
                   "cost_actual": null,
@@ -967,11 +967,202 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1773916829,
                   "progress": 0,
                   "description": "Only archive memories meeting ALL criteria: (1) ephemeral importance 0.0-0.2, (2) zero injections AND zero searches, (3) older than 90 days. Archive = soft-delete (flagged, excluded from retrieval, recoverable). Never hard-delete. Higher-importance memories with zero retrieval must NOT be touched — absence of retrieval doesn't mean unimportant.",
                   "notes": [],
                   "children": []
+                },
+                {
+                  "id": 173,
+                  "title": "MemoryHub Test & Benchmark Suite",
+                  "type": "milestone",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Comprehensive test environment with synthetic data, performance benchmarks, experiment framework, and CI-ready regression suite. Goal: evidence-based tuning, no more blind changes.",
+                  "notes": [],
+                  "children": [
+                    {
+                      "id": 174,
+                      "title": "Synthetic test persona + seed memory dataset",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": 4,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Create a fictional persona (e.g. 'Max Fischer') with rich biographical data: family tree (5+ people), preferences (language, tools, food), work context (projects, colleagues), decisions, lessons, events with dates. Generate 200-300 memories spanning all types (fact, event, state, decision, lesson, preference, commitment, entity). Include edge cases: multilingual content (German+English+Russian), contradictions (corrected facts), temporal chains (events over weeks), relational queries (nieces, colleagues). Output: JSON seed file importable into LanceDB.",
+                      "notes": [],
+                      "children": []
+                    },
+                    {
+                      "id": 175,
+                      "title": "Isolated test DB environment",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": 2,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Create test harness that spins up an isolated LanceDB instance (separate from production ~/.memoryhub/db). Load synthetic seed data. Provide setup/teardown helpers. Must never touch production DB. Config: TEST_DB_PATH env var or --test-db flag. Include a db-seed.js script that embeds and inserts all synthetic memories.",
+                      "notes": [],
+                      "children": [],
+                      "locked": true,
+                      "locked_by": {
+                        "id": 174,
+                        "title": "Synthetic test persona + seed memory dataset"
+                      }
+                    },
+                    {
+                      "id": 176,
+                      "title": "Golden query set with ground truth + evaluation metrics",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": 4,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Define 50+ test queries with expected memory matches (ground truth). Categories: exact recall, relational, cross-lingual (German query → English memory), temporal, negation, multi-hop. Metrics: Recall@5, Recall@10, MRR (Mean Reciprocal Rank), Precision@5. Output: queries.json with {query, expected_ids[], category, difficulty}. Evaluation script: runs all queries, scores against ground truth, outputs report.",
+                      "notes": [],
+                      "children": [],
+                      "locked": true,
+                      "locked_by": {
+                        "id": 175,
+                        "title": "Isolated test DB environment"
+                      }
+                    },
+                    {
+                      "id": 177,
+                      "title": "Benchmark runner — config comparison + regression detection",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": 3,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "CLI tool: 'node bench.js --config-a default --config-b experimental'. Runs golden query set against both configs, produces side-by-side comparison with deltas per metric and per category. Detects regressions: if any category drops >5%, flag red. Store results in benchmark-results/ with timestamps for historical comparison. Support --baseline flag to save a reference point.",
+                      "notes": [],
+                      "children": [],
+                      "locked": true,
+                      "locked_by": {
+                        "id": 176,
+                        "title": "Golden query set with ground truth + evaluation metrics"
+                      }
+                    },
+                    {
+                      "id": 178,
+                      "title": "Extraction quality test suite",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": 3,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Test the extraction pipeline (Haiku prompt → memory objects). Feed synthetic conversation transcripts, verify: correct memory_type assignment, importance calibration (10% at 0.8+), no inference beyond stated facts, proper dedup, person reference rule (name not 'the user'). Include regression tests for known bugs: backtick escaping, operational instruction extraction, task completion noise. 20+ test transcripts with expected extractions.",
+                      "notes": [],
+                      "children": [],
+                      "locked": true,
+                      "locked_by": {
+                        "id": 175,
+                        "title": "Isolated test DB environment"
+                      }
+                    },
+                    {
+                      "id": 179,
+                      "title": "Experiment framework — hypothesis → benchmark → decision log",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": 2,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Structured experiment workflow: (1) log hypothesis in experiments.json (what change, expected impact, metrics to watch), (2) run benchmark before, (3) apply change, (4) run benchmark after, (5) auto-generate diff report, (6) record decision (keep/revert/iterate). Track all experiments with IDs. Telos integration: link experiment to task ID.",
+                      "notes": [],
+                      "children": [],
+                      "locked": true,
+                      "locked_by": {
+                        "id": 177,
+                        "title": "Benchmark runner — config comparison + regression detection"
+                      }
+                    },
+                    {
+                      "id": 180,
+                      "title": "CI-ready test runner + pre-commit hook",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": 2,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "npm test runs full suite: extraction tests + retrieval benchmarks against golden set. Exit code 1 if any regression detected. Optional pre-commit hook that runs fast subset (10 queries). GitHub Actions workflow for PR checks. Must complete in <60s for fast feedback.",
+                      "notes": [],
+                      "children": [],
+                      "locked": true,
+                      "locked_by": {
+                        "id": 179,
+                        "title": "Experiment framework — hypothesis → benchmark → decision log"
+                      }
+                    }
+                  ]
                 }
               ]
             },
@@ -3853,6 +4044,48 @@
       "id": 31,
       "blocked_id": 159,
       "blocker_id": 151,
+      "type": "hard"
+    },
+    {
+      "id": 32,
+      "blocked_id": 175,
+      "blocker_id": 174,
+      "type": "hard"
+    },
+    {
+      "id": 33,
+      "blocked_id": 176,
+      "blocker_id": 175,
+      "type": "hard"
+    },
+    {
+      "id": 34,
+      "blocked_id": 177,
+      "blocker_id": 176,
+      "type": "hard"
+    },
+    {
+      "id": 35,
+      "blocked_id": 178,
+      "blocker_id": 175,
+      "type": "hard"
+    },
+    {
+      "id": 36,
+      "blocked_id": 179,
+      "blocker_id": 177,
+      "type": "hard"
+    },
+    {
+      "id": 37,
+      "blocked_id": 179,
+      "blocker_id": 178,
+      "type": "hard"
+    },
+    {
+      "id": 38,
+      "blocked_id": 180,
+      "blocker_id": 179,
       "type": "hard"
     }
   ]
