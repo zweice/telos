@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-20T08:09:01.641Z",
+  "generated_at": "2026-03-20T12:54:49.333Z",
   "tree": [
     {
       "id": 1,
@@ -1283,7 +1283,7 @@
                       "title": "ToolSense benchmark: tool efficiency with/without feature",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "in_progress",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
@@ -1295,7 +1295,12 @@
                       "completed_at": null,
                       "progress": 0,
                       "description": "Design and implement benchmark measuring agent tool efficiency with and without ToolSense. Metrics: (1) tool call success rate (fewer failures with ToolSense), (2) correction loops (agent retries same tool — should decrease), (3) time-to-correct (how fast agent recovers from errors), (4) false positive rate (ToolSense fires but lesson is irrelevant — should be <10%), (5) latency overhead per tool call. Test against recorded session logs with known tool failures. A/B comparison: same task set run with ToolSense on vs off.",
-                      "notes": [],
+                      "notes": [
+                        {
+                          "ts": 1774006395,
+                          "text": "✅ WS timeout fix shipped (patched both gateway-cli bundles). SLM smoke test launched: conv-26 with --limit 5 --fresh. Polling cron set to check every 3m."
+                        }
+                      ],
                       "children": []
                     },
                     {
@@ -1514,16 +1519,16 @@
                       "title": "Multi-query decomposition for multi-hop",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "done",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
                       "roi": 0,
                       "effort_hours_estimate": null,
-                      "effort_hours_actual": null,
+                      "effort_hours_actual": 2,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": null,
+                      "completed_at": 1773995969,
                       "progress": 0,
                       "description": "For multi-hop queries (841 of 1986), decompose into sub-queries before retrieval. Use Haiku to split complex questions into 2-3 atomic queries, retrieve for each, merge results. Expected +5-7% on multi-hop category (56.1% baseline). Add --decompose flag to bench.",
                       "notes": [],
@@ -3875,7 +3880,7 @@
                   "title": "Book notary appointment (online or in-person)",
                   "type": "task",
                   "owner": "andreas",
-                  "status": "in_progress",
+                  "status": "done",
                   "value": 5,
                   "cost_estimate": 2,
                   "cost_actual": 0,
@@ -3884,13 +3889,17 @@
                   "effort_hours_actual": 0.5,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1774011285,
                   "progress": 0,
                   "description": null,
                   "notes": [
                     {
                       "ts": 1772308979,
                       "text": "Online notary option available: online.notar.de supports UG formation via video notarization (since Aug 2022). Musterprotokoll eligible → notary fee ~€115 at €25k Stammkapital. Booking requires Andreas to schedule directly (video ID verification). Recommend: visit online.notar.de, select UG formation, pick slot. In-person alternative: Notariat Rothenbaumchaussee Hamburg."
+                    },
+                    {
+                      "ts": 1774011285,
+                      "text": "Notary appointment completed 2026-03-20. UG formation process started. Waiting for Handelsregister brief."
                     }
                   ],
                   "children": []
@@ -3936,8 +3945,8 @@
                   "children": [],
                   "locked": true,
                   "locked_by": {
-                    "id": 39,
-                    "title": "Book notary appointment (online or in-person)"
+                    "id": 42,
+                    "title": "Handelsregister registration (via notary)"
                   }
                 },
                 {
@@ -3945,7 +3954,7 @@
                   "title": "Handelsregister registration (via notary)",
                   "type": "task",
                   "owner": "andreas",
-                  "status": "blocked",
+                  "status": "in_progress",
                   "value": 8,
                   "cost_estimate": 3,
                   "cost_actual": null,
@@ -3961,14 +3970,13 @@
                     {
                       "ts": 1772202639,
                       "text": "Notary appointment (task #39) marked complete. Registration requires: 1) Confirm notary appointment date/time 2) Gather all documents (Gesellschaftsvertrag, etc. from task #40) 3) Attend appointment 4) Notary files with Handelsregister 5) Obtain registration confirmation. Awaiting Andreas to confirm notary appointment booking and schedule registration meeting."
+                    },
+                    {
+                      "ts": 1774011289,
+                      "text": "Notary completed 2026-03-20. Handelsregister submission in progress — waiting for registration brief from notary."
                     }
                   ],
-                  "children": [],
-                  "locked": true,
-                  "locked_by": {
-                    "id": 39,
-                    "title": "Book notary appointment (online or in-person)"
-                  }
+                  "children": []
                 },
                 {
                   "id": 43,
