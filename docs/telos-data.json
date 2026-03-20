@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-20T22:09:48.427Z",
+  "generated_at": "2026-03-20T23:32:08.889Z",
   "tree": [
     {
       "id": 1,
@@ -1804,19 +1804,24 @@
               "title": "Multi-hop memory retrieval",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "done",
               "value": 0,
               "cost_estimate": 0,
-              "cost_actual": null,
+              "cost_actual": 0.05,
               "roi": 0,
               "effort_hours_estimate": null,
-              "effort_hours_actual": null,
+              "effort_hours_actual": 2,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1774049527,
               "progress": 0,
               "description": "Iterative retrieval: (1) embed query → top-n(5) from DB, (2) join top-n content + original query → re-embed → fetch m(50) pool, (3) rank pool against original query → extract top-p(7). Repeat q(3) times. Final extraction always re-ranked against original query to prevent drift. Benchmark against LoCoMo baseline (65.4% single-hop). Parameters to tune: n, m, p, q.",
-              "notes": [],
+              "notes": [
+                {
+                  "ts": 1774048036,
+                  "text": "Baseline already strong: single-hop 100%, multi-hop 98%, overall 92.8%. Iterative multi-hop retrieval in tools.js already has basic 2nd-hop session summary lookup. Task is to implement full iterative multi-hop per the algorithm: embed query → top-n(5) → join + re-embed → fetch m(50) pool → rank top-p(7) → repeat q(3) times."
+                }
+              ],
               "children": []
             },
             {
