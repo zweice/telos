@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-20T15:39:59.959Z",
+  "generated_at": "2026-03-20T16:25:06.020Z",
   "tree": [
     {
       "id": 1,
@@ -4097,6 +4097,31 @@
                     "id": 212,
                     "title": "Transfer Stammkapital to business account"
                   }
+                },
+                {
+                  "id": 214,
+                  "title": "Submit Handelsregisterauszug as proof of registration",
+                  "type": "task",
+                  "owner": "andreas",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Deadline: 2026-06-18. Submit Handelsregisterauszug to confirm Pyfio UG registration is complete. Declaration accepted: 'Ich bin damit einverstanden, die Eintragung von Pyfio bis zum 18.06.2026 abzuschließen und als Nachweis hierfür den Handelsregisterauszug meiner Firma vorzulegen.'",
+                  "notes": [
+                    {
+                      "ts": 1774023905,
+                      "text": "Deadline: June 18, 2026. Deliver Handelsregisterauszug as formal proof of Pyfio UG registration."
+                    }
+                  ],
+                  "children": []
                 }
               ]
             },
