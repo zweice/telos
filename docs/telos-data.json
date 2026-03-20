@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-20T14:13:59.210Z",
+  "generated_at": "2026-03-20T15:39:59.959Z",
   "tree": [
     {
       "id": 1,
@@ -1330,7 +1330,7 @@
                   "title": "MemoryHub Performance: 73.6% → 85%+",
                   "type": "milestone",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 0,
                   "cost_estimate": 0,
                   "cost_actual": null,
@@ -1339,7 +1339,7 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1774017205,
                   "progress": 0,
                   "description": null,
                   "notes": [],
@@ -4027,6 +4027,76 @@
                     "id": 43,
                     "title": "Gewerbeanmeldung at Gewerbeamt"
                   }
+                },
+                {
+                  "id": 211,
+                  "title": "Open business bank account (UG)",
+                  "type": "task",
+                  "owner": "andreas",
+                  "status": "open",
+                  "value": 8,
+                  "cost_estimate": 2,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Open a business bank account for Pyfio UG. Can be done pre-HR-registration at some banks (FYRST, Qonto, Kontist accept notary confirmation). Required before Stammkapital transfer.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 212,
+                  "title": "Transfer Stammkapital to business account",
+                  "type": "task",
+                  "owner": "andreas",
+                  "status": "open",
+                  "value": 8,
+                  "cost_estimate": 1,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Transfer the Stammkapital (min. €1, agreed amount) to the newly opened business bank account.",
+                  "notes": [],
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 211,
+                    "title": "Open business bank account (UG)"
+                  }
+                },
+                {
+                  "id": 213,
+                  "title": "Send proof of Stammkapital transfer to notary",
+                  "type": "task",
+                  "owner": "andreas",
+                  "status": "open",
+                  "value": 8,
+                  "cost_estimate": 1,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Send bank confirmation/screenshot of Stammkapital transfer to the notary. Required for them to proceed with Handelsregister submission.",
+                  "notes": [],
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 212,
+                    "title": "Transfer Stammkapital to business account"
+                  }
                 }
               ]
             },
@@ -4748,6 +4818,18 @@
       "id": 49,
       "blocked_id": 198,
       "blocker_id": 203,
+      "type": "hard"
+    },
+    {
+      "id": 50,
+      "blocked_id": 212,
+      "blocker_id": 211,
+      "type": "hard"
+    },
+    {
+      "id": 51,
+      "blocked_id": 213,
+      "blocker_id": 212,
       "type": "hard"
     }
   ]
