@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-20T12:54:49.333Z",
+  "generated_at": "2026-03-20T13:32:18.024Z",
   "tree": [
     {
       "id": 1,
@@ -1539,7 +1539,7 @@
                       "title": "Re-ranking with Haiku cross-encoder",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "done",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
@@ -1548,7 +1548,7 @@
                       "effort_hours_actual": null,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": null,
+                      "completed_at": 1774011705,
                       "progress": 0,
                       "description": "After vector retrieval of top-20, use Haiku to re-rank by relevance to the query. Return top-5 from re-ranked list. Expected +3-5%. Add as option in db.search() with rerank:true parameter.",
                       "notes": [],
