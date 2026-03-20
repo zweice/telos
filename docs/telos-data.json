@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-20T16:25:06.020Z",
+  "generated_at": "2026-03-20T22:09:48.427Z",
   "tree": [
     {
       "id": 1,
@@ -1565,10 +1565,10 @@
                       "cost_actual": null,
                       "roi": 0,
                       "effort_hours_estimate": null,
-                      "effort_hours_actual": null,
+                      "effort_hours_actual": 2,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": 1774014347,
+                      "completed_at": 1774024437,
                       "progress": 0,
                       "description": "Before embedding, expand query with synonyms/alternative phrasings using Haiku. Embed expanded query for better recall on name/entity lookups. Low effort, expected +2-3%.",
                       "notes": [],
@@ -1686,10 +1686,10 @@
                       "cost_actual": 0,
                       "roi": 0,
                       "effort_hours_estimate": null,
-                      "effort_hours_actual": 1,
+                      "effort_hours_actual": 2,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": 1774016033,
+                      "completed_at": 1774024438,
                       "progress": 0,
                       "description": null,
                       "notes": [],
@@ -1706,10 +1706,10 @@
                       "cost_actual": 0,
                       "roi": 0,
                       "effort_hours_estimate": null,
-                      "effort_hours_actual": 0.5,
+                      "effort_hours_actual": 1,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": 1774016034,
+                      "completed_at": 1774024438,
                       "progress": 0,
                       "description": null,
                       "notes": [],
@@ -1720,16 +1720,16 @@
                       "title": "MemoryArena: Free Arena hosted service — queue, rate limiting, public leaderboard (arena.memoryarena.ai)",
                       "type": "task",
                       "owner": "conductor",
-                      "status": "open",
+                      "status": "done",
                       "value": 0,
                       "cost_estimate": 0,
                       "cost_actual": null,
                       "roi": 0,
                       "effort_hours_estimate": null,
-                      "effort_hours_actual": null,
+                      "effort_hours_actual": 3,
                       "start_date": null,
                       "end_date": null,
-                      "completed_at": null,
+                      "completed_at": 1774028057,
                       "progress": 0,
                       "description": null,
                       "notes": [],
@@ -1756,6 +1756,26 @@
                       "children": []
                     }
                   ]
+                },
+                {
+                  "id": 218,
+                  "title": "Query expansion: lazy/write-time modes for token efficiency",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "in_progress",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Two approaches to revisit: (1) Lazy mode — only expand when initial retrieval returns low-similarity results. (2) Write-time enrichment — expand facts at session_end, store keyword variants for FTS. Currently disabled (default false). Agent-driven recall via memory_search already implemented.",
+                  "notes": [],
+                  "children": []
                 }
               ]
             },
@@ -1776,6 +1796,46 @@
               "completed_at": 1773648437,
               "progress": 0,
               "description": "Two issues with current extraction:\n\n1. Output token alignment: max_tokens=8192 (Haiku 4.5 max output). If a long session produces more memories than fit in 8192 output tokens, JSON array gets truncated mid-stream → parse failure → zero memories saved. Need to calculate how many structured memories fit in 8192 tokens (~80-100). If a session could yield more, need a fallback.\n\n2. Tumbling window extraction: For very long sessions (>50k chars), split transcript into overlapping windows (e.g. 30k chars with 5k overlap) and run multiple Haiku extraction calls. Deduplicate across windows using existing cosine similarity gate. Reduces per-call latency and avoids hitting output limits.\n\nBoth changes ensure no facts are lost from marathon sessions.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 220,
+              "title": "Multi-hop memory retrieval",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Iterative retrieval: (1) embed query → top-n(5) from DB, (2) join top-n content + original query → re-embed → fetch m(50) pool, (3) rank pool against original query → extract top-p(7). Repeat q(3) times. Final extraction always re-ranked against original query to prevent drift. Benchmark against LoCoMo baseline (65.4% single-hop). Parameters to tune: n, m, p, q.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 221,
+              "title": "MemoryHub query() export for benchmark integration",
+              "type": "task",
+              "owner": "conductor",
+              "status": "done",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": 0.02,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": 0.5,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": 1774044579,
+              "progress": 0,
+              "description": "Extract standalone query(text, agentId, config) → Memory[] function from onBeforePromptBuild internals. Enables LoCoMo benchmark to test MemoryHub retrieval directly (instead of going through SLM Python engine). Required for multi-hop retrieval testing (#220). Interface: embed query → LanceDB search → rank → return top-k memories.",
               "notes": [],
               "children": []
             }
@@ -2726,7 +2786,7 @@
               "title": "Claude Code subscription: evaluate Pro vs Max 5x vs API",
               "type": "task",
               "owner": "conductor",
-              "status": "open",
+              "status": "done",
               "value": 3,
               "cost_estimate": 2,
               "cost_actual": null,
@@ -2735,7 +2795,7 @@
               "effort_hours_actual": null,
               "start_date": null,
               "end_date": 1775001600,
-              "completed_at": null,
+              "completed_at": 1774034550,
               "progress": 0,
               "description": null,
               "notes": [
@@ -2758,7 +2818,7 @@
                   "title": "Track Claude Code vs API costs for 30 days",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "in_progress",
+                  "status": "done",
                   "value": 3,
                   "cost_estimate": 2,
                   "cost_actual": null,
@@ -2767,7 +2827,7 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1774034549,
                   "progress": 0,
                   "description": "Collect daily cost data for Claude Code API usage vs subscription pricing (Pro/Max 5x). After 30 days, bring data to decision on #84. Track in Finance/ on Drive.",
                   "notes": [
@@ -2870,7 +2930,7 @@
               "title": "Migrate agent threads from Telegram to Discord",
               "type": "task",
               "owner": "conductor",
-              "status": "in_progress",
+              "status": "open",
               "value": 0,
               "cost_estimate": 0,
               "cost_actual": null,
@@ -2882,7 +2942,12 @@
               "completed_at": null,
               "progress": 0,
               "description": "Evaluate and migrate the agent thread setup (Jared, Atlas, Conductor heartbeat/work cycle threads) from Telegram topics to Discord. Discord threads have better ACP topic binding support, native thread management, and the recent 2026.3.7 improvements align better with Discord's model. Plan migration path, update cron session keys, test routing.",
-              "notes": [],
+              "notes": [
+                {
+                  "ts": 1774034549,
+                  "text": "On ice — Andreas prefers Telegram. Moved to ideas/backlog."
+                }
+              ],
               "children": []
             },
             {
@@ -3063,6 +3128,26 @@
               "completed_at": 1773922244,
               "progress": 0,
               "description": "After gateway restart the triggering agent isn't woken up. Options: (1) schedule 1-min cron before restarting, (2) write pending work to file + heartbeat picks it up, (3) native post-restart hook. Goal: resume mid-task work without human intervention.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 219,
+              "title": "TelosHub v0.2: Context injection + extraction rewrite",
+              "type": "milestone",
+              "owner": "conductor",
+              "status": "done",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": 0.05,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": 1,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": 1774038785,
+              "progress": 0,
+              "description": "Evolve TelosHub from extraction-only (v0.1) to bidirectional. Phase 1: FTS5 index on Telos nodes + before_prompt_build injection of relevant tasks. Phase 2: sqlite-vec embeddings if FTS insufficient. Phase 3: improved extraction via resolveAuth (Haiku OAuth). Existing v0.1 code: ~/code/macrohard/teloshub/ — has session_end extraction, Telos CLI integration, dry-run mode. Needs: before_prompt_build hook, FTS5 index, injection formatting.",
               "notes": [],
               "children": []
             }
@@ -4855,6 +4940,12 @@
       "id": 51,
       "blocked_id": 213,
       "blocker_id": 212,
+      "type": "hard"
+    },
+    {
+      "id": 52,
+      "blocked_id": 220,
+      "blocker_id": 221,
       "type": "hard"
     }
   ]
