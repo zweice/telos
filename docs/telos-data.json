@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-21T11:08:30.727Z",
+  "generated_at": "2026-03-21T13:09:57.905Z",
   "tree": [
     {
       "id": 1,
@@ -1884,6 +1884,26 @@
                   "completed_at": null,
                   "progress": 0,
                   "description": "SLM ingestion takes 2-3 hours. Output is deterministic for fixed dataset. Run once, dump SQLite DB as fixture, reload for benchmark. Same pattern as MemoryHub pre-computed fixtures.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 227,
+                  "title": "BM25 hybrid retrieval + reranking benchmark",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "done",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": 0.05,
+                  "roi": 0,
+                  "effort_hours_estimate": 3,
+                  "effort_hours_actual": 0.5,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": 1774098594,
+                  "progress": 0,
+                  "description": "Test BM25 keyword search combined with vector retrieval AND cross-encoder reranking. Previous FTS-only run hurt accuracy (62.9% vs 65.4% vector-only), but reranking may filter BM25 noise. Run conv-26 smoke test: vector+BM25+rerank vs vector+rerank-only.",
                   "notes": [],
                   "children": []
                 }
@@ -5073,6 +5093,12 @@
       "id": 54,
       "blocked_id": 224,
       "blocker_id": 222,
+      "type": "hard"
+    },
+    {
+      "id": 55,
+      "blocked_id": 227,
+      "blocker_id": 225,
       "type": "hard"
     }
   ]
