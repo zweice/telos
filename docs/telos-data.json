@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-21T17:14:40.966Z",
+  "generated_at": "2026-03-21T17:59:43.188Z",
   "tree": [
     {
       "id": 1,
@@ -1814,7 +1814,12 @@
                   "completed_at": null,
                   "progress": 0,
                   "description": "SLM builds 2554 graph edges per conversation. Multi-hop is 42% of LoCoMo queries (841/1986) and our weakest non-adversarial category at 45.9%. Graph enables traversal: query mentions entity A → find edges to entity B → retrieve B's facts. Extract relationships during Haiku extraction.",
-                  "notes": [],
+                  "notes": [
+                    {
+                      "ts": 1774114161,
+                      "text": "Graph-LLM v2 benched (conv-26): Strict +1pp overall, but multi-hop +15pp, open-domain +21pp, temporal +16pp. Graph traversal massively helps hard categories. Extras fix was critical (was 0 before). Next: full 10-conv bench."
+                    }
+                  ],
                   "children": [],
                   "locked": true,
                   "locked_by": {
@@ -1950,6 +1955,71 @@
                       "text": "Research complete. Design doc: docs/entity-taxonomy-v2.md. Key insight: Mem0 uses free-form types (LLM decides), we should too but with guided taxonomy (13 types). Remove strict enum validation. See doc for full prompt template."
                     }
                   ],
+                  "children": []
+                },
+                {
+                  "id": 230,
+                  "title": "SQLite migration for entity resolver + knowledge graph storage",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 5,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Replace JSON files (canonical.json, mappings.json, edges.json) with SQLite. Enables indexed lookups by memory_id and entity_id, faster traversal. Required foundation for top-K entity seeding and larger corpora.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 231,
+                  "title": "Top-K entity seeding: use vector results to amplify graph traversal",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 8,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "After vector search returns top-K, look up their memory UUIDs in entity store to find their canonical entity IDs. Union with query-extracted entities. Traverse graph to find strongest subnetwork connecting query-entities and top-K-entities. Bridging memories become high-value extras. Transforms graph from supplement into amplifier of vector search. Enables researcher-grade memory over large text corpora (books, papers, research notes).",
+                  "notes": [],
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 230,
+                    "title": "SQLite migration for entity resolver + knowledge graph storage"
+                  }
+                },
+                {
+                  "id": 232,
+                  "title": "Benchmark entity extraction v2 prompt (richer ontology)",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 3,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Run full LoCoMo bench with v2 entity extraction prompt (commit cf06cd3). Compare against v1 prompt results. 13 entity types + open relations vs 4 fixed types + enum relations.",
+                  "notes": [],
                   "children": []
                 }
               ]
@@ -5144,6 +5214,12 @@
       "id": 55,
       "blocked_id": 227,
       "blocker_id": 225,
+      "type": "hard"
+    },
+    {
+      "id": 56,
+      "blocked_id": 231,
+      "blocker_id": 230,
       "type": "hard"
     }
   ]
