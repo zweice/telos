@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-21T19:09:17.030Z",
+  "generated_at": "2026-03-21T20:49:14.914Z",
   "tree": [
     {
       "id": 1,
@@ -2003,7 +2003,12 @@
                   "completed_at": 1774120153,
                   "progress": 0,
                   "description": "After vector search returns top-K, look up their memory UUIDs in entity store to find their canonical entity IDs. Union with query-extracted entities. Traverse graph to find strongest subnetwork connecting query-entities and top-K-entities. Bridging memories become high-value extras. Transforms graph from supplement into amplifier of vector search. Enables researcher-grade memory over large text corpora (books, papers, research notes).",
-                  "notes": [],
+                  "notes": [
+                    {
+                      "ts": 1774120298,
+                      "text": "Implemented in src/index.js (production plugin path). Top-5 vector results seed entity lookup → graph traversal → novel memory injection (capped at 10). Config: entityGraph.topKSeeding. Not yet in evaluate.js (bench path). 638/638 tests pass."
+                    }
+                  ],
                   "children": []
                 },
                 {
@@ -2030,6 +2035,101 @@
                     }
                   ],
                   "children": []
+                },
+                {
+                  "id": 234,
+                  "title": "Raw chunk storage layer — lossless conversation memory",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 21,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Store raw conversation chunks alongside refined memories. Chunking strategy parameterized: n-messages window (tunable), optional topic-aware splits (boolean), or full Haiku-driven splitting. Each chunk gets embedded and stored in LanceDB with type='chunk'. Chunks are the lossless foundation — every sentence preserved. Design chunk schema: id, content, type='chunk', conversation_id, chunk_index, timestamp, agent_id, tenant_id.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 235,
+                  "title": "Refined extraction v2 — enrichment not filtering",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 21,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Haiku extracts refined memories from chunks: pronoun resolution (she→Caroline), relative→absolute dates (last year→2022), entity linking, semantic compression. Key change: extraction is ENRICHMENT not FILTERING — every chunk gets at least one refined memory. M:N mapping between chunks and refined memories (multiple chunks can produce one refined memory, one chunk can produce multiple). Store mapping in SQLite (chunk_id, refined_memory_id). Entity+relationship extraction runs on BOTH chunks and refined memories. Skip dedup at memory level — rely on graph dedup only.",
+                  "notes": [],
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 234,
+                    "title": "Raw chunk storage layer — lossless conversation memory"
+                  }
+                },
+                {
+                  "id": 236,
+                  "title": "Multi-layer hybrid search — chunks + refined + graph",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 21,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Search across all memory layers: raw chunks (broad recall), refined memories (precise/enriched), graph traversal (multi-hop connections). Merge results with configurable weights per layer. Entity extraction from query → graph traversal → surface connecting memories. Second traversal pass: identify entities in question, traverse graph filtering only paths through those entities, surface memories that connect the query entities through n hops. Hop count parameterized (benchmark 2,3,4). Top-K seeding feeds into graph from both chunk and refined hits.",
+                  "notes": [],
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 235,
+                    "title": "Refined extraction v2 — enrichment not filtering"
+                  }
+                },
+                {
+                  "id": 237,
+                  "title": "Entity-chunk mapping — entities linked to raw chunks",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 13,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Extend entity resolution to map entities to raw chunks, not just refined memories. SQLite table: entity_chunk_mappings (entity_id, chunk_id). During chunk ingestion, extract entities from chunks and create mappings. This enables graph traversal to surface relevant raw chunks that contain entity mentions even when refined memories don't capture the detail. Part of the lossless architecture: graph connects everything.",
+                  "notes": [],
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 234,
+                    "title": "Raw chunk storage layer — lossless conversation memory"
+                  }
                 }
               ]
             },
@@ -5254,6 +5354,30 @@
       "id": 56,
       "blocked_id": 231,
       "blocker_id": 230,
+      "type": "hard"
+    },
+    {
+      "id": 57,
+      "blocked_id": 235,
+      "blocker_id": 234,
+      "type": "hard"
+    },
+    {
+      "id": 58,
+      "blocked_id": 236,
+      "blocker_id": 235,
+      "type": "hard"
+    },
+    {
+      "id": 59,
+      "blocked_id": 237,
+      "blocker_id": 234,
+      "type": "hard"
+    },
+    {
+      "id": 60,
+      "blocked_id": 236,
+      "blocker_id": 237,
       "type": "hard"
     }
   ]
