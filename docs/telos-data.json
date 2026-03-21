@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-21T20:49:14.914Z",
+  "generated_at": "2026-03-21T21:08:08.834Z",
   "tree": [
     {
       "id": 1,
@@ -2041,16 +2041,16 @@
                   "title": "Raw chunk storage layer — lossless conversation memory",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 21,
                   "cost_estimate": 0,
-                  "cost_actual": null,
+                  "cost_actual": 0,
                   "roi": 0,
                   "effort_hours_estimate": null,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 0.5,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1774127286,
                   "progress": 0,
                   "description": "Store raw conversation chunks alongside refined memories. Chunking strategy parameterized: n-messages window (tunable), optional topic-aware splits (boolean), or full Haiku-driven splitting. Each chunk gets embedded and stored in LanceDB with type='chunk'. Chunks are the lossless foundation — every sentence preserved. Design chunk schema: id, content, type='chunk', conversation_id, chunk_index, timestamp, agent_id, tenant_id.",
                   "notes": [],
@@ -2074,12 +2074,7 @@
                   "progress": 0,
                   "description": "Haiku extracts refined memories from chunks: pronoun resolution (she→Caroline), relative→absolute dates (last year→2022), entity linking, semantic compression. Key change: extraction is ENRICHMENT not FILTERING — every chunk gets at least one refined memory. M:N mapping between chunks and refined memories (multiple chunks can produce one refined memory, one chunk can produce multiple). Store mapping in SQLite (chunk_id, refined_memory_id). Entity+relationship extraction runs on BOTH chunks and refined memories. Skip dedup at memory level — rely on graph dedup only.",
                   "notes": [],
-                  "children": [],
-                  "locked": true,
-                  "locked_by": {
-                    "id": 234,
-                    "title": "Raw chunk storage layer — lossless conversation memory"
-                  }
+                  "children": []
                 },
                 {
                   "id": 236,
@@ -2124,12 +2119,7 @@
                   "progress": 0,
                   "description": "Extend entity resolution to map entities to raw chunks, not just refined memories. SQLite table: entity_chunk_mappings (entity_id, chunk_id). During chunk ingestion, extract entities from chunks and create mappings. This enables graph traversal to surface relevant raw chunks that contain entity mentions even when refined memories don't capture the detail. Part of the lossless architecture: graph connects everything.",
                   "notes": [],
-                  "children": [],
-                  "locked": true,
-                  "locked_by": {
-                    "id": 234,
-                    "title": "Raw chunk storage layer — lossless conversation memory"
-                  }
+                  "children": []
                 }
               ]
             },
