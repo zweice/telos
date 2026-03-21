@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-21T17:59:43.188Z",
+  "generated_at": "2026-03-21T19:09:17.030Z",
   "tree": [
     {
       "id": 1,
@@ -1946,13 +1946,17 @@
                   "effort_hours_actual": 0.5,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": 1774113280,
+                  "completed_at": 1774119927,
                   "progress": 0,
                   "description": "Research and implement a more sophisticated entity+edge extraction prompt for Haiku. Current prompt only extracts person/place/org/event. Should also cover: projects, concepts, activities, skills, media (books/movies/music), health conditions, goals. Study academic NER/RE papers and production KG systems for optimal entity type taxonomies.",
                   "notes": [
                     {
                       "ts": 1774111927,
                       "text": "Research complete. Design doc: docs/entity-taxonomy-v2.md. Key insight: Mem0 uses free-form types (LLM decides), we should too but with guided taxonomy (13 types). Remove strict enum validation. See doc for full prompt template."
+                    },
+                    {
+                      "ts": 1774119143,
+                      "text": "v2 prompt REVERTED (commit a60eda7). Bench showed regression: Strict 56.6% vs v1's 63.8%. Richer ontology (13 types) reduced graph selectivity — too many entities extracted, too many connections. Keep v1 (4 strict types) until top-K seeding (#231) provides a different selectivity mechanism."
                     }
                   ],
                   "children": []
@@ -1962,7 +1966,7 @@
                   "title": "SQLite migration for entity resolver + knowledge graph storage",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 5,
                   "cost_estimate": 0,
                   "cost_actual": null,
@@ -1971,10 +1975,15 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1774117151,
                   "progress": 0,
                   "description": "Replace JSON files (canonical.json, mappings.json, edges.json) with SQLite. Enables indexed lookups by memory_id and entity_id, faster traversal. Required foundation for top-K entity seeding and larger corpora.",
-                  "notes": [],
+                  "notes": [
+                    {
+                      "ts": 1774117152,
+                      "text": "Implemented by CC. better-sqlite3, WAL mode, indexed tables for entities/mappings/edges. Migration script included. 637/638 tests pass (dream ESM pre-existing). Minor: VALID_ENTITY_TYPES still v1 set in resolveEntity()."
+                    }
+                  ],
                   "children": []
                 },
                 {
@@ -1982,44 +1991,44 @@
                   "title": "Top-K entity seeding: use vector results to amplify graph traversal",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 8,
                   "cost_estimate": 0,
-                  "cost_actual": null,
+                  "cost_actual": 0,
                   "roi": 0,
                   "effort_hours_estimate": null,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 1,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1774120153,
                   "progress": 0,
                   "description": "After vector search returns top-K, look up their memory UUIDs in entity store to find their canonical entity IDs. Union with query-extracted entities. Traverse graph to find strongest subnetwork connecting query-entities and top-K-entities. Bridging memories become high-value extras. Transforms graph from supplement into amplifier of vector search. Enables researcher-grade memory over large text corpora (books, papers, research notes).",
                   "notes": [],
-                  "children": [],
-                  "locked": true,
-                  "locked_by": {
-                    "id": 230,
-                    "title": "SQLite migration for entity resolver + knowledge graph storage"
-                  }
+                  "children": []
                 },
                 {
                   "id": 232,
                   "title": "Benchmark entity extraction v2 prompt (richer ontology)",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 3,
                   "cost_estimate": 0,
-                  "cost_actual": null,
+                  "cost_actual": 0,
                   "roi": 0,
                   "effort_hours_estimate": null,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 0.5,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1774119931,
                   "progress": 0,
                   "description": "Run full LoCoMo bench with v2 entity extraction prompt (commit cf06cd3). Compare against v1 prompt results. 13 entity types + open relations vs 4 fixed types + enum relations.",
-                  "notes": [],
+                  "notes": [
+                    {
+                      "ts": 1774119932,
+                      "text": "Benchmark already run as part of #229 work. v2 (richer ontology) showed regression: 56.6% vs v1 63.8%. v2 reverted (commit a60eda7). Marking complete — work was done, result was: don't ship v2 yet."
+                    }
+                  ],
                   "children": []
                 }
               ]
@@ -2627,6 +2636,31 @@
                   "progress": 0,
                   "description": "A plugin similar to MemoryHub but for workflow state. On each agent turn (or agent_end), automatically detect Telos-relevant signals in the conversation and update task status:\n\n- Task mentions: detect when agent references a Telos task ID or task title\n- Status transitions: detect completion signals ('done', 'shipped', 'fixed', 'deployed'), blockers ('waiting for', 'blocked by'), and progress notes\n- Auto-complete tasks when agent declares something finished\n- Auto-add notes/progress updates to in_progress tasks\n- Cost tracking: auto-populate cost-actual from session token costs when completing tasks\n- Low-noise: only trigger on high-confidence signals to avoid spurious updates\n\nArchitecture ideas:\n- Hook into agent_end (like MemoryHub) — extract Telos signals via Haiku from transcript\n- Or: hook into each turn (before_prompt_build) for real-time tracking\n- Telos CLI wrapper or direct DB writes\n- Config: per-agent enable/disable, confidence threshold, which status transitions to auto-apply\n\nTrade-offs:\n- agent_end batch vs. per-turn real-time: batch is cheaper, per-turn is more accurate\n- Auto-completing tasks is risky if detection is wrong — maybe only auto-add notes, require explicit completion\n- May conflict with manual Telos workflow if agent and human disagree on status",
                   "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 233,
+                  "title": "TelosBoard — Mission-control UI for agent work",
+                  "type": "goal",
+                  "owner": "conductor",
+                  "status": "in_progress",
+                  "value": 34,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Web UI showing major Telos nodes as topic cards. Each topic has: title, expandable info, sub-tasks in kanban lanes (New/Active/Blocked/Done), dynamic KPI fields agents can create/update. Motivated by chat being terrible for state visibility — hard to see multiple workstreams at once. Each topic could map to its own agent session. KPI example: MemoryHub LoCoMo strict/lenient scores. Tasks have short IDs (#frosty-bacon), titles, progress bars (agent-controlled). Think mission control, not project management.",
+                  "notes": [
+                    {
+                      "ts": 1774117261,
+                      "text": "Origin: Andreas observation that working on multiple topics in chat is cumbersome. Can't see state at a glance, has to ask agent for status already discussed. Irony: a good memory system would partially solve this too. Key insight: the board IS the shared context between human and agent — replaces 'what's the status?' with a live dashboard. Not a task yet — idea stage, needs design thinking."
+                    }
+                  ],
                   "children": []
                 }
               ]
