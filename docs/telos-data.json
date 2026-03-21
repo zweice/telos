@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-21T13:09:57.905Z",
+  "generated_at": "2026-03-21T17:14:40.966Z",
   "tree": [
     {
       "id": 1,
@@ -1905,6 +1905,51 @@
                   "progress": 0,
                   "description": "Test BM25 keyword search combined with vector retrieval AND cross-encoder reranking. Previous FTS-only run hurt accuracy (62.9% vs 65.4% vector-only), but reranking may filter BM25 noise. Run conv-26 smoke test: vector+BM25+rerank vs vector+rerank-only.",
                   "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 228,
+                  "title": "MemoryHub: Fix LanceDB FTS race condition (RecordBatch size mismatch)",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "in_progress",
+                  "value": 3,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "FTS search fails with 'RecordBatch size mismatch 200 != 199' when DB written concurrently by benchmarks. Seen 2026-03-21 12:01 CET, LanceDB 0.23.2. Fix: catch+retry on this error or serialize FTS access.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 229,
+                  "title": "Entity extraction prompt v2: richer ontology (projects, concepts, activities)",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "done",
+                  "value": 13,
+                  "cost_estimate": 5,
+                  "cost_actual": 2,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": 0.5,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": 1774113280,
+                  "progress": 0,
+                  "description": "Research and implement a more sophisticated entity+edge extraction prompt for Haiku. Current prompt only extracts person/place/org/event. Should also cover: projects, concepts, activities, skills, media (books/movies/music), health conditions, goals. Study academic NER/RE papers and production KG systems for optimal entity type taxonomies.",
+                  "notes": [
+                    {
+                      "ts": 1774111927,
+                      "text": "Research complete. Design doc: docs/entity-taxonomy-v2.md. Key insight: Mem0 uses free-form types (LLM decides), we should too but with guided taxonomy (13 types). Remove strict enum validation. See doc for full prompt template."
+                    }
+                  ],
                   "children": []
                 }
               ]
