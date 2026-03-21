@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-21T21:08:08.834Z",
+  "generated_at": "2026-03-21T22:13:40.117Z",
   "tree": [
     {
       "id": 1,
@@ -2053,7 +2053,12 @@
                   "completed_at": 1774127286,
                   "progress": 0,
                   "description": "Store raw conversation chunks alongside refined memories. Chunking strategy parameterized: n-messages window (tunable), optional topic-aware splits (boolean), or full Haiku-driven splitting. Each chunk gets embedded and stored in LanceDB with type='chunk'. Chunks are the lossless foundation — every sentence preserved. Design chunk schema: id, content, type='chunk', conversation_id, chunk_index, timestamp, agent_id, tenant_id.",
-                  "notes": [],
+                  "notes": [
+                    {
+                      "ts": 1774127527,
+                      "text": "Commit 5386ee0. chunk.js (chunkConversation), schema migration (memory_type/chunk_group_id/chunk_index/source_chunk_ids), writeChunks in db.js, --chunks bench flag, 21 tests passing."
+                    }
+                  ],
                   "children": []
                 },
                 {
@@ -2061,7 +2066,7 @@
                   "title": "Refined extraction v2 — enrichment not filtering",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "in_progress",
                   "value": 21,
                   "cost_estimate": 0,
                   "cost_actual": null,
@@ -2106,16 +2111,16 @@
                   "title": "Entity-chunk mapping — entities linked to raw chunks",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 13,
                   "cost_estimate": 0,
-                  "cost_actual": null,
+                  "cost_actual": 0,
                   "roi": 0,
                   "effort_hours_estimate": null,
-                  "effort_hours_actual": null,
+                  "effort_hours_actual": 0.5,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1774131217,
                   "progress": 0,
                   "description": "Extend entity resolution to map entities to raw chunks, not just refined memories. SQLite table: entity_chunk_mappings (entity_id, chunk_id). During chunk ingestion, extract entities from chunks and create mappings. This enables graph traversal to surface relevant raw chunks that contain entity mentions even when refined memories don't capture the detail. Part of the lossless architecture: graph connects everything.",
                   "notes": [],
