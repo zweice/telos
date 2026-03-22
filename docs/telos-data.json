@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-22T01:08:38.288Z",
+  "generated_at": "2026-03-22T15:58:59.181Z",
   "tree": [
     {
       "id": 1,
@@ -2167,8 +2167,61 @@
                     {
                       "ts": 1774141500,
                       "text": "Reviewing task context: This involves converting flat entity types into category entities with is_a relations in MemoryHub. Need to understand current entity type schema."
+                    },
+                    {
+                      "ts": 1774141801,
+                      "text": "CC auto-implemented. Category entities with is_a relations. Commit c26dacc. 735/735 tests."
+                    },
+                    {
+                      "ts": 1774141979,
+                      "text": "Reverted (015a2ad). Category entities should not be auto-enforced. Keep as optional/future: only create is_a edges when user explicitly configures domain categories via memory instructor prompt."
                     }
                   ],
+                  "children": []
+                },
+                {
+                  "id": 239,
+                  "title": "Improve temporal query retrieval for MemoryHub",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "## Problem\nTemporal queries ('When did X happen?') are our weakest category. Date/time info often lives in a different memory than the event description — neither vector search nor entity graph bridges the gap.\n\nExample: 'When did Caroline give a speech at a school?'\n- Vector #1 finds event content but NO date\n- Evidence with date NOT IN TOP 50\n- Graph: 19 mems, 0 evidence\n\n## Ideas\n\n1. **Temporal entity extraction** — Extract dates as first-class entities (e.g. 'May 2023') linked to events via 'occurred_at' relations. Graph traversal then bridges event→date.\n\n2. **Date-aware metadata** — Add event_date field during extraction. Boost date-populated memories when query has temporal keywords (when/before/after).\n\n3. **Temporal co-occurrence edges** — Create 'same_timeframe' edges between memories sharing date references.\n\n4. **Query decomposition** — Detect temporal queries, first retrieve the event, then search for date-containing memories about those entities. Two-stage retrieval.\n\n5. **Hybrid: entities + metadata** — Combine 1 and 2 for both graph traversal and fast filtering.\n\n## Recommendation\nStart with idea 1 (temporal entities) — fits naturally into existing LLM extraction pipeline. Minimal new infrastructure.",
+                  "notes": [
+                    {
+                      "ts": 1774188125,
+                      "text": "KEY FINDING: Temporal edge metadata already exists in the pipeline. LLM extraction prompt already asks for timestamp/time_range_start/time_range_end on relations. addEdge() stores them in SQLite edges table. The gap is purely at retrieval time — traverseGraphWithCentrality() ignores temporal columns entirely. Fix is much simpler than expected: at retrieval time, when query has temporal keywords, boost/filter edges by their temporal metadata. No extraction changes needed."
+                    }
+                  ],
+                  "children": []
+                },
+                {
+                  "id": 240,
+                  "title": "Enrich memories with conversation-derived event dates",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "## Problem\nMemories extracted from conversations lose their temporal context. A memory like 'Caroline gave a school talk about her transgender journey' has no date — the date ('week before 9 June 2023') only exists in the conversation turn context. This makes temporal queries unanswerable when the date isn't baked into the memory text.\n\n## Solution: Conversation-aware timestamps on memories\n\n### Write-time enrichment\nEach memory chunk should carry a `created_at` / `event_date` field derived from conversation context:\n1. The conversation turn that produced the memory has a timestamp\n2. During extraction, pass the conversation timestamp to the LLM extractor\n3. LLM should resolve relative dates ('last week', 'last Saturday') against the conversation timestamp\n4. Store resolved date as structured metadata on the memory (not just in edge relations)\n\n### How it helps retrieval\n- Temporal queries can filter/boost by `event_date` metadata\n- The date becomes searchable even when the memory text doesn't mention it\n- Graph edges already store temporal data — memories should too\n\n### Implementation approach\n1. Add `event_date` column to memory schema (nullable TEXT, ISO format)\n2. Pass conversation timestamp context to `extractEntitiesLLM()` \n3. Have Haiku resolve relative dates against conversation timestamp\n4. Store resolved date on the memory record\n5. At retrieval time: when `isTemporalQuery()` is true, boost memories with `event_date` populated\n\n### LoCoMo benchmark impact\nThe hardest temporal questions (Q1 type: date not in memory text) would be solved. Currently ~0% recall on these; with event_date metadata, retrieval can surface them.\n\n### Dependencies\n- Depends on conversation context being available at extraction time (LoCoMo fixture has turn timestamps)\n- For production: session turn timestamps from OpenClaw session JSONL",
+                  "notes": [],
                   "children": []
                 }
               ]
