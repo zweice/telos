@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-21T22:13:40.117Z",
+  "generated_at": "2026-03-22T01:08:38.288Z",
   "tree": [
     {
       "id": 1,
@@ -102,7 +102,12 @@
               "completed_at": null,
               "progress": 0,
               "description": null,
-              "notes": [],
+              "notes": [
+                {
+                  "ts": 1774141390,
+                  "text": "Replace fixed entity types with category entities linked via is_a/instance_of. Present existing types to extractor for consistency. Domain customization via memory instructor prompt config. Types become traversable graph nodes instead of dead metadata."
+                }
+              ],
               "children": [],
               "locked": true,
               "locked_by": {
@@ -1877,7 +1882,7 @@
                   "title": "Pre-compute SLM benchmark fixtures — dump ingested DB for fast reruns",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "in_progress",
+                  "status": "blocked",
                   "value": 5,
                   "cost_estimate": 2,
                   "cost_actual": null,
@@ -1889,7 +1894,12 @@
                   "completed_at": null,
                   "progress": 0,
                   "description": "SLM ingestion takes 2-3 hours. Output is deterministic for fixed dataset. Run once, dump SQLite DB as fixture, reload for benchmark. Same pattern as MemoryHub pre-computed fixtures.",
-                  "notes": [],
+                  "notes": [
+                    {
+                      "ts": 1774133041,
+                      "text": "SLM paused indefinitely per Andreas. Head-to-head already proved MH dominance (+17.8pp). Resource cost not worth full benchmark."
+                    }
+                  ],
                   "children": []
                 },
                 {
@@ -2066,7 +2076,7 @@
                   "title": "Refined extraction v2 — enrichment not filtering",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "in_progress",
+                  "status": "done",
                   "value": 21,
                   "cost_estimate": 0,
                   "cost_actual": null,
@@ -2075,10 +2085,15 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1774133725,
                   "progress": 0,
                   "description": "Haiku extracts refined memories from chunks: pronoun resolution (she→Caroline), relative→absolute dates (last year→2022), entity linking, semantic compression. Key change: extraction is ENRICHMENT not FILTERING — every chunk gets at least one refined memory. M:N mapping between chunks and refined memories (multiple chunks can produce one refined memory, one chunk can produce multiple). Store mapping in SQLite (chunk_id, refined_memory_id). Entity+relationship extraction runs on BOTH chunks and refined memories. Skip dedup at memory level — rely on graph dedup only.",
-                  "notes": [],
+                  "notes": [
+                    {
+                      "ts": 1774133725,
+                      "text": "Complete across commits 1d0401e + fd0b499. extractWithContext() with sliding context, chunk_refined_map SQLite table, bench --chunks integration, 691/691 tests pass."
+                    }
+                  ],
                   "children": []
                 },
                 {
@@ -2086,7 +2101,7 @@
                   "title": "Multi-layer hybrid search — chunks + refined + graph",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "done",
                   "value": 21,
                   "cost_estimate": 0,
                   "cost_actual": null,
@@ -2095,16 +2110,16 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1774135417,
                   "progress": 0,
                   "description": "Search across all memory layers: raw chunks (broad recall), refined memories (precise/enriched), graph traversal (multi-hop connections). Merge results with configurable weights per layer. Entity extraction from query → graph traversal → surface connecting memories. Second traversal pass: identify entities in question, traverse graph filtering only paths through those entities, surface memories that connect the query entities through n hops. Hop count parameterized (benchmark 2,3,4). Top-K seeding feeds into graph from both chunk and refined hits.",
-                  "notes": [],
-                  "children": [],
-                  "locked": true,
-                  "locked_by": {
-                    "id": 235,
-                    "title": "Refined extraction v2 — enrichment not filtering"
-                  }
+                  "notes": [
+                    {
+                      "ts": 1774135417,
+                      "text": "Commit 5112123. 3-layer search (chunk+refined+graph), RRF fusion, config-driven weights, auto chunk storage on session_end. 698/698 tests pass."
+                    }
+                  ],
+                  "children": []
                 },
                 {
                   "id": 237,
@@ -2123,7 +2138,37 @@
                   "completed_at": 1774131217,
                   "progress": 0,
                   "description": "Extend entity resolution to map entities to raw chunks, not just refined memories. SQLite table: entity_chunk_mappings (entity_id, chunk_id). During chunk ingestion, extract entities from chunks and create mappings. This enables graph traversal to surface relevant raw chunks that contain entity mentions even when refined memories don't capture the detail. Part of the lossless architecture: graph connects everything.",
-                  "notes": [],
+                  "notes": [
+                    {
+                      "ts": 1774131328,
+                      "text": "Auto-implemented by orphaned CC session (commit 1d0401e). entity_chunk_mappings SQLite table, resolveChunkEntities() heuristic, wired into writeChunks(). Also created src/extract.js and tests. 681/681 tests pass."
+                    }
+                  ],
+                  "children": []
+                },
+                {
+                  "id": 238,
+                  "title": "Entity types → category entities with is_a relations",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "done",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": 0.05,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": 0.5,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": 1774141716,
+                  "progress": 0,
+                  "description": null,
+                  "notes": [
+                    {
+                      "ts": 1774141500,
+                      "text": "Reviewing task context: This involves converting flat entity types into category entities with is_a relations in MemoryHub. Need to understand current entity type schema."
+                    }
+                  ],
                   "children": []
                 }
               ]
