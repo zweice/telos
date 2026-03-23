@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-23T16:39:10.829Z",
+  "generated_at": "2026-03-23T19:11:25.376Z",
   "tree": [
     {
       "id": 1,
@@ -3786,7 +3786,12 @@
               "completed_at": null,
               "progress": 0,
               "description": "Current entity resolution uses Jaro-Winkler string similarity only. Misses semantic matches (grandmother vs grandma). New flow: (1) Haiku suggests entity with description, (2) embed suggestion and search existing entities in graph, (3) present top-N matches with IDs to Haiku, (4) Haiku decides merge vs create new. This closes the entity fragmentation gap where the same real-world entity gets multiple graph nodes.",
-              "notes": [],
+              "notes": [
+                {
+                  "ts": 1774293075,
+                  "text": "Architecture decision (2026-03-23): Entity extraction should be part of memory extraction, not a separate pass. Two-step flow: (1) Haiku extracts memories + proposes entities from chunk. (2) Vector similarity search on entity name+description against existing entity DB → Haiku picks existing entity or creates new one with UUID. This gives online dedup at extraction time. Entities get embeddings on name+description for the similarity search. Replaces current post-hoc resolver approach. Part of #247 unified pipeline scope."
+                }
+              ],
               "children": []
             },
             {
@@ -3810,6 +3815,10 @@
                 {
                   "ts": 1774281590,
                   "text": "Scope expanded: unify bench and production into single ingest pipeline (pipeline.js). Bench reimplements ~400 lines of orchestration that should be shared code. One ingest(messages, agentId, config) function: chunk → extract → resolveEntities → embed → store → buildGraph. Production calls per-turn, bench calls per-conv. Same code path = same bugs = same fixes. Also build graph during extraction (not after) to overlap wait times. Per Andreas directive 2026-03-23."
+                },
+                {
+                  "ts": 1774293075,
+                  "text": "Architecture decision (2026-03-23): Graph building must happen during extraction, not as separate pass. Two-step entity extraction (see #246 note) feeds directly into graph edges. Centrality scores available immediately after extraction for use in confidence gate (new task). Also: centrality should be part of the composite confidence score for the retrieval confidence gate — not just similarity."
                 }
               ],
               "children": []
@@ -3831,6 +3840,26 @@
               "completed_at": null,
               "progress": 0,
               "description": "Implement LongMemEval benchmark alongside LoCoMo. LongMemEval tests cross-session recall, temporal reasoning over longer horizons, and multi-turn dialogue memory — areas LoCoMo doesn't cover (LoCoMo is per-conversation only). Covers: dataset acquisition, adapter implementation, evaluation harness, comparison with LoCoMo results.",
+              "notes": [],
+              "children": []
+            },
+            {
+              "id": 249,
+              "title": "Retrieval confidence gate — filter low-confidence memories before injection",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Add confidence threshold to retrieval pipeline. If ALL top-K results fall below a composite confidence score (α*similarity + β*centrality), return empty array instead of weak memories. Benefits: (1) benchmark — UNANSWERABLE correctly scored when no confident matches, (2) production — less pollution in proactive memory injection. Threshold must be configurable per-agent. Composite score incorporates both vector similarity and graph centrality so graph-connected memories survive even at moderate similarity.",
               "notes": [],
               "children": []
             }
