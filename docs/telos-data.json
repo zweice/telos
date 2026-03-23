@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-23T19:11:25.376Z",
+  "generated_at": "2026-03-23T19:30:40.754Z",
   "tree": [
     {
       "id": 1,
@@ -3862,6 +3862,31 @@
               "description": "Add confidence threshold to retrieval pipeline. If ALL top-K results fall below a composite confidence score (α*similarity + β*centrality), return empty array instead of weak memories. Benefits: (1) benchmark — UNANSWERABLE correctly scored when no confident matches, (2) production — less pollution in proactive memory injection. Threshold must be configurable per-agent. Composite score incorporates both vector similarity and graph centrality so graph-connected memories survive even at moderate similarity.",
               "notes": [],
               "children": []
+            },
+            {
+              "id": 250,
+              "title": "Experiment: chunk-only retrieval — benchmark without refined memories",
+              "type": "task",
+              "owner": "conductor",
+              "status": "open",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Hypothesis: refined memories may be unnecessary if chunks are embedded directly. Refined memories currently serve as a search index (good embeddings + metadata) but get replaced by source chunks before the judge/agent sees them. Test: (1) Embed chunks with real vectors instead of zero vectors. (2) Run bench with chunk embeddings only — no refined memories at all. (3) Compare R@5 and judge accuracy against current approach (refined memories as search surface + chunk replacement). If chunk embeddings match or beat refined memory embeddings for retrieval precision, drop the refinement step entirely — saves ~50% Haiku extraction cost. If worse, refined memories stay as search index entries (not content). Related: #249 (confidence gate), #246 (entity extraction), #247 (unified pipeline).",
+              "notes": [],
+              "children": [],
+              "locked": true,
+              "locked_by": {
+                "id": 249,
+                "title": "Retrieval confidence gate — filter low-confidence memories before injection"
+              }
             }
           ]
         },
@@ -5723,6 +5748,12 @@
       "id": 61,
       "blocked_id": 244,
       "blocker_id": 243,
+      "type": "hard"
+    },
+    {
+      "id": 62,
+      "blocked_id": 250,
+      "blocker_id": 249,
       "type": "hard"
     }
   ]
