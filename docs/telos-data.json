@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-27T00:27:58.460Z",
+  "generated_at": "2026-03-27T00:57:02.137Z",
   "tree": [
     {
       "id": 1,
@@ -5333,6 +5333,17 @@
     }
   ],
   "ideas": [
+    {
+      "id": 25,
+      "title": "Evaluate Paperclip for MacroHard orchestration + Clipmart distribution",
+      "description": "Paperclip (github.com/paperclipai/paperclip) is open-source orchestration for zero-human companies. Node.js + React UI. 33k stars, MIT. Sits above OpenClaw — manages org charts, budgets, governance, goal alignment across agent teams. Their tagline: 'If OpenClaw is an employee, Paperclip is the company.' Coming soon: Clipmart — one-click company templates marketplace.",
+      "rationale": "Two angles: (1) Governance/cost dashboard — we lack unified cost tracking and budget governance across agents. Paperclip may fill that gap better than extending Telos. (2) Clipmart distribution — once MacroHard is proven, publishing as a template ('AI-native freight SaaS company') could be meaningful early distribution. First-mover advantage if Clipmart gains traction.",
+      "status": "active",
+      "key_decisions": "1. Does Paperclip's governance layer outperform Telos, or does it duplicate it? 2. Is Clipmart worth targeting as a distribution channel? 3. Conductor approval needed before any installation. 4. Evaluate after #37 (Pyfio UG) clears — no bandwidth to evaluate infra changes while formation is pending.",
+      "tags": [],
+      "created_at": 1774573017,
+      "updated_at": 1774573017
+    },
     {
       "id": 24,
       "title": "Evaluate gstack for MacroHard workflow",
