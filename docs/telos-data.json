@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-26T23:50:46.109Z",
+  "generated_at": "2026-03-27T00:27:58.460Z",
   "tree": [
     {
       "id": 1,
@@ -3938,7 +3938,12 @@
               "completed_at": null,
               "progress": 0,
               "description": null,
-              "notes": [],
+              "notes": [
+                {
+                  "ts": 1774569882,
+                  "text": "Current best: R@5=0.8366 (sliding_window w=5). Target: 0.90. Gap: 0.063."
+                }
+              ],
               "children": [
                 {
                   "id": 253,
@@ -3957,7 +3962,12 @@
                   "completed_at": null,
                   "progress": 0,
                   "description": null,
-                  "notes": [],
+                  "notes": [
+                    {
+                      "ts": 1774569882,
+                      "text": "Phase 2 complete. Best: sliding_window w=5, R@5=0.8366. Key findings: window size dominant lever, BM25+prefix both hurt. Gap to 0.90 = 0.063. CC continuing with w=7, w=10 + Phase 3 query optimization."
+                    }
+                  ],
                   "children": []
                 },
                 {
@@ -5323,6 +5333,17 @@
     }
   ],
   "ideas": [
+    {
+      "id": 24,
+      "title": "Evaluate gstack for MacroHard workflow",
+      "description": "gstack (github.com/garrytan/gstack) is Garry Tan's (YC) Claude Code setup: 20+ slash command 'specialists' (CEO review, eng manager, designer, QA, security officer, release engineer). MIT license. 49k+ stars. Turns Claude Code into a structured virtual team. Key commands: /plan-ceo-review, /review, /qa, /ship, /retro, /cso (security), /browse. Install: git clone into ~/.claude/skills/gstack. Could enhance Forge's coding quality, review rigor, and QA coverage.",
+      "rationale": "We're a 1-person shop shipping with AI agents. gstack's structured roles (especially /review, /qa, /cso) could catch what Forge currently misses. Karpathy-validated workflow. Low cost (MIT, no dependencies beyond Claude Code).",
+      "status": "active",
+      "key_decisions": "1. Does it add enough value over our current Forge workflow? 2. Which commands map to our pain points (code review, QA, security)? 3. Conductor approval needed before any installation (per skill install policy).",
+      "tags": [],
+      "created_at": 1774571275,
+      "updated_at": 1774571275
+    },
     {
       "id": 23,
       "title": "VRE — Volute Reasoning Engine: Epistemic enforcement for agentic AI",
