@@ -10,7 +10,8 @@
     "init": "node src/cli.js init",
     "start": "node server.js",
     "api": "node api-server.js",
-    "test": "node src/cli.js list"
+    "test": "node src/cli.js list",
+    "postinstall": "node-gyp rebuild --directory node_modules/better-sqlite3 2>/dev/null || true"
   },
   "keywords": [
     "goal",
@@ -28,5 +29,8 @@
   },
   "devDependencies": {
     "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=25.0.0"
   }
 }
