@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-27T00:57:02.137Z",
+  "generated_at": "2026-03-30T21:41:36.808Z",
   "tree": [
     {
       "id": 1,
@@ -2077,6 +2077,26 @@
                   "description": "## Problem\n43.4% of INCORRECT benchmark answers are because fine-grained conversational details were never extracted into memories. Extraction can't capture everything — we need the raw source available for retrieval.\n\n## Solution: Hybrid retrieval — extracted memories + transcript chunks\n\n### Write-time pipeline\n1. Chunk raw transcript into 3-5 turn sliding windows (with 1-turn overlap)\n2. Embed each chunk via text-embedding-3-large (same as memories)\n3. Store in LanceDB with `memory_type: 'transcript_chunk'`\n4. Each extracted memory gets a `source_chunk_ids: string[]` field linking back to the chunk(s) that produced it\n5. Each chunk gets `source_memory_ids: string[]` linking to extracted memories derived from it\n\n### Retrieval-time flow\nVector search hits both chunks and memories in one query (same table).\n\n**When a memory is retrieved:** works as before (memory → entity → graph)\n\n**When a chunk is retrieved:**\n1. Look up `source_memory_ids` on the chunk\n2. Pull entities from those linked memories\n3. Feed entities into graph traversal as usual\n4. The chunk itself is included in results passed to the LLM/judge\n\nThis means: chunk → extracted memories → entities → graph. The bridge is the bidirectional link.\n\n### Judge/LLM context\n- Retrieved results include both memories and transcript chunks\n- Chunks serve as source evidence (provenance)\n- Judge can verify extracted facts against original conversation\n\n### Benchmark changes\n- `bench.js` seeds both memories AND transcript chunks per conversation\n- Need to generate transcript chunks from `conv-*-transcript.txt` fixtures\n- Evidence matching: transcript chunks CAN be matched against evidence_ids directly (they contain the raw turns)\n\n### Chunk format\n```json\n{\n  \"id\": \"conv-26:chunk-0\",\n  \"content\": \"[Turn 1] Caroline: Hey Mel! ... [Turn 2] Melanie: Hi! ...\",\n  \"memory_type\": \"transcript_chunk\",\n  \"source_memory_ids\": [\"mem-uuid-1\", \"mem-uuid-2\"],\n  \"source_turn_ids\": [\"D1:1\", \"D1:2\", \"D1:3\"],\n  \"importance\": 0.3,\n  \"agent_id\": \"...\",\n  \"tenant_id\": \"...\"\n}\n```\n\n### Key constraint\n- Chunks and memories live in the SAME LanceDB table (vector search returns both)\n- Filter on memory_type when needed (e.g. entity resolution only uses extracted memories, not chunks)\n- Don't change entity extraction — entities still come from extracted memories only\n\n## Expected impact\n- Directly fixes 191 queries where answer is in transcript but not extracted\n- Improves evidence matching (chunks contain raw turn text → isHit() can match)\n- Should push accuracy from 64% toward 70%+",
                   "notes": [],
                   "children": []
+                },
+                {
+                  "id": 258,
+                  "title": "Active Memory — Entity Tracking & Maintenance",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Implement entity tracking system that identifies and maintains current state for key entities (people, systems, projects, relationships, environment). Dream cycle periodically refreshes entity summaries with latest facts. Hierarchical structure: entity -> sub-memories that surface when relevant. Solves: stale MemoryHub memories (36pct are outdated meta-discussion), missing cross-session entity state. Design: (1) Entity identification pass on new memories, (2) Periodic aggregation/refresh cycle, (3) Only maintain entities worth tracking (usage-based pruning), (4) Hierarchical surfacing - entity summary + detail memories on demand. Working name: Active Memory.",
+                  "notes": [],
+                  "children": []
                 }
               ]
             },
@@ -3942,6 +3962,30 @@
                 {
                   "ts": 1774569882,
                   "text": "Current best: R@5=0.8366 (sliding_window w=5). Target: 0.90. Gap: 0.063."
+                },
+                {
+                  "ts": 1774573960,
+                  "text": "NEW BEST: R@5=0.8983 (entity_agg + sliding_window w=10). Gap to 0.99: 0.092. By cat: sh=0.813, mh=0.876, temporal=0.982, adversarial=0.912, open_domain=0.886."
+                },
+                {
+                  "ts": 1774580006,
+                  "text": "Phase 4 done. Haiku reranker: R@5=0.9368 (full bench). Ceiling R@50=0.9863 (27/1977 hard misses). By cat: sh=0.900, mh=0.888, temporal=0.996, adv=0.945, od=0.919. Gap to 0.99: 0.053. Next: wider reranker candidates + multi-hop decomposition."
+                },
+                {
+                  "ts": 1774599061,
+                  "text": "Current best R@5=0.9444 (Phase 5 H1, n=1977). CoT reranker smoke: 0.9847 on conv-26. BLOCKED: both Anthropic API + OpenRouter out of credits. Ceiling R@50=0.9863 < target 0.99 — need credit top-up + embedding fix for 27 hard misses."
+                },
+                {
+                  "ts": 1774622522,
+                  "text": "Cycle 3 (15:40 CET): R@5=0.9454 (Phase 5 H3, cat-aware reranker). CC running Phase 6: h6_mh_candidates100 + h6_multihop_decompose. Gap: 0.0446. Ceiling: 0.9863."
+                },
+                {
+                  "ts": 1774623951,
+                  "text": "Phase 6 launched — current best R@5=0.9449 (n=1977). CC running (PID 640561): testing candidates=100 full bench + H_split_naive (conjunction split). Gap to target: 0.0451. Ceiling R@50=0.9863."
+                },
+                {
+                  "ts": 1774641900,
+                  "text": "Cron cycle 21:01 CET. Best R@5=0.9454 (Phase 5 H3). Launched H6 full bench: reranker_candidates=100+cat-aware. Smoke test: 0.9898 on conv-26 alone. CC running PID 674162. Ceiling R@50=0.9863 — 27 hard misses may keep final score below 0.99."
                 }
               ],
               "children": [
@@ -3966,6 +4010,10 @@
                     {
                       "ts": 1774569882,
                       "text": "Phase 2 complete. Best: sliding_window w=5, R@5=0.8366. Key findings: window size dominant lever, BM25+prefix both hurt. Gap to 0.90 = 0.063. CC continuing with w=7, w=10 + Phase 3 query optimization."
+                    },
+                    {
+                      "ts": 1774573597,
+                      "text": "Phase 2 done (best w=10, R@5=0.8796). Phase 3 results: dual_index=0.841 (killed), top_k_200=0.8715 (no gain), query_expand=0.862 (adds noise). All retrieval-side approaches exhausted. Moving to ingestion-side: H_entity_agg (Haiku entity summaries)."
                     }
                   ],
                   "children": []
