@@ -135,8 +135,8 @@ const state = {
   kpis:          {},
   agentStatus:   {},
   loopStatus:    {},
-  chatMessages:  {},   // taskId -> [{role, text, timestamp}]
-  waitingReply:  {},   // taskId -> bool
+  chatMessages:  {},   // `${taskId}:${mode}` -> [{role, text, timestamp}]
+  waitingReply:  {},   // `${taskId}:${mode}` -> bool
   chatMode:      {},   // taskId -> 'relay' | 'cc'
   chatPollTimer: null,
   logPollTimer:  null,
@@ -148,7 +148,9 @@ function saveLastSeen() {
 }
 
 function markSeen(taskId) {
-  const msgs = state.chatMessages[taskId] || [];
+  const mode = state.chatMode[taskId] || 'relay';
+  const key  = `${taskId}:${mode}`;
+  const msgs = state.chatMessages[key] || [];
   if (!msgs.length) return;
   state.lastSeen[taskId] = msgs[msgs.length - 1].timestamp || new Date().toISOString();
   saveLastSeen();
@@ -156,7 +158,10 @@ function markSeen(taskId) {
 
 function hasUnread(taskId) {
   if (taskId === state.activeTaskId) return false;
-  const msgs = state.chatMessages[taskId] || [];
+  // Check both modes for any unread message
+  const relayMsgs = state.chatMessages[`${taskId}:relay`] || [];
+  const ccMsgs    = state.chatMessages[`${taskId}:cc`]    || [];
+  const msgs      = relayMsgs.length >= ccMsgs.length ? relayMsgs : ccMsgs;
   if (!msgs.length) return false;
   const lastSeenTs = state.lastSeen[taskId];
   if (!lastSeenTs) return msgs.length > 0;
@@ -201,8 +206,10 @@ function inferStatus(node) {
 }
 
 function lastPreview(node) {
-  // Prefer chat messages
-  const msgs = state.chatMessages[node.id];
+  // Prefer chat messages — check relay first, then cc
+  const mode  = state.chatMode[node.id] || 'relay';
+  const key   = `${node.id}:${mode}`;
+  const msgs  = state.chatMessages[key];
   if (msgs && msgs.length) {
     const last = msgs[msgs.length - 1];
     return { text: last.text || '', ts: last.timestamp };
@@ -340,32 +347,48 @@ function openChat(taskId) {
   renderMessages(taskId);
   markSeen(taskId);
 
-  // Mode toggle — load persisted mode then show toggle
-  apiFetch(`/api/chat/${taskId}/mode`).then(data => {
-    state.chatMode[taskId] = data.mode || 'relay';
-    updateModeUI(taskId);
+  // Tabs — load persisted mode, then check for CC program support
+  if (!state.chatMode[taskId]) state.chatMode[taskId] = 'relay';
+
+  const tabsEl  = document.getElementById('chat-tabs');
+  const loopBar = document.getElementById('loop-controls');
+
+  apiFetch(`/api/program/${taskId}`).then(data => {
+    const hasProgram    = !!(data.content && data.content.trim());
+    const hasExperiment = hasProgram && data.content.includes('## How to run');
+
+    if (hasProgram) {
+      // Restore persisted server-side mode
+      return apiFetch(`/api/chat/${taskId}/mode`).then(modeData => {
+        state.chatMode[taskId] = modeData.mode || 'relay';
+        updateTabUI(taskId);
+        tabsEl.classList.remove('hidden');
+        if (loopBar) loopBar.style.display = hasExperiment ? '' : 'none';
+      }).catch(() => {
+        state.chatMode[taskId] = 'relay';
+        updateTabUI(taskId);
+        tabsEl.classList.remove('hidden');
+        if (loopBar) loopBar.style.display = hasExperiment ? '' : 'none';
+      });
+    } else {
+      // No program — force relay, hide tabs
+      state.chatMode[taskId] = 'relay';
+      updateTabUI(taskId);
+      tabsEl.classList.add('hidden');
+      if (loopBar) loopBar.style.display = 'none';
+    }
   }).catch(() => {
     state.chatMode[taskId] = 'relay';
-    updateModeUI(taskId);
+    updateTabUI(taskId);
+    tabsEl.classList.add('hidden');
+    if (loopBar) loopBar.style.display = 'none';
   });
-  document.getElementById('chat-mode-toggle').classList.remove('hidden');
 
   // Loop controls bar
   renderLoopControls(taskId);
 
   // Start polling
   startChatPoll(taskId);
-
-  // Check if task has experiment program — show/hide loop controls
-  const loopBar = document.getElementById('loop-controls');
-  if (loopBar) {
-    apiFetch(`/api/program/${taskId}`).then(data => {
-      const hasExperiment = data.content && data.content.includes('## How to run');
-      loopBar.style.display = hasExperiment ? '' : 'none';
-    }).catch(() => {
-      loopBar.style.display = 'none';
-    });
-  }
 }
 
 function closeChat() {
@@ -378,27 +401,14 @@ function closeChat() {
   document.getElementById('chat-input').disabled = true;
   document.getElementById('send-btn').disabled   = true;
   document.getElementById('loop-controls').classList.add('hidden');
-  document.getElementById('chat-mode-toggle').classList.add('hidden');
+  document.getElementById('chat-tabs').classList.add('hidden');
 }
 
-function updateModeUI(taskId) {
+function updateTabUI(taskId) {
   const mode = state.chatMode[taskId] || 'relay';
-  document.getElementById('mode-relay-btn').classList.toggle('active', mode === 'relay');
-  document.getElementById('mode-cc-btn').classList.toggle('active', mode === 'cc');
-}
-
-async function switchMode(taskId, mode) {
-  try {
-    await apiFetchPost(`/api/chat/${taskId}/mode`, { mode });
-    state.chatMode[taskId] = mode;
-    updateModeUI(taskId);
-    // Clear chat and re-fetch with new mode filter
-    state.chatMessages[taskId] = [];
-    renderMessages(taskId);
-    await pollChat(taskId);
-  } catch (e) {
-    console.error('switchMode failed:', e);
-  }
+  document.querySelectorAll('.chat-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.mode === mode);
+  });
 }
 
 function renderChatHeader(task) {
@@ -427,8 +437,9 @@ function renderMessages(taskId) {
   const container = document.getElementById('chat-messages');
   if (taskId !== state.activeTaskId) return;
 
-  const msgs    = state.chatMessages[taskId] || [];
-  const waiting = state.waitingReply[taskId];
+  const key     = `${taskId}:${state.chatMode[taskId] || 'relay'}`;
+  const msgs    = state.chatMessages[key] || [];
+  const waiting = state.waitingReply[key];
 
   if (!msgs.length && !waiting) {
     container.innerHTML = '<div class="chat-placeholder">No messages yet. Start the conversation!</div>';
@@ -498,10 +509,11 @@ function copyText(text) {
 
 async function pollChat(taskId) {
   try {
-    const mode = state.chatMode?.[taskId] || 'relay';
-    const data    = await apiFetch(`/api/chat/${taskId}?mode=${mode}`);
+    const mode       = state.chatMode[taskId] || 'relay';
+    const key        = `${taskId}:${mode}`;
+    const data       = await apiFetch(`/api/chat/${taskId}?mode=${mode}`);
     const serverMsgs = data.messages || [];
-    const clientMsgs = state.chatMessages[taskId] || [];
+    const clientMsgs = state.chatMessages[key] || [];
 
     // Use server as source of truth. Compare last timestamp to detect changes.
     const sLast = serverMsgs.length ? serverMsgs[serverMsgs.length - 1].timestamp : '';
@@ -511,9 +523,9 @@ async function pollChat(taskId) {
       // Detect new assistant replies
       const newAssistant = serverMsgs.some(m => m.role === 'assistant' &&
         !clientMsgs.some(c => c.timestamp === m.timestamp && c.role === 'assistant'));
-      if (newAssistant) state.waitingReply[taskId] = false;
+      if (newAssistant) state.waitingReply[key] = false;
 
-      state.chatMessages[taskId] = serverMsgs;
+      state.chatMessages[key] = serverMsgs;
       if (taskId === state.activeTaskId) {
         renderMessages(taskId);
         markSeen(taskId);
@@ -552,13 +564,15 @@ async function sendMessage() {
   input.disabled = true;
   document.getElementById('send-btn').disabled = true;
 
-  state.waitingReply[taskId] = true;
-  if (!state.chatMessages[taskId]) state.chatMessages[taskId] = [];
-  state.chatMessages[taskId].push({ role: 'user', text: message, timestamp: new Date().toISOString() });
+  const mode = state.chatMode[taskId] || 'relay';
+  const key  = `${taskId}:${mode}`;
+
+  state.waitingReply[key] = true;
+  if (!state.chatMessages[key]) state.chatMessages[key] = [];
+  state.chatMessages[key].push({ role: 'user', text: message, timestamp: new Date().toISOString() });
   renderMessages(taskId);
 
   try {
-    const mode = state.chatMode[taskId] || 'relay';
     const res = await fetch(`/api/chat/${taskId}`, {
       method:  'POST',
       headers: { ...authHeaders(), 'Content-Type': 'application/json' },
@@ -567,7 +581,7 @@ async function sendMessage() {
     if (res.status === 401) { clearToken(); window.location.href = '/login'; return; }
   } catch (e) {
     console.error('Send failed:', e);
-    state.waitingReply[taskId] = false;
+    state.waitingReply[key] = false;
     renderMessages(taskId);
   } finally {
     input.disabled = false;
@@ -910,11 +924,36 @@ document.getElementById('loop-start-btn').addEventListener('click', () => loopAc
 document.getElementById('loop-pause-btn').addEventListener('click', () => loopAction('pause'));
 document.getElementById('loop-stop-btn').addEventListener('click',  () => loopAction('stop'));
 
-document.getElementById('mode-relay-btn').addEventListener('click', () => {
-  if (state.activeTaskId) switchMode(state.activeTaskId, 'relay');
-});
-document.getElementById('mode-cc-btn').addEventListener('click', () => {
-  if (state.activeTaskId) switchMode(state.activeTaskId, 'cc');
+// Scroll position memory per task+mode
+const chatScrollPos = {};  // `${taskId}:${mode}` -> scrollTop
+
+document.getElementById('chat-tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.chat-tab');
+  if (!tab) return;
+  const newMode = tab.dataset.mode;
+  const taskId  = state.activeTaskId;
+  if (!taskId || newMode === state.chatMode[taskId]) return;
+
+  // Save scroll position for current mode
+  const messagesEl = document.getElementById('chat-messages');
+  chatScrollPos[`${taskId}:${state.chatMode[taskId]}`] = messagesEl.scrollTop;
+
+  // Switch mode
+  state.chatMode[taskId] = newMode;
+  updateTabUI(taskId);
+
+  const key = `${taskId}:${newMode}`;
+  if (!state.chatMessages[key]) state.chatMessages[key] = [];
+  renderMessages(taskId);
+
+  // Restore scroll position for new mode
+  const savedScroll = chatScrollPos[key];
+  if (savedScroll !== undefined) {
+    messagesEl.scrollTop = savedScroll;
+  }
+
+  // Restart polling on the new mode
+  startChatPoll(taskId);
 });
 
 // ── Boot ──────────────────────────────────────────────────────────────────────

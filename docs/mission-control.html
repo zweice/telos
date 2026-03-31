@@ -41,14 +41,14 @@
           <div id="chat-title">Select a task</div>
           <div id="chat-kpis"></div>
         </div>
-        <div id="chat-mode-toggle" class="hidden">
-          <div class="mode-toggle">
-            <button id="mode-relay-btn" class="mode-btn active" title="OpenClaw Relay">🔗 Relay</button>
-            <button id="mode-cc-btn" class="mode-btn" title="Claude Code Session">💻 CC</button>
-          </div>
-        </div>
         <div id="chat-status-badge"></div>
         <button id="menu-btn" class="icon-btn" title="More options">⋮</button>
+      </div>
+
+      <!-- Chat mode tabs (shown when task has CC support) -->
+      <div id="chat-tabs" class="hidden">
+        <button class="chat-tab active" data-mode="relay">🔗 Relay</button>
+        <button class="chat-tab" data-mode="cc">💻 CC</button>
       </div>
 
       <!-- Loop control bar (shown when task has an active/available loop) -->

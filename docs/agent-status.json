@@ -1,10 +1,7 @@
 {
   "conductor": {
-    "status": "cooking",
-    "last_heartbeat": "2026-03-31T21:05:00.019Z",
-    "task": "#258 EXP-185",
-    "pid": 1371624,
-    "started": "2026-03-31T18:08:46.229Z"
+    "status": "idle",
+    "last_heartbeat": "2026-03-31T21:13:59.088Z"
   },
   "main": {
     "status": "idle",

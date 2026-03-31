@@ -613,26 +613,32 @@ body.chat-open #chat-area { transform: translateX(0); }
   #back-btn { display: none; }
 }
 
-/* ── Mode Toggle ─────────────────────────────────────────────────────────────── */
-#chat-mode-toggle { display: flex; align-items: center; flex-shrink: 0; }
-.mode-toggle {
+/* ── Chat Tabs ───────────────────────────────────────────────────────────────── */
+#chat-tabs {
   display: flex;
-  gap: 2px;
-  background: var(--bg-input);
-  border-radius: 6px;
-  padding: 2px;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+  padding: 0 8px;
+  flex-shrink: 0;
 }
-.mode-btn {
-  padding: 2px 8px;
+.chat-tab {
+  flex: 1;
+  padding: 8px;
   border: none;
   background: transparent;
-  color: var(--text-dim);
-  border-radius: 4px;
+  color: #8b949e;
+  font-size: 0.8rem;
   cursor: pointer;
-  font-size: 0.7rem;
-  transition: background 0.15s, color 0.15s;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
 }
-.mode-btn.active { background: var(--border); color: var(--text); }
+.chat-tab.active {
+  color: #e6edf3;
+  border-bottom-color: #58a6ff;
+}
+.chat-tab:hover {
+  background: #21262d;
+}
 
 /* ── Loop Controls ──────────────────────────────────────────────────────────── */
 #loop-controls {
