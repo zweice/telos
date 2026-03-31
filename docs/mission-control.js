@@ -579,7 +579,10 @@ document.getElementById('back-btn').addEventListener('click', closeChat);
 document.getElementById('send-btn').addEventListener('click', sendMessage);
 
 document.getElementById('chat-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
+  // Desktop: Enter sends, Shift+Enter for newline
+  // Mobile (<768px): Enter = newline, only Send button sends
+  const isMobile = window.innerWidth < 768;
+  if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
     e.preventDefault();
     sendMessage();
   }

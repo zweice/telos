@@ -16,3 +16,6 @@
 {"role":"user","text":"Don't see typing indicator. But you can ship it when it looks more like telegram","timestamp":"2026-03-31T15:07:02.533Z","source":"web"}
 {"role":"assistant","text":"🎨 Full redesign launching now. Telegram-style: task list on left, chat on right. Mobile: full-screen list → tap → full-screen chat. ~10 min.","timestamp":"2026-03-31T15:07:31.000Z","source":"session"}
 {"role":"assistant","text":"Got it — the typing indicator was in the old CSS, might not have loaded from cache. The full Telegram redesign CC is already running, will include typing indicator properly. ETA ~10 min.","timestamp":"2026-03-31T15:07:58.000Z","source":"session"}
+{"role":"user","text":"This","timestamp":"2026-03-31T15:20:22.639Z","source":"web"}
+{"role":"assistant","text":"📱 Telegram-style redesign is LIVE! Reload the page. Task list on left, chat on right. Mobile: tap task → full-screen chat.","timestamp":"2026-03-31T15:20:58.000Z","source":"session"}
+{"role":"user","text":"This looks fantastic on mobile. Typing indicator works. I'd like to be able to hit enter without sending on mobile. Shift enter seems to be working though","timestamp":"2026-03-31T15:24:15.652Z","source":"web"}
