@@ -500,14 +500,20 @@ async function pollChat(taskId) {
   try {
     const mode = state.chatMode?.[taskId] || 'relay';
     const data    = await apiFetch(`/api/chat/${taskId}?mode=${mode}`);
-    const newMsgs = data.messages || [];
-    const oldMsgs = state.chatMessages[taskId] || [];
+    const serverMsgs = data.messages || [];
+    const clientMsgs = state.chatMessages[taskId] || [];
 
-    if (newMsgs.length !== oldMsgs.length) {
-      const hasNewAssistant = newMsgs.slice(oldMsgs.length).some(m => m.role === 'assistant');
-      if (hasNewAssistant) state.waitingReply[taskId] = false;
-      state.chatMessages[taskId] = newMsgs;
+    // Use server as source of truth. Compare last timestamp to detect changes.
+    const sLast = serverMsgs.length ? serverMsgs[serverMsgs.length - 1].timestamp : '';
+    const cLast = clientMsgs.length ? clientMsgs[clientMsgs.length - 1].timestamp : '';
 
+    if (serverMsgs.length !== clientMsgs.length || sLast !== cLast) {
+      // Detect new assistant replies
+      const newAssistant = serverMsgs.some(m => m.role === 'assistant' &&
+        !clientMsgs.some(c => c.timestamp === m.timestamp && c.role === 'assistant'));
+      if (newAssistant) state.waitingReply[taskId] = false;
+
+      state.chatMessages[taskId] = serverMsgs;
       if (taskId === state.activeTaskId) {
         renderMessages(taskId);
         markSeen(taskId);
