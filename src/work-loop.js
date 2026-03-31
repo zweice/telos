@@ -212,6 +212,15 @@ async function runLoop(taskId, agentName) {
   process.on('SIGTERM', () => { stopping = true; });
   process.on('SIGINT',  () => { stopping = true; });
 
+  let paused = false;
+  process.on('SIGUSR1', () => {
+    paused = !paused;
+    console.log(`[work-loop] ${paused ? 'PAUSED' : 'RESUMED'}`);
+    const entry = readLoopStatus()[taskId] || {};
+    entry.paused = paused;
+    setLoopEntry(taskId, entry);
+  });
+
   while (!stopping) {
     expNum++;
     const expLabel = `EXP-${String(expNum).padStart(3, '0')}`;
@@ -347,6 +356,11 @@ Work in: ${repoDir}
 
     // Brief pause between iterations
     await sleep(10000);
+
+    // Wait while paused
+    while (paused && !stopping) {
+      await sleep(5000);
+    }
   }
 
   // Cleanup on stop
@@ -437,6 +451,30 @@ if (cmd === 'start') {
     console.log(`[work-loop] Cleared stale loop status for task #${taskId}`);
   }
 
+} else if (cmd === 'pause') {
+  const taskId = flags.task;
+  if (!taskId) {
+    console.error('Usage: work-loop.js pause --task <id>');
+    process.exit(1);
+  }
+
+  const loopStatus = readLoopStatus();
+  const entry      = loopStatus[String(taskId)];
+
+  if (!entry?.running) {
+    console.log(`No loop running for task #${taskId}`);
+    process.exit(0);
+  }
+
+  const pid = entry.pid;
+  try {
+    process.kill(pid, 'SIGUSR1');
+    const willBePaused = !entry.paused;
+    console.log(`[work-loop] Sent SIGUSR1 to PID ${pid} (task #${taskId}) — ${willBePaused ? 'pausing' : 'resuming'}`);
+  } catch (e) {
+    console.warn(`[work-loop] Could not signal PID ${pid}: ${e.message}`);
+  }
+
 } else if (cmd === 'status') {
   const loopStatus = readLoopStatus();
   const entries    = Object.entries(loopStatus);
@@ -481,6 +519,9 @@ Commands:
 
   stop --task <id>
       Signal the loop to stop gracefully.
+
+  pause --task <id>
+      Toggle pause/resume on a running loop (sends SIGUSR1).
 
   status
       Show all running loops with current experiment info.

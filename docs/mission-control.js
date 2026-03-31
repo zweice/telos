@@ -31,6 +31,15 @@ async function apiFetch(url) {
   return res.json();
 }
 
+async function apiFetchPost(url) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  if (res.status === 401) { clearToken(); window.location.href = '/login'; throw new Error('Unauthorized'); }
+  return res.json();
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function ago(ts) {
@@ -124,6 +133,7 @@ const state = {
   chatMessages:  {},   // taskId -> [{role, text, timestamp}]
   waitingReply:  {},   // taskId -> bool
   chatPollTimer: null,
+  logPollTimer:  null,
   lastSeen:      JSON.parse(localStorage.getItem(LAST_SEEN_KEY) || '{}'),
 };
 
@@ -224,6 +234,13 @@ function renderTaskList() {
   }
 }
 
+function loopIndicator(taskId) {
+  const entry = state.loopStatus[String(taskId)];
+  if (!entry?.running) return '';
+  if (entry.paused) return '<span class="loop-indicator" title="Loop paused">⏸</span>';
+  return '<span class="loop-indicator running" title="Loop running">🔄</span>';
+}
+
 function buildTaskItem(task) {
   const preview  = lastPreview(task);
   const isActive = task.id === state.activeTaskId;
@@ -244,6 +261,7 @@ function buildTaskItem(task) {
         <span class="owner-dot ${ownerClass(task.owner)}" title="${escapeHtml(task.owner || '')}"></span>
         <span class="task-item-preview">${escapeHtml(preview.text.slice(0, 90))}</span>
         <span class="task-item-id">#${task.id}</span>
+        ${loopIndicator(task.id)}
         ${unread ? '<span class="unread-dot"></span>' : ''}
       </div>
     </div>
@@ -316,6 +334,9 @@ function openChat(taskId) {
   renderMessages(taskId);
   markSeen(taskId);
 
+  // Loop controls bar
+  renderLoopControls(taskId);
+
   // Start polling
   startChatPoll(taskId);
 }
@@ -329,6 +350,7 @@ function closeChat() {
   document.getElementById('chat-input-area').classList.add('disabled');
   document.getElementById('chat-input').disabled = true;
   document.getElementById('send-btn').disabled   = true;
+  document.getElementById('loop-controls').classList.add('hidden');
 }
 
 function renderChatHeader(task) {
@@ -525,6 +547,9 @@ function closeProgramPanel() {
   if (ta) ta.style.display = '';
   const rd = document.getElementById('results-display');
   if (rd) rd.style.display = 'none';
+  stopLogPoll();
+  const ld = document.getElementById('log-viewer');
+  if (ld) ld.style.display = 'none';
   const sb = document.getElementById('save-program-btn');
   if (sb) sb.style.display = '';
 
@@ -553,6 +578,124 @@ async function saveProgram() {
     setTimeout(() => { statusEl.textContent = ''; }, 2000);
   } catch (e) {
     statusEl.textContent = 'Failed: ' + e.message;
+  }
+}
+
+// ── Loop Controls ─────────────────────────────────────────────────────────────
+
+function renderLoopControls(taskId) {
+  const bar     = document.getElementById('loop-controls');
+  const entry   = state.loopStatus[String(taskId)];
+  const running = entry?.running;
+  const paused  = entry?.paused;
+
+  // Show bar if there's any loop entry or show always — reveal it
+  bar.classList.remove('hidden');
+
+  // Buttons
+  const startBtn = document.getElementById('loop-start-btn');
+  const pauseBtn = document.getElementById('loop-pause-btn');
+  const stopBtn  = document.getElementById('loop-stop-btn');
+
+  startBtn.disabled = !!running;
+  pauseBtn.disabled = !running;
+  stopBtn.disabled  = !running;
+
+  // Pause/Resume toggle label
+  pauseBtn.textContent = (running && paused) ? '▶ Resume' : '⏸ Pause';
+
+  // Status line
+  const statusEl = document.getElementById('loop-status-line');
+  if (!running) {
+    statusEl.innerHTML = '<span>Loop stopped</span>';
+  } else {
+    const expName  = escapeHtml(entry.experiment_name || '—');
+    const expNum   = entry.experiment_num || '?';
+    const state_   = paused ? '<span class="loop-state-paused">PAUSED</span>' : '<span class="loop-state-running">RUNNING</span>';
+    const lastR    = entry.last_result
+      ? ` | R@5: ${entry.last_result.r5.toFixed(3)} [${entry.last_result.status}]`
+      : '';
+    const updated  = entry.started ? ` | ${ago(entry.started)}` : '';
+    statusEl.innerHTML = `${state_} EXP-${String(expNum).padStart(3,'0')} ${expName}${lastR}${updated}`;
+  }
+}
+
+async function loopAction(action) {
+  const taskId = state.activeTaskId;
+  if (!taskId) return;
+
+  if (action === 'stop') {
+    if (!confirm(`Stop the loop for task #${taskId}?`)) return;
+  }
+
+  try {
+    await apiFetchPost(`/api/loop/${taskId}/${action}`);
+    // Refresh status after a short delay to pick up the change
+    setTimeout(refresh, 800);
+  } catch (e) {
+    alert(`Loop ${action} failed: ${e.message}`);
+  }
+}
+
+// ── Log Viewer ────────────────────────────────────────────────────────────────
+
+function openLogPanel() {
+  const taskId = state.activeTaskId;
+  if (!taskId) return;
+
+  const panel    = document.getElementById('program-panel');
+  const backdrop = document.getElementById('panel-backdrop');
+  panel.querySelector('.panel-title').textContent = `Log — #${taskId}`;
+
+  // Hide textarea and save button, show log viewer
+  const ta = document.getElementById('program-textarea');
+  ta.style.display = 'none';
+  document.getElementById('save-program-btn').style.display = 'none';
+
+  let logDiv = document.getElementById('log-viewer');
+  if (!logDiv) {
+    logDiv = document.createElement('div');
+    logDiv.id = 'log-viewer';
+    ta.parentNode.insertBefore(logDiv, ta);
+  }
+  logDiv.innerHTML = '<span class="log-empty">Loading…</span>';
+  logDiv.style.display = '';
+
+  // Hide results-display if open
+  const rd = document.getElementById('results-display');
+  if (rd) rd.style.display = 'none';
+
+  document.getElementById('program-status').textContent = 'Auto-refreshes every 5s';
+  panel.classList.remove('hidden');
+  backdrop.classList.remove('hidden');
+  requestAnimationFrame(() => panel.classList.add('open'));
+
+  fetchLog(taskId);
+  state.logPollTimer = setInterval(() => {
+    if (state.activeTaskId === taskId) fetchLog(taskId);
+    else stopLogPoll();
+  }, 5000);
+}
+
+async function fetchLog(taskId) {
+  try {
+    const data   = await apiFetch(`/api/loop/${taskId}/log`);
+    const lines  = data.lines || [];
+    const logDiv = document.getElementById('log-viewer');
+    if (!logDiv) return;
+    if (!lines.length) {
+      logDiv.innerHTML = '<span class="log-empty">No log entries yet.</span>';
+    } else {
+      logDiv.textContent = lines.join('\n');
+      logDiv.scrollTop   = logDiv.scrollHeight;
+    }
+  } catch { /* silent */ }
+}
+
+function stopLogPoll() {
+  if (state.logPollTimer) {
+    clearInterval(state.logPollTimer);
+    state.logPollTimer = null;
   }
 }
 
@@ -592,6 +735,7 @@ async function refresh() {
     if (state.activeTaskId) {
       const task = state.tasks.find(t => t.id === state.activeTaskId);
       if (task) renderChatHeader(task);
+      renderLoopControls(state.activeTaskId);
     }
 
     if (indicator) indicator.textContent = new Date().toLocaleTimeString();
@@ -691,6 +835,7 @@ document.getElementById('task-menu').addEventListener('click', e => {
       requestAnimationFrame(() => panel.classList.add('open'));
     });
   }
+  if (action === 'log') openLogPanel();
   if (action === 'copy-id') {
     const id = state.activeTaskId;
     if (id) navigator.clipboard?.writeText(String(id)).catch(() => {});
@@ -704,6 +849,10 @@ document.addEventListener('click', e => {
 document.getElementById('panel-backdrop').addEventListener('click', closeProgramPanel);
 document.getElementById('program-close-btn').addEventListener('click', closeProgramPanel);
 document.getElementById('save-program-btn').addEventListener('click', saveProgram);
+
+document.getElementById('loop-start-btn').addEventListener('click', () => loopAction('start'));
+document.getElementById('loop-pause-btn').addEventListener('click', () => loopAction('pause'));
+document.getElementById('loop-stop-btn').addEventListener('click',  () => loopAction('stop'));
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 

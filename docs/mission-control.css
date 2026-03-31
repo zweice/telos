@@ -612,3 +612,73 @@ body.chat-open #chat-area { transform: translateX(0); }
   body.chat-open #sidebar { transform: none !important; }
   #back-btn { display: none; }
 }
+
+/* ── Loop Controls ──────────────────────────────────────────────────────────── */
+#loop-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  min-height: 34px;
+}
+#loop-control-btns {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.loop-btn {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  transition: background 0.15s, border-color 0.15s;
+}
+.loop-btn:hover:not(:disabled) { background: #2d333b; border-color: var(--text-muted); color: var(--text); }
+.loop-btn:disabled { opacity: 0.38; cursor: default; }
+.loop-btn-start { color: var(--green); border-color: rgba(63,185,80,0.35); }
+.loop-btn-stop  { color: var(--red);   border-color: rgba(248,81,73,0.3); }
+#loop-status-line {
+  flex: 1;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.loop-state-running { color: var(--green); font-weight: 600; }
+.loop-state-paused  { color: var(--yellow); font-weight: 600; }
+
+/* Loop indicator in task list */
+.loop-indicator {
+  font-size: 12px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.loop-indicator.running { animation: spin 1.5s linear infinite; }
+
+/* Log panel terminal view */
+#log-viewer {
+  flex: 1;
+  background: #080c10;
+  color: #3fb950;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.55;
+  padding: 12px 14px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+#log-viewer .log-empty {
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+}

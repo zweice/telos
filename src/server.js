@@ -4,6 +4,7 @@ const express    = require('express');
 const jwt        = require('jsonwebtoken');
 const fs         = require('fs');
 const path       = require('path');
+const { execSync }   = require('child_process');
 
 const PORT        = parseInt(process.env.PORT) || 8088;
 const HOST        = process.env.HOST || '127.0.0.1';
@@ -233,6 +234,70 @@ app.put('/api/program/:taskId', requireAuth, (req, res) => {
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Loop control endpoints ────────────────────────────────────────────────────
+
+const WORK_LOOP       = path.join(__dirname, 'work-loop.js');
+const LOOP_STATUS_FILE = path.join(DOCS_DIR, 'loop-status.json');
+
+app.get('/api/loop/status', requireAuth, (req, res) => {
+  res.json(readJSON(LOOP_STATUS_FILE));
+});
+
+app.get('/api/loop/:taskId/log', requireAuth, (req, res) => {
+  const { taskId } = req.params;
+  if (!/^\d+$/.test(taskId)) return res.status(400).json({ error: 'Bad taskId' });
+  const logFile = path.join(__dirname, '..', `loop-${taskId}.log`);
+  try {
+    const content = fs.readFileSync(logFile, 'utf8');
+    const lines   = content.split('\n').filter(Boolean);
+    res.json({ lines: lines.slice(-50) });
+  } catch {
+    res.json({ lines: [] });
+  }
+});
+
+app.post('/api/loop/:taskId/start', requireAuth, (req, res) => {
+  const { taskId } = req.params;
+  if (!/^\d+$/.test(taskId)) return res.status(400).json({ error: 'Bad taskId' });
+  try {
+    execSync(`node ${WORK_LOOP} start --task ${taskId}`, {
+      env: { ...process.env },
+      timeout: 10000,
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.stderr?.toString() || e.message });
+  }
+});
+
+app.post('/api/loop/:taskId/stop', requireAuth, (req, res) => {
+  const { taskId } = req.params;
+  if (!/^\d+$/.test(taskId)) return res.status(400).json({ error: 'Bad taskId' });
+  try {
+    execSync(`node ${WORK_LOOP} stop --task ${taskId}`, {
+      env: { ...process.env },
+      timeout: 10000,
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.stderr?.toString() || e.message });
+  }
+});
+
+app.post('/api/loop/:taskId/pause', requireAuth, (req, res) => {
+  const { taskId } = req.params;
+  if (!/^\d+$/.test(taskId)) return res.status(400).json({ error: 'Bad taskId' });
+  try {
+    execSync(`node ${WORK_LOOP} pause --task ${taskId}`, {
+      env: { ...process.env },
+      timeout: 10000,
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.stderr?.toString() || e.message });
   }
 });
 

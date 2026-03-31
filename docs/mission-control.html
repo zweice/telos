@@ -45,6 +45,16 @@
         <button id="menu-btn" class="icon-btn" title="More options">⋮</button>
       </div>
 
+      <!-- Loop control bar (shown when task has an active/available loop) -->
+      <div id="loop-controls" class="hidden">
+        <div id="loop-control-btns">
+          <button id="loop-start-btn" class="loop-btn loop-btn-start" title="Start loop">▶ Start</button>
+          <button id="loop-pause-btn" class="loop-btn" title="Pause or resume loop">⏸ Pause</button>
+          <button id="loop-stop-btn" class="loop-btn loop-btn-stop" title="Stop loop">⏹ Stop</button>
+        </div>
+        <div id="loop-status-line"></div>
+      </div>
+
       <!-- Message list -->
       <div id="chat-messages">
         <div class="chat-placeholder">← Select a task to view its chat</div>
@@ -64,6 +74,7 @@
     <button data-action="program">📋 Program Editor</button>
     <button data-action="results">📊 Open Results</button>
     <button data-action="copy-id">🔗 Copy Task ID</button>
+    <button data-action="log">📜 View Log</button>
   </div>
 
   <!-- Program slide-in panel -->
