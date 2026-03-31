@@ -265,6 +265,19 @@ app.post('/api/chat/:taskId/mode', requireAuth, (req, res) => {
   res.json({ ok: true, mode });
 });
 
+
+// Reset CC session (start fresh conversation)
+app.post('/api/chat/:taskId/reset', requireAuth, (req, res) => {
+  const { taskId } = req.params;
+  if (!/^\d+$/.test(taskId)) return res.status(400).json({ error: 'Bad taskId' });
+  try {
+    const ccSession = require('./cc-session');
+    const result = ccSession.resetSession(taskId);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 app.get('/api/program/:taskId', requireAuth, (req, res) => {
   const { taskId } = req.params;
   if (!/^\d+$/.test(taskId)) return res.status(400).json({ error: 'Bad taskId' });

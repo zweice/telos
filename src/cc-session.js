@@ -8,9 +8,35 @@ const PROGRAMS_DIR = path.join(__dirname, '..', 'programs');
 const DOCS_DIR     = path.join(__dirname, '..', 'docs');
 const HOME         = process.env.HOME || '/root';
 const TELOS_DIR    = path.join(__dirname, '..');
+const SESSIONS_FILE = path.join(DOCS_DIR, 'cc-sessions.json');
 
-// Track which repo dirs have had at least one CC session this process lifetime.
-// First message per dir gets full context prepended; subsequent use --continue.
+// ── Session ID tracking ───────────────────────────────────────────────────────
+
+function readSessions() {
+  try { return JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8')); } catch { return {}; }
+}
+
+function writeSessions(data) {
+  fs.writeFileSync(SESSIONS_FILE, JSON.stringify(data, null, 2));
+}
+
+function getSessionId(taskId) {
+  return readSessions()[String(taskId)] || null;
+}
+
+function setSessionId(taskId, sessionId) {
+  const s = readSessions();
+  s[String(taskId)] = sessionId;
+  writeSessions(s);
+}
+
+function clearSession(taskId) {
+  const s = readSessions();
+  delete s[String(taskId)];
+  writeSessions(s);
+}
+
+// ── Repo + context ────────────────────────────────────────────────────────────
 
 function getTaskRepoDir(taskId) {
   const programPath = path.join(PROGRAMS_DIR, `${taskId}.md`);
@@ -52,37 +78,28 @@ Available commands (run from shell):
   return parts.join('\n\n');
 }
 
-
-function getChatHistory(taskId) {
-  const chatLogPath = path.join(DOCS_DIR, 'chat-logs', `${taskId}.jsonl`);
-  if (!fs.existsSync(chatLogPath)) return '(no prior messages)';
-  try {
-    const lines = fs.readFileSync(chatLogPath, 'utf8').trim().split('\n').filter(Boolean);
-    // Last 10 messages for context
-    const recent = lines.slice(-10).map(line => {
-      try {
-        const m = JSON.parse(line);
-        return `${m.role}: ${(m.text || '').slice(0, 500)}`;
-      } catch { return ''; }
-    }).filter(Boolean);
-    return recent.join('\n\n') || '(no prior messages)';
-  } catch { return '(no prior messages)'; }
-}
+// ── Send message ──────────────────────────────────────────────────────────────
 
 async function sendAsync(taskId, message) {
   const repoDir = getTaskRepoDir(taskId);
-  const isFirst = !activeSessions.has(repoDir);
+  const existingSessionId = getSessionId(taskId);
+  const isNew = !existingSessionId;
 
-  // Always start fresh — never --continue (avoids inheriting work loop sessions)
-  // Full context is cheap and ensures CC always has latest program + results
-  const fullMessage = buildTaskContext(taskId) + '\n\n## Chat History\n' + getChatHistory(taskId) + '\n\n---\n\nUser message:\n' + message;
+  // First message: prepend full context. Subsequent: CC has it in session history.
+  let fullMessage = message;
+  if (isNew) {
+    fullMessage = buildTaskContext(taskId) + '\n\n---\n\nUser message:\n' + message;
+  }
 
   return new Promise((resolve, reject) => {
-    const args = [
-      '--print',
-      '--dangerously-skip-permissions',
-      '-p', fullMessage,
-    ];
+    const args = ['--print', '--dangerously-skip-permissions', '--output-format', 'json'];
+    
+    if (existingSessionId) {
+      // Resume existing session — CC has full conversation history
+      args.push('--resume', existingSessionId);
+    }
+    
+    args.push('-p', fullMessage);
 
     const child = spawn('claude', args, {
       cwd: repoDir,
@@ -103,11 +120,39 @@ async function sendAsync(taskId, message) {
     child.on('close', code => {
       clearTimeout(timer);
       if (code !== 0) {
+        // If resume failed (stale session), retry as new
+        if (existingSessionId && stderr.includes('session')) {
+          clearSession(taskId);
+          sendAsync(taskId, message).then(resolve).catch(reject);
+          return;
+        }
         return reject(new Error(`CC exit ${code}: ${stderr.slice(-500)}`));
       }
-      resolve(stdout.trim());
+
+      // Parse JSON output to get session ID + response text
+      try {
+        const result = JSON.parse(stdout);
+        // Store session ID for future --resume
+        if (result.session_id) {
+          setSessionId(taskId, result.session_id);
+        }
+        // Extract text response
+        const text = result.result || result.text || 
+          (Array.isArray(result.content) ? result.content.filter(c => c.type === 'text').map(c => c.text).join('\n') : stdout.trim());
+        resolve(text);
+      } catch {
+        // Fallback: treat as plain text (non-JSON mode)
+        resolve(stdout.trim());
+      }
     });
   });
 }
 
-module.exports = { sendAsync, getTaskRepoDir };
+// ── Reset session ─────────────────────────────────────────────────────────────
+
+function resetSession(taskId) {
+  clearSession(taskId);
+  return { ok: true, message: `CC session for task #${taskId} cleared. Next message starts fresh.` };
+}
+
+module.exports = { sendAsync, getTaskRepoDir, resetSession, getSessionId };
