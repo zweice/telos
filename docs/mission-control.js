@@ -446,7 +446,6 @@ function renderMessages(taskId) {
 
   const key     = `${taskId}:${state.chatMode[taskId] || 'relay'}`;
   const msgs    = state.chatMessages[key] || [];
-  console.log('[render]', taskId, 'key='+key, 'msgs='+msgs.length);
   const waiting = state.waitingReply[key];
 
   if (!msgs.length && !waiting) {
@@ -490,18 +489,6 @@ function renderMessages(taskId) {
   container.innerHTML = html;
   container.scrollTop = container.scrollHeight;
 
-  // DEBUG: visible state indicator
-  let dbg = document.getElementById('debug-state');
-  if (!dbg) {
-    dbg = document.createElement('div');
-    dbg.id = 'debug-state';
-    dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ff0;color:#000;font-size:10px;padding:2px 6px;z-index:9999;font-family:monospace;';
-    document.body.appendChild(dbg);
-  }
-  const dmode = state.chatMode[taskId] || '?';
-  const dkey = taskId+':'+dmode;
-  const dmsgs = state.chatMessages[dkey] || [];
-  dbg.textContent = 'MODE='+dmode+' KEY='+dkey+' MSGS='+dmsgs.length+' RENDERED='+msgs.length;
 
   // Wire expand buttons
   container.querySelectorAll('.msg-expand-btn').forEach(btn => {
@@ -532,7 +519,6 @@ async function pollChat(taskId) {
   try {
     const mode       = state.chatMode[taskId] || 'relay';
     const key        = `${taskId}:${mode}`;
-    console.log('[poll]', taskId, 'mode='+mode, 'key='+key);
     const data       = await apiFetch(`/api/chat/${taskId}?mode=${mode}`);
     const serverMsgs = data.messages || [];
     const clientMsgs = state.chatMessages[key] || [];
@@ -961,7 +947,6 @@ document.getElementById('chat-tabs').addEventListener('click', e => {
   chatScrollPos[`${taskId}:${state.chatMode[taskId]}`] = messagesEl.scrollTop;
 
   // Switch mode
-  console.log('[tab-click] switching', taskId, 'from', state.chatMode[taskId], 'to', newMode);
   state.chatMode[taskId] = newMode;
   updateTabUI(taskId);
 
