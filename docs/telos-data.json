@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-31T11:57:28.871Z",
+  "generated_at": "2026-03-31T22:43:56.592Z",
   "tree": [
     {
       "id": 1,
@@ -2480,6 +2480,26 @@
               "description": "Extract standalone query(text, agentId, config) → Memory[] function from onBeforePromptBuild internals. Enables LoCoMo benchmark to test MemoryHub retrieval directly (instead of going through SLM Python engine). Required for multi-hop retrieval testing (#220). Interface: embed query → LanceDB search → rank → return top-k memories.",
               "notes": [],
               "children": []
+            },
+            {
+              "id": 259,
+              "title": "Agent Harness: Spec→Implement→Evaluate Loop",
+              "type": "milestone",
+              "owner": "conductor",
+              "status": "open",
+              "value": 0,
+              "cost_estimate": 0,
+              "cost_actual": null,
+              "roi": 0,
+              "effort_hours_estimate": null,
+              "effort_hours_actual": null,
+              "start_date": null,
+              "end_date": null,
+              "completed_at": null,
+              "progress": 0,
+              "description": "Three-agent architecture for task execution:\n1. Intent Agent — interprets user intent (not literal words), gathers context from MemoryHub/projects/trends/Telos, produces a rich spec\n2. Generator Agent — implements based on spec\n3. Evaluator Agent — reviews implementation with context from MemoryHub (failure modes, past dissatisfaction), provides feedback → generator iterates until evaluator approves\n\nEvery Telos task follows: Spec → Implement → Evaluate → Iterate → Approve",
+              "notes": [],
+              "children": []
             }
           ]
         },
@@ -3036,7 +3056,7 @@
                   "start_date": null,
                   "end_date": null,
                   "completed_at": null,
-                  "progress": 5,
+                  "progress": 90,
                   "description": "Mission Control dashboard + agentic work harness. Two intertwined problems:\n\n## Problem 1: Visibility (Dashboard)\nChat is terrible for state visibility. Andreas cant tell:\n- Is Conductor stale, missed a notification, or actively cooking?\n- Whats the current task state/performance?\n- Whats next in the queue?\n- Which context belongs to which task?\n\nSolution: Web UI showing active workstreams as cards with:\n- Task title + description\n- Current status (idle / cooking / blocked / done)\n- Live KPIs (R@5, MC_Acc, etc) that agents update\n- Queue/backlog visibility\n- Last activity timestamp\n- CC process status (running PID, elapsed time, log tail)\n\n## Problem 2: Work Continuity (Agentic Harness)\nCurrently using 30-min cron jobs to keep work flowing. Tasks should chain:\n- Task A completes -> immediately triggers Task B\n- No 30-min idle gap between tasks\n- Self-scheduling work loop with break conditions\n- Human can pause/steer/reprioritize from dashboard\n\nSolution: Work loop harness that:\n- Picks next task from queue\n- Launches CC / subagent\n- Monitors completion (event-driven, not polling)\n- On completion: logs results, picks next task, continues\n- Human override: pause, skip, reprioritize via dashboard\n- Automatic notification on completion + state change\n\n## Design Principles\n- Dashboard reads from Telos DB + agent state files\n- Agents update KPIs via simple CLI/API calls\n- No new infra — static HTML + SQLite reads (like Telos viz)\n- Work harness is an OpenClaw feature request or custom orchestrator script",
                   "notes": [
                     {
@@ -3046,6 +3066,18 @@
                     {
                       "ts": 1774958227,
                       "text": "Promoted from idea to active task (2026-03-31). Andreas pain points: stale notifications, invisible task state, 30-min cron gaps, context confusion between tasks. Two deliverables: (1) dashboard UI, (2) work loop harness."
+                    },
+                    {
+                      "ts": 1774959023,
+                      "text": "Inspiration: karpathy/autoresearch (62k stars). Key pattern: agent runs in tight loop (propose→run→eval→keep/discard→repeat). Human steers via program.md, agent edits code. Fixed time budget per experiment. results.tsv as append-only log. No framework — just Claude Code + markdown + git. Our adaptation: replace 30-min cron with continuous CC loop. ENTITY-EXPERIMENTS.md = program.md equivalent. Pipeline = train.py equivalent."
+                    },
+                    {
+                      "ts": 1774974995,
+                      "text": "Phase 1+2a+2b shipped. Dashboard live at ngrok URL. Telegram-style mobile UI, web chat with auth, results panel, work loop harness, program editor. 12 commits today."
+                    },
+                    {
+                      "ts": 1774977085,
+                      "text": "Phase 3 shipped: work loop controls (start/pause/stop), log viewer, loop status indicators in task list. All 3 phases complete. Dashboard fully operational."
                     }
                   ],
                   "children": []
@@ -5391,6 +5423,76 @@
           ]
         }
       ]
+    },
+    {
+      "id": 260,
+      "title": "Intent Agent — context-aware spec generation",
+      "type": "task",
+      "owner": "conductor",
+      "status": "open",
+      "value": 0,
+      "cost_estimate": 0,
+      "cost_actual": null,
+      "roi": 0,
+      "effort_hours_estimate": null,
+      "effort_hours_actual": null,
+      "start_date": null,
+      "end_date": null,
+      "completed_at": null,
+      "progress": 0,
+      "description": "Agent that interprets user intent (not just literal words). Gathers context from:\n- MemoryHub (relevant memories, past decisions)\n- Existing projects (code, docs, architecture)\n- Current trends (web research if needed)  \n- Telos tasks and aims (what we're building toward)\n- User inputs and conversation history\n\nProduces a rich, actionable spec that the generator agent can execute without ambiguity. The spec includes success criteria, constraints, and evaluation rubric.",
+      "notes": [],
+      "children": []
+    },
+    {
+      "id": 261,
+      "title": "Evaluator Agent — implementation review with memory context",
+      "type": "task",
+      "owner": "conductor",
+      "status": "open",
+      "value": 0,
+      "cost_estimate": 0,
+      "cost_actual": null,
+      "roi": 0,
+      "effort_hours_estimate": null,
+      "effort_hours_actual": null,
+      "start_date": null,
+      "end_date": null,
+      "completed_at": null,
+      "progress": 0,
+      "description": "Agent that evaluates implementations against the spec. Key features:\n- Reviews code/output against spec success criteria\n- Pulls context from MemoryHub: common failure modes, past user dissatisfaction patterns\n- Provides structured feedback to generator agent\n- Generator iterates based on feedback\n- Loop continues until evaluator is sufficiently satisfied\n- Final approval gate before marking task done\n\nMust be a DIFFERENT agent/session than the generator (fresh eyes, no sunk cost bias).",
+      "notes": [],
+      "children": [],
+      "locked": true,
+      "locked_by": {
+        "id": 260,
+        "title": "Intent Agent — context-aware spec generation"
+      }
+    },
+    {
+      "id": 262,
+      "title": "Meta-Harness Agent — self-improving agent orchestration",
+      "type": "task",
+      "owner": "conductor",
+      "status": "open",
+      "value": 0,
+      "cost_estimate": 0,
+      "cost_actual": null,
+      "roi": 0,
+      "effort_hours_estimate": null,
+      "effort_hours_actual": null,
+      "start_date": null,
+      "end_date": null,
+      "completed_at": null,
+      "progress": 0,
+      "description": "Inspired by: https://yoonholee.com/meta-harness/\n\nAgent that continuously monitors and adjusts the agent harness itself by:\n- Observing user-agent interactions across all sessions\n- Detecting user discontent, frustration, repeated corrections\n- Detecting success patterns (things that work well → reinforce)\n- Detecting failure patterns (things that don't work → adjust)\n- Modifying agent prompts, routing rules, evaluation criteria\n- Adjusting the spec→implement→evaluate loop parameters\n\nThis is the 'learning layer' — the harness that improves the harness.\nPositive reinforcement matters as much as error correction.",
+      "notes": [],
+      "children": [],
+      "locked": true,
+      "locked_by": {
+        "id": 261,
+        "title": "Evaluator Agent — implementation review with memory context"
+      }
     }
   ],
   "ideas": [
@@ -6001,6 +6103,18 @@
       "id": 62,
       "blocked_id": 250,
       "blocker_id": 249,
+      "type": "hard"
+    },
+    {
+      "id": 63,
+      "blocked_id": 261,
+      "blocker_id": 260,
+      "type": "hard"
+    },
+    {
+      "id": 64,
+      "blocked_id": 262,
+      "blocker_id": 261,
       "type": "hard"
     }
   ]
