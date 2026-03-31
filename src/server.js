@@ -208,9 +208,11 @@ app.get('/api/chat/:taskId', requireAuth, (req, res) => {
   if (!/^\d+$/.test(taskId)) return res.status(400).json({ error: 'Bad taskId' });
   const mode = req.query.mode;
   let messages = readChatLog(taskId);
-  // If mode filter specified, only show messages from that mode (or untagged)
-  if (mode) {
-    messages = messages.filter(m => !m.mode || m.mode === mode);
+  // Filter by mode: untagged messages are relay (legacy)
+  if (mode === 'cc') {
+    messages = messages.filter(m => m.mode === 'cc');
+  } else if (mode === 'relay') {
+    messages = messages.filter(m => !m.mode || m.mode === 'relay');
   }
   res.json({ messages });
 });

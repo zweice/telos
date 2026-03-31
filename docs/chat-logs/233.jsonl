@@ -64,3 +64,11 @@
 {"role":"assistant","text":"I'm Claude, an AI assistant made by Anthropic. I'm here to help you with software engineering tasks on the Telos project.\n\nWhat can I help you with?","timestamp":"2026-03-31T20:38:49.392Z","source":"cc","mode":"cc"}
 {"role":"user","text":"What is you context so far?","timestamp":"2026-03-31T20:39:12.998Z","source":"web","mode":"cc"}
 {"role":"assistant","text":"EXP-183 is already committed and the pipeline has been cleaned up. Everything is in order:\n\n---\n\n**EXP-183 Summary**\n\n- **Hypothesis**: BM25 hybrid for `current_state` queries would fix 7 embedding-level misses (lexical property-name matching)\n- **Result**: R@5=0.8293 MC=0.8130 — regression of −3.3pp vs EXP-020 baseline (0.8618)\n- **Verdict**: **DISCARD** — BM25 hurt, likely because current_state evidence is conversational (\"I just started at Google\") with no lexical overlap with the query (\"What is X's current employer?\")\n- **Status**: Committed as `0a750582`, pipeline reverted to EXP-020 base\n\nR@5=0.8293 MC=0.8130\n\n**DISCARD** — BM25 hybrid for current_state queries: regression −3.3pp, evidence is conversational speech with no keyword overlap with query property terms.","timestamp":"2026-03-31T20:40:09.517Z","source":"cc","mode":"cc"}
+{"role":"user","text":"Hi","timestamp":"2026-03-31T21:00:07.973Z","source":"web","mode":"cc"}
+{"role":"assistant","text":"Hey! What are you working on?","timestamp":"2026-03-31T21:00:12.887Z","source":"cc","mode":"cc"}
+{"role":"user","text":"Hi. Short and quick reply pls","timestamp":"2026-03-31T21:06:33.649Z","source":"web","mode":"cc"}
+{"role":"assistant","text":"Hey! What do you need?","timestamp":"2026-03-31T21:06:38.574Z","source":"cc","mode":"cc"}
+{"role":"user","text":"Iil","timestamp":"2026-03-31T21:07:03.732Z","source":"web","mode":"cc"}
+{"role":"assistant","text":"Got it — looks like a typo. What did you mean?","timestamp":"2026-03-31T21:07:09.190Z","source":"cc","mode":"cc"}
+{"role":"user","text":"What task is this? Reply in one sentence.","timestamp":"2026-03-31T21:08:20.679Z","source":"web","mode":"cc"}
+{"role":"assistant","text":"Task #233 — TelosBoard: a Mission Control dashboard and agentic work harness for visibility into agent tasks and automated work continuity.","timestamp":"2026-03-31T21:08:25.481Z","source":"cc","mode":"cc"}

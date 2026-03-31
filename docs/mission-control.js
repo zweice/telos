@@ -392,6 +392,10 @@ async function switchMode(taskId, mode) {
     await apiFetchPost(`/api/chat/${taskId}/mode`, { mode });
     state.chatMode[taskId] = mode;
     updateModeUI(taskId);
+    // Clear chat and re-fetch with new mode filter
+    state.chatMessages[taskId] = [];
+    renderMessages(taskId);
+    await pollChat(taskId);
   } catch (e) {
     console.error('switchMode failed:', e);
   }
