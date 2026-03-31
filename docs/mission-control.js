@@ -292,15 +292,17 @@ function openChat(taskId) {
   if (!descEl) {
     descEl = document.createElement('div');
     descEl.id = 'chat-description';
-    descEl.style.cssText = 'padding:6px 12px;font-size:0.75rem;color:#8b949e;border-bottom:1px solid #21262d;max-height:60px;overflow:hidden;cursor:pointer;white-space:pre-wrap;';
+    descEl.style.cssText = 'font-size:0.7rem;color:#8b949e;margin-top:2px;max-height:2.8em;overflow:hidden;cursor:pointer;line-height:1.4;';
     descEl.title = 'Click to expand';
     descEl.addEventListener('click', () => {
-      descEl.style.maxHeight = descEl.style.maxHeight === 'none' ? '60px' : 'none';
+      descEl.style.maxHeight = descEl.style.maxHeight === 'none' ? '2.8em' : 'none';
     });
-    document.getElementById('chat-header').after(descEl);
+    document.getElementById('chat-header-info').appendChild(descEl);
   }
   if (task.description) {
-    descEl.textContent = task.description.slice(0, 300) + (task.description.length > 300 ? '…' : '');
+    // First line only for compact display
+    const firstLine = task.description.split('\n')[0].slice(0, 120);
+    descEl.textContent = firstLine + (task.description.length > 120 ? '…' : '');
     descEl.style.display = '';
   } else {
     descEl.style.display = 'none';
