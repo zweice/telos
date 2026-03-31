@@ -360,15 +360,21 @@ function openChat(taskId) {
     if (hasProgram) {
       // Restore persisted server-side mode
       return apiFetch(`/api/chat/${taskId}/mode`).then(modeData => {
-        state.chatMode[taskId] = modeData.mode || 'relay';
+        const resolvedMode = modeData.mode || 'relay';
+        state.chatMode[taskId] = resolvedMode;
         updateTabUI(taskId);
         tabsEl.classList.remove('hidden');
         if (loopBar) loopBar.style.display = hasExperiment ? '' : 'none';
+        // Re-render + re-poll with correct mode (fixes race with initial poll)
+        renderMessages(taskId);
+        startChatPoll(taskId);
       }).catch(() => {
         state.chatMode[taskId] = 'relay';
         updateTabUI(taskId);
         tabsEl.classList.remove('hidden');
         if (loopBar) loopBar.style.display = hasExperiment ? '' : 'none';
+        renderMessages(taskId);
+        startChatPoll(taskId);
       });
     } else {
       // No program — force relay, hide tabs
