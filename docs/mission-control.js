@@ -1,9 +1,10 @@
 'use strict';
 
 const REFRESH_INTERVAL = 60_000;
-const DATA_PATH = './telos-data.json';
-const KPI_PATH = './kpis.json';
-const AGENT_PATH = './agent-status.json';
+const DATA_PATH    = './telos-data.json';
+const KPI_PATH     = './kpis.json';
+const AGENT_PATH   = './agent-status.json';
+const LOOP_PATH    = './loop-status.json';
 
 // Agent emoji map
 const AGENT_EMOJI = {
@@ -134,7 +135,7 @@ function renderKPIs(taskId, kpis) {
   </div>`;
 }
 
-function renderCard(node, kpis, agentStatus) {
+function renderCard(node, kpis, agentStatus, loopStatus) {
   const status = inferCardStatus(node, agentStatus);
   const pct = node.progress || 0;
   const lastNote = Array.isArray(node.notes) ? node.notes[node.notes.length - 1] :
@@ -149,6 +150,9 @@ function renderCard(node, kpis, agentStatus) {
   const descHtml = node.description ? `
     <div class="card-desc collapsed" id="desc-${node.id}">${node.description}</div>
     <button class="expand-btn" onclick="toggleDesc(${node.id})" id="expand-${node.id}">▾ more</button>` : '';
+
+  const results    = _resultsCache[node.id] || [];
+  const resultsHtml = renderResultsTab(node.id, results, loopStatus || {});
 
   const card = el('div', `work-card ${status}`);
   card.innerHTML = `
@@ -170,12 +174,13 @@ function renderCard(node, kpis, agentStatus) {
     </div>
     ${descHtml}
     ${renderKPIs(node.id, kpis)}
+    ${resultsHtml}
     ${noteHtml}
   `;
   return card;
 }
 
-function renderActiveCards(all, kpis, agentStatus) {
+function renderActiveCards(all, kpis, agentStatus, loopStatus) {
   const container = document.getElementById('active-cards');
   const active = all
     .filter(n => n.status === 'in_progress' && (!n.children?.length))
@@ -193,7 +198,7 @@ function renderActiveCards(all, kpis, agentStatus) {
 
   container.innerHTML = '';
   for (const node of active) {
-    container.appendChild(renderCard(node, kpis, agentStatus));
+    container.appendChild(renderCard(node, kpis, agentStatus, loopStatus));
   }
 }
 
@@ -283,6 +288,91 @@ window.toggleDesc = function(id) {
   btn.textContent = collapsed ? '▾ more' : '▴ less';
 };
 
+// ── Results TSV ──────────────────────────────────────────────────────────────
+
+async function fetchTSV(url) {
+  const res = await fetch(url + '?t=' + Date.now());
+  if (!res.ok) return [];
+  const text = await res.text();
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  return lines.slice(1).map(line => {
+    const parts = line.split('\t');
+    return {
+      commit:      parts[0] || '',
+      r5:          parseFloat(parts[1]) || 0,
+      mc:          parseFloat(parts[2]) || 0,
+      status:      parts[3] || '',
+      description: parts.slice(4).join('\t') || '',
+    };
+  });
+}
+
+// ── Sparkline ────────────────────────────────────────────────────────────────
+
+function renderSparkline(values, color) {
+  if (!values.length) return '';
+  const w = 80, h = 22, pad = 2;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 0.001;
+  const pts = values.map((v, i) => {
+    const x = pad + (i / Math.max(values.length - 1, 1)) * (w - pad * 2);
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const last = values[values.length - 1];
+  return `<svg class="sparkline" width="${w}" height="${h}" title="R@5 trend — latest: ${last.toFixed(4)}">
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
+    <circle cx="${parseFloat(pts.split(' ').pop().split(',')[0])}" cy="${parseFloat(pts.split(' ').pop().split(',')[1])}" r="2" fill="${color}"/>
+  </svg>`;
+}
+
+// ── Results tab ───────────────────────────────────────────────────────────────
+
+function renderResultsTab(taskId, results, loopStatus) {
+  if (!results.length) return '';
+
+  const loop  = loopStatus[String(taskId)];
+  const keeps = results.filter(r => r.status === 'keep');
+  const r5vals = keeps.map(r => r.r5);
+  const sparkColor = '#58a6ff';
+  const spark = r5vals.length > 1 ? renderSparkline(r5vals, sparkColor) : '';
+
+  const loopBadge = loop?.running
+    ? `<span class="loop-badge running">⚡ Exp #${loop.experiment_num} running</span>`
+    : `<span class="loop-badge idle">◎ idle</span>`;
+
+  const rows = results.slice(-10).reverse().map(r => {
+    const cls = r.status === 'keep' ? 'result-keep' : 'result-discard';
+    const short = r.commit.length > 9 ? r.commit.slice(0, 9) : r.commit;
+    return `<tr class="${cls}">
+      <td class="res-commit">${short}</td>
+      <td class="res-r5">${r.r5.toFixed(4)}</td>
+      <td class="res-mc">${r.mc.toFixed(4)}</td>
+      <td class="res-status ${r.status}">${r.status}</td>
+      <td class="res-desc">${r.description}</td>
+    </tr>`;
+  }).join('');
+
+  return `
+    <div class="results-section">
+      <div class="results-header">
+        <span class="kpi-section-title">Experiments</span>
+        <div class="results-meta">
+          ${spark}
+          ${loopBadge}
+        </div>
+      </div>
+      <table class="results-table">
+        <thead><tr>
+          <th>commit</th><th>R@5</th><th>MC</th><th>status</th><th>description</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
 // ── Fetch & Render ───────────────────────────────────────────────────────────
 
 async function fetchJSON(url) {
@@ -291,19 +381,38 @@ async function fetchJSON(url) {
   return res.json();
 }
 
+// Cache for results TSV (keyed by taskId)
+const _resultsCache = {};
+
+async function fetchResultsForTask(taskId) {
+  const url = `./results-${taskId}.tsv`;
+  try {
+    const results = await fetchTSV(url);
+    _resultsCache[taskId] = results;
+    return results;
+  } catch {
+    return _resultsCache[taskId] || [];
+  }
+}
+
 async function refresh() {
   const indicator = document.getElementById('last-refresh');
   try {
-    const [data, kpis, agentStatus] = await Promise.all([
+    const [data, kpis, agentStatus, loopStatus] = await Promise.all([
       fetchJSON(DATA_PATH),
       fetchJSON(KPI_PATH).catch(() => ({})),
       fetchJSON(AGENT_PATH).catch(() => ({})),
+      fetchJSON(LOOP_PATH).catch(() => ({})),
     ]);
 
     const all = flatten(data.tree || []);
 
+    // Fetch results for active tasks
+    const activeTasks = all.filter(n => n.status === 'in_progress' && !n.children?.length);
+    await Promise.all(activeTasks.map(n => fetchResultsForTask(n.id)));
+
     renderStatusBar(agentStatus);
-    renderActiveCards(all, kpis, agentStatus);
+    renderActiveCards(all, kpis, agentStatus, loopStatus);
     renderQueue(all);
     renderActivity(all);
 

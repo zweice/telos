@@ -16,6 +16,7 @@ const path = require('path');
 const DOCS_DIR    = path.join(__dirname, '..', 'docs');
 const KPI_FILE    = path.join(DOCS_DIR, 'kpis.json');
 const AGENT_FILE  = path.join(DOCS_DIR, 'agent-status.json');
+const LOOP_FILE   = path.join(DOCS_DIR, 'loop-status.json');
 
 function readJSON(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
@@ -134,6 +135,43 @@ if (cmd === 'set') {
   }
   console.log('');
 
+// ── loop-status <taskId> [--exp <n>] [--name <str>] [--r5 <n>] [--mc <n>] [--clear] ──
+} else if (cmd === 'loop-status') {
+  const [taskId] = args;
+  if (!taskId) {
+    console.error('Usage: kpi.js loop-status <taskId> [--exp <n>] [--name <str>] [--r5 <n>] [--mc <n>] [--clear]');
+    process.exit(1);
+  }
+
+  const loops = readJSON(LOOP_FILE);
+
+  if (flags.clear) {
+    delete loops[taskId];
+    writeJSON(LOOP_FILE, loops);
+    console.log(`✓ Loop status cleared for task #${taskId}`);
+  } else {
+    const existing = loops[taskId] || {};
+    loops[taskId] = {
+      ...existing,
+      running: true,
+    };
+    if (flags.exp  !== undefined) loops[taskId].experiment_num  = parseInt(flags.exp);
+    if (flags.name !== undefined) loops[taskId].experiment_name = flags.name;
+    if (flags.pid  !== undefined) loops[taskId].pid             = parseInt(flags.pid);
+    if (!loops[taskId].started)   loops[taskId].started         = new Date().toISOString();
+
+    if (flags.r5 !== undefined || flags.mc !== undefined) {
+      loops[taskId].last_result = {
+        r5:     flags.r5 !== undefined ? parseFloat(flags.r5) : (existing.last_result?.r5 ?? 0),
+        mc:     flags.mc !== undefined ? parseFloat(flags.mc) : (existing.last_result?.mc ?? 0),
+        status: flags.status || existing.last_result?.status || 'keep',
+      };
+    }
+
+    writeJSON(LOOP_FILE, loops);
+    console.log(`✓ Loop status updated: task #${taskId} exp=${loops[taskId].experiment_num} "${loops[taskId].experiment_name}"`);
+  }
+
 } else {
   console.log(`Telos KPI CLI
 
@@ -156,6 +194,8 @@ Examples:
   node src/kpi.js agent conductor cooking --task "#258 Entity Register" --pid 1254072
   node src/kpi.js agent conductor idle
   node src/kpi.js heartbeat conductor
+  node src/kpi.js loop-status 258 --exp 21 --name "EXP-021 entity resolution" --r5 0.862 --mc 0.821
+  node src/kpi.js loop-status 258 --clear
   node src/kpi.js show
 `);
 }
