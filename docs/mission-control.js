@@ -339,6 +339,17 @@ function openChat(taskId) {
 
   // Start polling
   startChatPoll(taskId);
+
+  // Check if task has experiment program — show/hide loop controls
+  const loopBar = document.getElementById('loop-controls');
+  if (loopBar) {
+    apiFetch(`/api/program/${taskId}`).then(data => {
+      const hasExperiment = data.content && data.content.includes('## How to run');
+      loopBar.style.display = hasExperiment ? '' : 'none';
+    }).catch(() => {
+      loopBar.style.display = 'none';
+    });
+  }
 }
 
 function closeChat() {
