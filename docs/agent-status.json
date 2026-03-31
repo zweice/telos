@@ -1,10 +1,10 @@
 {
   "conductor": {
     "status": "cooking",
-    "task": "#233 EXP-001",
+    "task": "#233 EXP-002",
     "pid": 1354884,
     "started": "2026-03-31T11:36:00Z",
-    "last_heartbeat": "2026-03-31T17:23:33.449Z"
+    "last_heartbeat": "2026-03-31T17:39:47.466Z"
   },
   "main": {
     "status": "idle",
