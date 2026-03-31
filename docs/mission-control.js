@@ -494,7 +494,8 @@ function copyText(text) {
 
 async function pollChat(taskId) {
   try {
-    const data    = await apiFetch(`/api/chat/${taskId}`);
+    const mode = state.chatMode?.[taskId] || 'relay';
+    const data    = await apiFetch(`/api/chat/${taskId}?mode=${mode}`);
     const newMsgs = data.messages || [];
     const oldMsgs = state.chatMessages[taskId] || [];
 

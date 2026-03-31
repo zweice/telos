@@ -206,7 +206,13 @@ app.get('/api/results/:taskId', requireAuth, (req, res) => {
 app.get('/api/chat/:taskId', requireAuth, (req, res) => {
   const { taskId } = req.params;
   if (!/^\d+$/.test(taskId)) return res.status(400).json({ error: 'Bad taskId' });
-  res.json({ messages: readChatLog(taskId) });
+  const mode = req.query.mode;
+  let messages = readChatLog(taskId);
+  // If mode filter specified, only show messages from that mode (or untagged)
+  if (mode) {
+    messages = messages.filter(m => !m.mode || m.mode === mode);
+  }
+  res.json({ messages });
 });
 
 app.post('/api/chat/:taskId', requireAuth, async (req, res) => {

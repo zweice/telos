@@ -11,7 +11,6 @@ const TELOS_DIR    = path.join(__dirname, '..');
 
 // Track which repo dirs have had at least one CC session this process lifetime.
 // First message per dir gets full context prepended; subsequent use --continue.
-const activeSessions = new Set();
 
 function getTaskRepoDir(taskId) {
   const programPath = path.join(PROGRAMS_DIR, `${taskId}.md`);
@@ -53,18 +52,33 @@ Available commands (run from shell):
   return parts.join('\n\n');
 }
 
+
+function getChatHistory(taskId) {
+  const chatLogPath = path.join(DOCS_DIR, 'chat-logs', `${taskId}.jsonl`);
+  if (!fs.existsSync(chatLogPath)) return '(no prior messages)';
+  try {
+    const lines = fs.readFileSync(chatLogPath, 'utf8').trim().split('\n').filter(Boolean);
+    // Last 10 messages for context
+    const recent = lines.slice(-10).map(line => {
+      try {
+        const m = JSON.parse(line);
+        return `${m.role}: ${(m.text || '').slice(0, 500)}`;
+      } catch { return ''; }
+    }).filter(Boolean);
+    return recent.join('\n\n') || '(no prior messages)';
+  } catch { return '(no prior messages)'; }
+}
+
 async function sendAsync(taskId, message) {
   const repoDir = getTaskRepoDir(taskId);
   const isFirst = !activeSessions.has(repoDir);
 
-  let fullMessage = message;
-  if (isFirst) {
-    fullMessage = buildTaskContext(taskId) + '\n\n---\n\n' + message;
-  }
+  // Always start fresh — never --continue (avoids inheriting work loop sessions)
+  // Full context is cheap and ensures CC always has latest program + results
+  const fullMessage = buildTaskContext(taskId) + '\n\n## Chat History\n' + getChatHistory(taskId) + '\n\n---\n\nUser message:\n' + message;
 
   return new Promise((resolve, reject) => {
     const args = [
-      ...(isFirst ? [] : ['--continue']),
       '--print',
       '--dangerously-skip-permissions',
       '-p', fullMessage,
@@ -91,7 +105,6 @@ async function sendAsync(taskId, message) {
       if (code !== 0) {
         return reject(new Error(`CC exit ${code}: ${stderr.slice(-500)}`));
       }
-      activeSessions.add(repoDir);
       resolve(stdout.trim());
     });
   });
