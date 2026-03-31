@@ -22,3 +22,4 @@ aa7d8b44	0.854	0.789	keep	EXP-017 optimal combo no state/delta + routing NEW REC
 cc8a12ed	0.837	0.813	discard	EXP-018 targeted reranker expansion (FALSIFIED −1.7pp)
 0bf6a153	0.821	0.821	discard	EXP-019 bulk entity extraction (FALSIFIED −3.3pp, extraction F1=0.660 works)
 913776cd	0.862	0.821	keep	EXP-020 entity register NEW RECORD (+0.8pp, relationship +5.6pp)
+(uncommitted)	0.8378	0.8211	discard	unnamed experiment
