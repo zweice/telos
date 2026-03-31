@@ -55,6 +55,23 @@ function requireAuth(req, res, next) {
   }
 }
 
+// ── Chat log helpers ──────────────────────────────────────────────────────────
+
+const CHAT_LOG_DIR = path.join(DOCS_DIR, 'chat-logs');
+if (!fs.existsSync(CHAT_LOG_DIR)) fs.mkdirSync(CHAT_LOG_DIR, { recursive: true });
+
+function appendChatLog(taskId, entry) {
+  const fp = path.join(CHAT_LOG_DIR, `${taskId}.jsonl`);
+  fs.appendFileSync(fp, JSON.stringify(entry) + '\n');
+}
+
+function readChatLog(taskId) {
+  const fp = path.join(CHAT_LOG_DIR, `${taskId}.jsonl`);
+  try {
+    return fs.readFileSync(fp, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l));
+  } catch { return []; }
+}
+
 // ── Data helpers ──────────────────────────────────────────────────────────────
 
 function readJSON(fp) {
@@ -62,41 +79,44 @@ function readJSON(fp) {
   catch { return {}; }
 }
 
-function readSessionMessages(taskId) {
-  const sessDir = path.join(OPENCLAW_DIR, 'agents', 'conductor', 'sessions');
-  const messages = [];
-  try {
-    const files = fs.readdirSync(sessDir)
-      .filter(f => f.endsWith('.jsonl'))
-      .map(f => ({ f, mt: fs.statSync(path.join(sessDir, f)).mtimeMs }))
-      .sort((a, b) => b.mt - a.mt)
-      .slice(0, 10)
-      .map(x => x.f);
 
+// ── Background response capture ───────────────────────────────────────────────
+
+const lastResponseCheck = {};
+
+function captureResponses() {
+  const sessDir = path.join(OPENCLAW_DIR, 'agents', 'conductor', 'sessions');
+  try {
+    const files = fs.readdirSync(sessDir).filter(f => f.endsWith('.jsonl'));
     for (const file of files) {
-      const lines = fs.readFileSync(path.join(sessDir, file), 'utf8')
-        .split('\n').filter(Boolean);
-      for (const line of lines) {
+      const fp = path.join(sessDir, file);
+      const stat = fs.statSync(fp);
+      if (lastResponseCheck[file] && stat.mtimeMs <= lastResponseCheck[file]) continue;
+      lastResponseCheck[file] = stat.mtimeMs;
+
+      const lines = fs.readFileSync(fp, 'utf8').split('\n').filter(Boolean);
+      for (const line of lines.slice(-10)) {
         try {
           const obj = JSON.parse(line);
-          if (obj.role && (obj.text || obj.content)) {
-            messages.push({
-              role: obj.role,
-              text: obj.text || (
-                Array.isArray(obj.content)
-                  ? obj.content.map(c => c.text || '').join('')
-                  : String(obj.content || '')
-              ),
-              timestamp: obj.timestamp || obj.ts || null,
-            });
+          if (obj.role === 'assistant' && obj.timestamp) {
+            const text = obj.text || (Array.isArray(obj.content) ? obj.content.map(c => c.text || '').join('') : '');
+            const match = text.match(/\[TelosBoard #(\d+)\]/) || text.match(/#(\d+)/);
+            if (match) {
+              const taskId = match[1];
+              const chatLog = readChatLog(taskId);
+              const isDupe = chatLog.some(m => m.timestamp === obj.timestamp && m.role === 'assistant');
+              if (!isDupe) {
+                appendChatLog(taskId, { role: 'assistant', text, timestamp: obj.timestamp, source: 'session' });
+              }
+            }
           }
         } catch { /* skip malformed */ }
       }
-      if (messages.length >= 50) break;
     }
   } catch { /* no sessions dir yet */ }
-  return messages.slice(-50);
 }
+
+setInterval(captureResponses, 10000);
 
 async function sendToGateway(taskId, message) {
   let token;
@@ -105,7 +125,8 @@ async function sendToGateway(taskId, message) {
   } catch {
     throw new Error('Gateway token not available');
   }
-  const sessionKey = `agent:conductor:task:${taskId}`;
+  const sessionKey = process.env.CHAT_SESSION_KEY || 'agent:conductor:telegram:direct:29216737';
+  const prefixedMessage = `[TelosBoard #${taskId}] ${message}`;
   const res = await fetch('http://localhost:18789/tools/invoke', {
     method: 'POST',
     headers: {
@@ -114,7 +135,7 @@ async function sendToGateway(taskId, message) {
     },
     body: JSON.stringify({
       tool: 'sessions_send',
-      args: { sessionKey, message, timeoutSeconds: 0 },
+      args: { sessionKey, message: prefixedMessage, timeoutSeconds: 0 },
     }),
   });
   if (!res.ok) throw new Error(`Gateway ${res.status}: ${await res.text()}`);
@@ -170,7 +191,7 @@ app.get('/api/results/:taskId', requireAuth, (req, res) => {
 app.get('/api/chat/:taskId', requireAuth, (req, res) => {
   const { taskId } = req.params;
   if (!/^\d+$/.test(taskId)) return res.status(400).json({ error: 'Bad taskId' });
-  res.json({ messages: readSessionMessages(taskId) });
+  res.json({ messages: readChatLog(taskId) });
 });
 
 app.post('/api/chat/:taskId', requireAuth, async (req, res) => {
@@ -182,6 +203,7 @@ app.post('/api/chat/:taskId', requireAuth, async (req, res) => {
   }
   try {
     await sendToGateway(taskId, message.trim());
+    appendChatLog(taskId, { role: 'user', text: message.trim(), timestamp: new Date().toISOString(), source: 'web' });
     res.json({ ok: true });
   } catch (e) {
     res.status(502).json({ error: e.message });
