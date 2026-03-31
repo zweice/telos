@@ -268,6 +268,7 @@ function updateTaskItemUnread(taskId) {
 
 function openChat(taskId) {
   state.activeTaskId = taskId;
+  history.pushState({ chat: taskId }, '', `#task-${taskId}`);
 
   // Sidebar active highlight
   document.querySelectorAll('.task-item').forEach(it => {
@@ -574,7 +575,22 @@ async function refresh() {
 
 // ── Event Wiring ──────────────────────────────────────────────────────────────
 
-document.getElementById('back-btn').addEventListener('click', closeChat);
+document.getElementById('back-btn').addEventListener('click', () => {
+  closeChat();
+  history.pushState({ list: true }, '', '#');
+});
+
+// Handle browser back button — stay in app instead of going to login
+window.addEventListener('popstate', e => {
+  if (e.state && e.state.chat) {
+    openChat(e.state.chat);
+  } else {
+    closeChat();
+  }
+});
+
+// Set initial state
+history.replaceState({ list: true }, '', location.hash || '#');
 
 document.getElementById('send-btn').addEventListener('click', sendMessage);
 
@@ -607,7 +623,31 @@ document.getElementById('task-menu').addEventListener('click', e => {
   if (action === 'program') openProgramPanel();
   if (action === 'results') {
     const id = state.activeTaskId;
-    if (id) fetch(`/api/results/${id}`, {headers: authHeaders()}).then(r => r.ok ? window.open(`/api/results/${id}?token=${encodeURIComponent(localStorage.getItem("mc_token"))}`, "_blank") : alert("No results file for this task yet."));
+    if (id) fetch(`/api/results/${id}`, {headers: authHeaders()}).then(r => {
+      if (!r.ok) return alert("No results file for this task yet.");
+      return r.text();
+    }).then(tsv => {
+      if (!tsv) return;
+      // Parse TSV and show in program panel (reuse it)
+      const rows = tsv.trim().split('\n').map(r => r.split('\t'));
+      const header = rows[0];
+      const html = '<table style="width:100%;border-collapse:collapse;font-size:0.8rem;"><thead><tr>' +
+        header.map(h => `<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #30363d;color:#8b949e;">${h}</th>`).join('') +
+        '</tr></thead><tbody>' +
+        rows.slice(1).map(r => '<tr>' + r.map((c,i) => {
+          let color = '#e6edf3';
+          if (header[i] === 'status') color = c === 'keep' ? '#3fb950' : c === 'discard' ? '#f85149' : '#d29922';
+          return `<td style="padding:4px 8px;border-bottom:1px solid #21262d;color:${color};">${c}</td>`;
+        }).join('') + '</tr>').join('') +
+        '</tbody></table>';
+      const panel = document.getElementById('program-panel');
+      panel.querySelector('.panel-title').textContent = 'Results — #' + id;
+      document.getElementById('program-editor').innerHTML = html;
+      document.getElementById('program-editor').style.fontFamily = 'monospace';
+      document.getElementById('program-editor').readOnly = true;
+      document.getElementById('save-program-btn').style.display = 'none';
+      panel.classList.remove('hidden');
+    });
   }
   if (action === 'copy-id') {
     const id = state.activeTaskId;
