@@ -25,3 +25,4 @@ cc8a12ed	0.837	0.813	discard	EXP-018 targeted reranker expansion (FALSIFIED −1
 (uncommitted)	0.8378	0.8211	discard	unnamed experiment
 a62e7b28	0.8293	0.8293	discard	EXP-180 HyDE query embedding — hallucinated hypothetical answers mis
 (uncommitted)	0.8455	0.8211	discard	EXP-182 Multi-query keyword variant retrieval**
+(uncommitted)	0.8699	0.8130	discard	EXP-185 BM25+Dense hybrid for relationship routing**
