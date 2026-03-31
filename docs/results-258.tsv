@@ -23,3 +23,4 @@ cc8a12ed	0.837	0.813	discard	EXP-018 targeted reranker expansion (FALSIFIED −1
 0bf6a153	0.821	0.821	discard	EXP-019 bulk entity extraction (FALSIFIED −3.3pp, extraction F1=0.660 works)
 913776cd	0.862	0.821	keep	EXP-020 entity register NEW RECORD (+0.8pp, relationship +5.6pp)
 (uncommitted)	0.8378	0.8211	discard	unnamed experiment
+a62e7b28	0.8293	0.8293	discard	EXP-180 HyDE query embedding — hallucinated hypothetical answers mis
