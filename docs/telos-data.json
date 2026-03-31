@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-30T21:41:36.808Z",
+  "generated_at": "2026-03-31T11:36:09.272Z",
   "tree": [
     {
       "id": 1,
@@ -2083,7 +2083,7 @@
                   "title": "Active Memory — Entity Tracking & Maintenance",
                   "type": "task",
                   "owner": "conductor",
-                  "status": "open",
+                  "status": "in_progress",
                   "value": 0,
                   "cost_estimate": 0,
                   "cost_actual": null,
@@ -2093,9 +2093,18 @@
                   "start_date": null,
                   "end_date": null,
                   "completed_at": null,
-                  "progress": 0,
-                  "description": "Implement entity tracking system that identifies and maintains current state for key entities (people, systems, projects, relationships, environment). Dream cycle periodically refreshes entity summaries with latest facts. Hierarchical structure: entity -> sub-memories that surface when relevant. Solves: stale MemoryHub memories (36pct are outdated meta-discussion), missing cross-session entity state. Design: (1) Entity identification pass on new memories, (2) Periodic aggregation/refresh cycle, (3) Only maintain entities worth tracking (usage-based pruning), (4) Hierarchical surfacing - entity summary + detail memories on demand. Working name: Active Memory.",
-                  "notes": [],
+                  "progress": 40,
+                  "description": "Entity tracking system for MemoryHub. Identifies, matches, and maintains evolving state for any noteworthy entity (people, systems, projects, pets, places, orgs).\n\n## Architecture\n- **Entity Register**: flat store — name, type, description (versioned), state history, evidence refs\n- **Write path (at extraction time)**: LLM identifies entities in conversation → matches against existing register (embedding similarity or LLM) → creates new or updates existing → each state update gets dual timestamps (effective_date if stated, reported_at always) + evidence ref to source message\n- **Invalidation**: when state changes, old state marked invalid with pointer to new state\n- **Read path (at query time)**: identify entities in query → match against register → retrieve latest state by default, historical with timestamp filter\n- **State granularity**: start with description versions (simple), expand to atomic state bits as hypothesis\n\n## Benchmark\n- mem90 entity bench: 10 convs, 409 QA, 6 categories, multiple choice\n- Targets: MC_Acc ≥ 0.90 (HIT: 91.9%), R@5 ≥ 0.99 (current: 0.854)\n- Must test non-person entities (systems, projects, pets)\n- Must test temporal queries (current state vs historical)\n\n## Design Rules\n- Entity = any noteworthy thing, not just speakers\n- No knowledge graph — flat register is sufficient  \n- Every mem90 experiment must be transferable to MemoryHub\n- Entity extraction merges into existing memory extraction prompt (one LLM call)\n- Effective_date optional (only if explicitly stated in conversation)\n- Evidence ref mandatory (conversation + message pointer)",
+                  "notes": [
+                    {
+                      "ts": 1774948889,
+                      "text": "Refocusing: entity = any noteworthy thing (people, systems, pets, projects), not just speakers. Entity register approach (no graph needed). mem90 experiments must be transferable to MemoryHub. EA currently speaker-only — needs broadening. Entity state chunks use benchmark ground truth — needs production equivalent. 16 experiments complete, R@5=0.854 (no entity state) / MC=88.6% (with entity state)."
+                    },
+                    {
+                      "ts": 1774956877,
+                      "text": "Design finalized (2026-03-31): dual timestamps, invalidation chain, entity matching at extraction, description versions as starting granularity. Cron will implement."
+                    }
+                  ],
                   "children": []
                 }
               ]
