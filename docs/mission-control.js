@@ -18,7 +18,9 @@ function getToken()    { return localStorage.getItem(TOKEN_KEY); }
 function clearToken()  { localStorage.removeItem(TOKEN_KEY); }
 function authHeaders() {
   const t = getToken();
-  return t ? { Authorization: `Bearer ${t}` } : {};
+  const h = { 'ngrok-skip-browser-warning': 'true' };
+  if (t) h.Authorization = `Bearer ${t}`;
+  return h;
 }
 (function checkAuth() {
   if (!getToken()) window.location.href = '/login';
