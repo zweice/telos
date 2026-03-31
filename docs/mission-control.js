@@ -489,6 +489,19 @@ function renderMessages(taskId) {
   container.innerHTML = html;
   container.scrollTop = container.scrollHeight;
 
+  // DEBUG: visible state indicator
+  let dbg = document.getElementById('debug-state');
+  if (!dbg) {
+    dbg = document.createElement('div');
+    dbg.id = 'debug-state';
+    dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ff0;color:#000;font-size:10px;padding:2px 6px;z-index:9999;font-family:monospace;';
+    document.body.appendChild(dbg);
+  }
+  const dmode = state.chatMode[taskId] || '?';
+  const dkey = taskId+':'+dmode;
+  const dmsgs = state.chatMessages[dkey] || [];
+  dbg.textContent = 'MODE='+dmode+' KEY='+dkey+' MSGS='+dmsgs.length+' RENDERED='+msgs.length;
+
   // Wire expand buttons
   container.querySelectorAll('.msg-expand-btn').forEach(btn => {
     btn.addEventListener('click', () => {
