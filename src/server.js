@@ -46,9 +46,12 @@ function checkRateLimit(ip) {
 
 function requireAuth(req, res, next) {
   const h = req.headers['authorization'];
-  if (!h || !h.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  let token = (h && h.startsWith('Bearer ')) ? h.slice(7) : null;
+  // Also accept token as query param (for window.open links)
+  if (!token && req.query && req.query.token) token = req.query.token;
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
   try {
-    req.user = jwt.verify(h.slice(7), SECRET);
+    req.user = jwt.verify(token, SECRET);
     next();
   } catch {
     res.status(401).json({ error: 'Invalid or expired token' });
