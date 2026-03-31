@@ -1,10 +1,17 @@
 {
   "233": {
-    "running": true,
-    "experiment_num": 2,
-    "experiment_name": "EXP-002 running...",
-    "started": "2026-03-31T17:39:47.465Z",
+    "running": false,
+    "experiment_num": 3,
+    "experiment_name": "EXP-003 complete — HyDE DISCARD",
+    "started": "2026-03-31T17:50:21.584Z",
+    "finished": "2026-03-31T19:59:41.000Z",
     "pid": 1354884,
-    "last_result": null
+    "last_result": {
+      "exp": "EXP-003",
+      "r5": 0.8293,
+      "mc": 0.8374,
+      "status": "discard",
+      "description": "HyDE — hypothetical document embedding for entity queries"
+    }
   }
 }
