@@ -287,6 +287,25 @@ function openChat(taskId) {
   }
 
   // Enable input
+  // Show description
+  let descEl = document.getElementById('chat-description');
+  if (!descEl) {
+    descEl = document.createElement('div');
+    descEl.id = 'chat-description';
+    descEl.style.cssText = 'padding:6px 12px;font-size:0.75rem;color:#8b949e;border-bottom:1px solid #21262d;max-height:60px;overflow:hidden;cursor:pointer;white-space:pre-wrap;';
+    descEl.title = 'Click to expand';
+    descEl.addEventListener('click', () => {
+      descEl.style.maxHeight = descEl.style.maxHeight === 'none' ? '60px' : 'none';
+    });
+    document.getElementById('chat-header').after(descEl);
+  }
+  if (task.description) {
+    descEl.textContent = task.description.slice(0, 300) + (task.description.length > 300 ? '…' : '');
+    descEl.style.display = '';
+  } else {
+    descEl.style.display = 'none';
+  }
+
   document.getElementById('chat-input-area').classList.remove('disabled');
   document.getElementById('chat-input').disabled  = false;
   document.getElementById('send-btn').disabled    = false;
