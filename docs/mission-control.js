@@ -607,7 +607,7 @@ document.getElementById('task-menu').addEventListener('click', e => {
   if (action === 'program') openProgramPanel();
   if (action === 'results') {
     const id = state.activeTaskId;
-    if (id) window.open(`/api/results/${id}`, '_blank');
+    if (id) fetch(`/api/results/${id}`, {headers: authHeaders()}).then(r => r.ok ? window.open(`/api/results/${id}?token=${encodeURIComponent(localStorage.getItem("tb_token"))}`, "_blank") : alert("No results file for this task yet."));
   }
   if (action === 'copy-id') {
     const id = state.activeTaskId;
