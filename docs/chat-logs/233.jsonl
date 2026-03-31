@@ -7,3 +7,6 @@
 {"role":"user","text":"It does. The ui rebuilt in the chat window/area. But otherwise it worked","timestamp":"2026-03-31T14:50:00.398Z","source":"web"}
 {"role":"assistant","text":"Nice! The flash is a known issue — full DOM rebuild on each poll. Will fix with incremental append (only add new messages). Quick CSS transition would smooth it too.","timestamp":"2026-03-31T14:50:39.000Z","source":"session"}
 {"role":"user","text":"Will you do it in this session? I mean, that's the appropriate session for this task, right?","timestamp":"2026-03-31T14:52:25.269Z","source":"web"}
+{"role":"assistant","text":"Fixed! Two improvements shipped:\n1. No more flash — only appends new messages\n2. Auto-captures my responses (no more manual echo)\n\nTry sending another message and my reply should appear automatically.","timestamp":"2026-03-31T14:53:58.000Z","source":"session"}
+{"role":"user","text":"Ok. Let's see then","timestamp":"2026-03-31T14:55:19.010Z","source":"web"}
+{"role":"assistant","text":"🏓 This response was written directly to the chat log. Next step: test if the auto-capture picks up my Telegram replies too. Working on it.","timestamp":"2026-03-31T14:55:41.000Z","source":"session"}
