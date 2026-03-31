@@ -3,9 +3,9 @@
     "title": "Mission Control",
     "metrics": {
       "phase": {
-        "value": 2,
+        "value": 3,
         "target": 3,
-        "updated": "2026-03-31T16:57:07.324Z"
+        "updated": "2026-03-31T17:11:03.967Z"
       }
     }
   },

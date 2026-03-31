@@ -1,10 +1,10 @@
 {
   "conductor": {
     "status": "cooking",
-    "task": "#258 Entity Register",
-    "pid": 1254072,
+    "task": "#233 EXP-001",
+    "pid": 1354884,
     "started": "2026-03-31T11:36:00Z",
-    "last_heartbeat": "2026-03-31T12:11:03.114Z"
+    "last_heartbeat": "2026-03-31T17:23:33.449Z"
   },
   "main": {
     "status": "idle",

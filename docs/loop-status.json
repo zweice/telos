@@ -1,1 +1,10 @@
-{}
+{
+  "233": {
+    "running": true,
+    "experiment_num": 1,
+    "experiment_name": "EXP-001 running...",
+    "started": "2026-03-31T17:23:33.448Z",
+    "pid": 1354884,
+    "last_result": null
+  }
+}
