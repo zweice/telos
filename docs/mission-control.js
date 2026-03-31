@@ -487,8 +487,13 @@ function renderChatMessages(taskId) {
 async function pollChat(taskId) {
   try {
     const data = await apiFetch(`/api/chat/${taskId}`);
-    _chatMessages[taskId] = data.messages || [];
-    renderChatMessages(taskId);
+    const newMsgs = data.messages || [];
+    const oldMsgs = _chatMessages[taskId] || [];
+    // Only re-render if message count changed (avoids flash)
+    if (newMsgs.length !== oldMsgs.length) {
+      _chatMessages[taskId] = newMsgs;
+      renderChatMessages(taskId);
+    }
   } catch { /* silent fail — main refresh will surface errors */ }
 }
 

@@ -1,0 +1,9 @@
+{"role":"user","text":"Test message. Short response pls","timestamp":"2026-03-31T14:46:28.342Z","source":"web"}
+{"role":"assistant","text":"👋 Received! Chat routing works. This is Conductor responding from Telegram session.","timestamp":"2026-03-31T14:46:51.000Z","source":"session"}
+{"role":"user","text":"Ok. Another short response pls","timestamp":"2026-03-31T14:47:09.928Z","source":"web"}
+{"role":"assistant","text":"✅ Round two. Chat is bidirectional now.","timestamp":"2026-03-31T14:48:09.000Z","source":"session"}
+{"role":"user","text":"I'm not sure if it's live or I have to reload. Send another short one quick pls","timestamp":"2026-03-31T14:48:51.466Z","source":"web"}
+{"role":"assistant","text":"🏓 Ping! If you see this without reloading, polling works.","timestamp":"2026-03-31T14:49:10.000Z","source":"session"}
+{"role":"user","text":"It does. The ui rebuilt in the chat window/area. But otherwise it worked","timestamp":"2026-03-31T14:50:00.398Z","source":"web"}
+{"role":"assistant","text":"Nice! The flash is a known issue — full DOM rebuild on each poll. Will fix with incremental append (only add new messages). Quick CSS transition would smooth it too.","timestamp":"2026-03-31T14:50:39.000Z","source":"session"}
+{"role":"user","text":"Will you do it in this session? I mean, that's the appropriate session for this task, right?","timestamp":"2026-03-31T14:52:25.269Z","source":"web"}
