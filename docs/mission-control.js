@@ -1,10 +1,8 @@
 'use strict';
 
-const REFRESH_INTERVAL = 60_000;
-const DATA_PATH    = './telos-data.json';
-const KPI_PATH     = './kpis.json';
-const AGENT_PATH   = './agent-status.json';
-const LOOP_PATH    = './loop-status.json';
+const REFRESH_INTERVAL   = 60_000;
+const CHAT_POLL_INTERVAL = 5_000;
+const TOKEN_KEY          = 'mc_token';
 
 // Agent emoji map
 const AGENT_EMOJI = {
@@ -14,7 +12,35 @@ const AGENT_EMOJI = {
   atlas: '🤖',
 };
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+function getToken()   { return localStorage.getItem(TOKEN_KEY); }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+function authHeaders() {
+  const t = getToken();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
+// Redirect to login if no token
+(function checkAuth() {
+  if (!getToken()) window.location.href = '/login';
+})();
+
+async function apiFetch(url) {
+  const res = await fetch(url + '?t=' + Date.now(), { headers: authHeaders() });
+  if (res.status === 401) { clearToken(); window.location.href = '/login'; throw new Error('Unauthorized'); }
+  if (!res.ok) throw new Error(`${res.status} ${url}`);
+  return res.json();
+}
+
+async function apiFetchText(url) {
+  const res = await fetch(url + '?t=' + Date.now(), { headers: authHeaders() });
+  if (res.status === 401) { clearToken(); window.location.href = '/login'; throw new Error('Unauthorized'); }
+  if (!res.ok) return '';
+  return res.text();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function ago(ts) {
   if (!ts) return '—';
@@ -52,8 +78,8 @@ function fmt(v) {
 function kpiColor(value, target) {
   if (typeof value !== 'number' || typeof target !== 'number') return 'green';
   const ratio = value / target;
-  if (ratio >= 1)    return 'green';
-  if (ratio >= 0.8)  return 'yellow';
+  if (ratio >= 1)   return 'green';
+  if (ratio >= 0.8) return 'yellow';
   return 'red';
 }
 
@@ -68,7 +94,15 @@ function progressClass(pct) {
   return '';
 }
 
-// ── Flatten tree ─────────────────────────────────────────────────────────────
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Flatten tree ──────────────────────────────────────────────────────────────
 
 function flatten(nodes, out = []) {
   for (const n of nodes) {
@@ -78,17 +112,16 @@ function flatten(nodes, out = []) {
   return out;
 }
 
-// ── Status Bar ───────────────────────────────────────────────────────────────
+// ── Status Bar ────────────────────────────────────────────────────────────────
 
 function renderStatusBar(agents) {
   const bar = document.getElementById('status-bar');
   bar.innerHTML = '<span class="status-bar-label">Agents</span>';
 
   for (const [name, info] of Object.entries(agents)) {
-    const cls = agentAgeClass(info.last_heartbeat);
+    const cls   = agentAgeClass(info.last_heartbeat);
     const emoji = AGENT_EMOJI[name] || '🤖';
-    const taskTip = info.task ? ` title="${info.task}"` : '';
-    const pill = el('div', `agent-pill ${cls}`);
+    const pill  = el('div', `agent-pill ${cls}`);
     pill.innerHTML = `
       <span class="pill-status-dot"></span>
       <span>${emoji} ${name}</span>
@@ -100,13 +133,13 @@ function renderStatusBar(agents) {
   }
 }
 
-// ── Work Cards ───────────────────────────────────────────────────────────────
+// ── Work Cards ────────────────────────────────────────────────────────────────
 
 function inferCardStatus(node, agentStatus) {
   if (node.status === 'blocked') return 'blocked';
   const owner = node.owner?.toLowerCase();
   if (owner && agentStatus[owner]) {
-    const agent = agentStatus[owner];
+    const agent    = agentStatus[owner];
     const agentCls = agentAgeClass(agent.last_heartbeat);
     if (agentCls === 'active' && agent.status === 'cooking') return 'cooking';
     if (agentCls === 'stale') return 'idle';
@@ -136,8 +169,8 @@ function renderKPIs(taskId, kpis) {
 }
 
 function renderCard(node, kpis, agentStatus, loopStatus) {
-  const status = inferCardStatus(node, agentStatus);
-  const pct = node.progress || 0;
+  const status  = inferCardStatus(node, agentStatus);
+  const pct     = node.progress || 0;
   const lastNote = Array.isArray(node.notes) ? node.notes[node.notes.length - 1] :
                    (node.notes && typeof node.notes === 'object') ? node.notes : null;
 
@@ -153,6 +186,7 @@ function renderCard(node, kpis, agentStatus, loopStatus) {
 
   const results    = _resultsCache[node.id] || [];
   const resultsHtml = renderResultsTab(node.id, results, loopStatus || {});
+  const activeTab  = _activeTab[node.id] || 'results';
 
   const card = el('div', `work-card ${status}`);
   card.innerHTML = `
@@ -174,9 +208,25 @@ function renderCard(node, kpis, agentStatus, loopStatus) {
     </div>
     ${descHtml}
     ${renderKPIs(node.id, kpis)}
-    ${resultsHtml}
+    <div class="card-tabs">
+      <button class="tab-btn${activeTab === 'results' ? ' active' : ''}" data-tab="results" data-task="${node.id}" onclick="switchTab(${node.id},'results')">Results</button>
+      <button class="tab-btn${activeTab === 'chat' ? ' active' : ''}" data-tab="chat" data-task="${node.id}" onclick="switchTab(${node.id},'chat')">💬 Chat</button>
+      <button class="tab-btn${activeTab === 'program' ? ' active' : ''}" data-tab="program" data-task="${node.id}" onclick="switchTab(${node.id},'program')">📋 Program</button>
+    </div>
+    <div id="tab-results-${node.id}" class="tab-pane${activeTab !== 'results' ? ' hidden' : ''}">
+      ${resultsHtml || '<div class="chat-empty">No results yet</div>'}
+    </div>
+    <div id="tab-chat-${node.id}" class="tab-pane${activeTab !== 'chat' ? ' hidden' : ''}">
+      ${renderChatPanel(node.id)}
+    </div>
+    <div id="tab-program-${node.id}" class="tab-pane${activeTab !== 'program' ? ' hidden' : ''}"></div>
     ${noteHtml}
   `;
+
+  // Restore active state after DOM insert
+  if (activeTab === 'chat')    setTimeout(() => startChatPoll(node.id), 0);
+  if (activeTab === 'program') setTimeout(() => loadProgram(node.id), 0);
+
   return card;
 }
 
@@ -208,7 +258,21 @@ function lastTs(node) {
   return note?.ts || 0;
 }
 
-// ── Queue Panel ──────────────────────────────────────────────────────────────
+// ── Tab switching ─────────────────────────────────────────────────────────────
+
+window.switchTab = function(taskId, tab) {
+  _activeTab[taskId] = tab;
+  for (const t of ['results', 'chat', 'program']) {
+    const pane = document.getElementById(`tab-${t}-${taskId}`);
+    const btn  = document.querySelector(`.tab-btn[data-tab="${t}"][data-task="${taskId}"]`);
+    if (pane) pane.classList.toggle('hidden', t !== tab);
+    if (btn)  btn.classList.toggle('active', t === tab);
+  }
+  if (tab === 'chat')    startChatPoll(taskId);
+  if (tab === 'program') loadProgram(taskId);
+};
+
+// ── Queue Panel ───────────────────────────────────────────────────────────────
 
 function renderQueue(all) {
   const container = document.getElementById('queue-list');
@@ -225,11 +289,10 @@ function renderQueue(all) {
 
   container.innerHTML = '';
   queue.forEach((n, i) => {
-    const item = el('div', 'queue-item');
+    const item   = el('div', 'queue-item');
     const effort = n.effort_hours_estimate ? `${n.effort_hours_estimate}h` : null;
-    const roi = n.roi ? `ROI ${n.roi}` : null;
-    const owner = n.owner;
-    const tags = [owner, effort, roi].filter(Boolean).map(t =>
+    const roi    = n.roi ? `ROI ${n.roi}` : null;
+    const tags   = [n.owner, effort, roi].filter(Boolean).map(t =>
       `<span class="queue-tag">${t}</span>`).join('');
     item.innerHTML = `
       <span class="queue-rank">${i + 1}.</span>
@@ -241,7 +304,7 @@ function renderQueue(all) {
   });
 }
 
-// ── Activity Feed ────────────────────────────────────────────────────────────
+// ── Activity Feed ─────────────────────────────────────────────────────────────
 
 function renderActivity(all) {
   const container = document.getElementById('activity-list');
@@ -278,7 +341,7 @@ function renderActivity(all) {
   }
 }
 
-// ── Toggle description ───────────────────────────────────────────────────────
+// ── Toggle description ────────────────────────────────────────────────────────
 
 window.toggleDesc = function(id) {
   const desc = document.getElementById(`desc-${id}`);
@@ -288,35 +351,40 @@ window.toggleDesc = function(id) {
   btn.textContent = collapsed ? '▾ more' : '▴ less';
 };
 
-// ── Results TSV ──────────────────────────────────────────────────────────────
+// ── Results TSV ───────────────────────────────────────────────────────────────
 
-async function fetchTSV(url) {
-  const res = await fetch(url + '?t=' + Date.now());
-  if (!res.ok) return [];
-  const text = await res.text();
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return [];
-  return lines.slice(1).map(line => {
-    const parts = line.split('\t');
-    return {
-      commit:      parts[0] || '',
-      r5:          parseFloat(parts[1]) || 0,
-      mc:          parseFloat(parts[2]) || 0,
-      status:      parts[3] || '',
-      description: parts.slice(4).join('\t') || '',
-    };
-  });
+async function fetchResultsForTask(taskId) {
+  try {
+    const text = await apiFetchText(`/api/results/${taskId}`);
+    if (!text) { _resultsCache[taskId] = []; return []; }
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) { _resultsCache[taskId] = []; return []; }
+    const results = lines.slice(1).map(line => {
+      const parts = line.split('\t');
+      return {
+        commit:      parts[0] || '',
+        r5:          parseFloat(parts[1]) || 0,
+        mc:          parseFloat(parts[2]) || 0,
+        status:      parts[3] || '',
+        description: parts.slice(4).join('\t') || '',
+      };
+    });
+    _resultsCache[taskId] = results;
+    return results;
+  } catch {
+    return _resultsCache[taskId] || [];
+  }
 }
 
-// ── Sparkline ────────────────────────────────────────────────────────────────
+// ── Sparkline ─────────────────────────────────────────────────────────────────
 
 function renderSparkline(values, color) {
   if (!values.length) return '';
   const w = 80, h = 22, pad = 2;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const min   = Math.min(...values);
+  const max   = Math.max(...values);
   const range = max - min || 0.001;
-  const pts = values.map((v, i) => {
+  const pts   = values.map((v, i) => {
     const x = pad + (i / Math.max(values.length - 1, 1)) * (w - pad * 2);
     const y = h - pad - ((v - min) / range) * (h - pad * 2);
     return `${x.toFixed(1)},${y.toFixed(1)}`;
@@ -333,18 +401,18 @@ function renderSparkline(values, color) {
 function renderResultsTab(taskId, results, loopStatus) {
   if (!results.length) return '';
 
-  const loop  = loopStatus[String(taskId)];
-  const keeps = results.filter(r => r.status === 'keep');
-  const r5vals = keeps.map(r => r.r5);
+  const loop       = loopStatus[String(taskId)];
+  const keeps      = results.filter(r => r.status === 'keep');
+  const r5vals     = keeps.map(r => r.r5);
   const sparkColor = '#58a6ff';
-  const spark = r5vals.length > 1 ? renderSparkline(r5vals, sparkColor) : '';
+  const spark      = r5vals.length > 1 ? renderSparkline(r5vals, sparkColor) : '';
 
   const loopBadge = loop?.running
     ? `<span class="loop-badge running">⚡ Exp #${loop.experiment_num} running</span>`
     : `<span class="loop-badge idle">◎ idle</span>`;
 
   const rows = results.slice(-10).reverse().map(r => {
-    const cls = r.status === 'keep' ? 'result-keep' : 'result-discard';
+    const cls   = r.status === 'keep' ? 'result-keep' : 'result-discard';
     const short = r.commit.length > 9 ? r.commit.slice(0, 9) : r.commit;
     return `<tr class="${cls}">
       <td class="res-commit">${short}</td>
@@ -373,37 +441,147 @@ function renderResultsTab(taskId, results, loopStatus) {
     </div>`;
 }
 
-// ── Fetch & Render ───────────────────────────────────────────────────────────
+// ── Chat panel ────────────────────────────────────────────────────────────────
 
-async function fetchJSON(url) {
-  const res = await fetch(url + '?t=' + Date.now());
-  if (!res.ok) throw new Error(`${res.status} ${url}`);
-  return res.json();
+const _chatPollers  = {}; // taskId -> intervalId
+const _chatMessages = {}; // taskId -> [{role, text, timestamp}]
+
+function renderChatPanel(taskId) {
+  const msgs    = _chatMessages[taskId] || [];
+  const msgsHtml = msgs.length
+    ? msgs.map(m => `
+        <div class="chat-msg ${m.role === 'user' ? 'user' : 'assistant'}">
+          <div class="chat-bubble">${escapeHtml(m.text)}</div>
+          ${m.timestamp ? `<div class="chat-ts">${ago(m.timestamp)}</div>` : ''}
+        </div>`).join('')
+    : '<div class="chat-empty">No messages yet</div>';
+
+  return `
+    <div class="chat-panel">
+      <div class="chat-messages" id="chat-msgs-${taskId}">${msgsHtml}</div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-in-${taskId}"
+               placeholder="Message to agent…"
+               onkeydown="if(event.key==='Enter')sendChat(${taskId})">
+        <button class="chat-send-btn" onclick="sendChat(${taskId})">Send</button>
+      </div>
+    </div>`;
 }
+
+function renderChatMessages(taskId) {
+  const container = document.getElementById(`chat-msgs-${taskId}`);
+  if (!container) return;
+  const msgs = _chatMessages[taskId] || [];
+  if (!msgs.length) {
+    container.innerHTML = '<div class="chat-empty">No messages yet</div>';
+    return;
+  }
+  container.innerHTML = msgs.map(m => `
+    <div class="chat-msg ${m.role === 'user' ? 'user' : 'assistant'}">
+      <div class="chat-bubble">${escapeHtml(m.text)}</div>
+      ${m.timestamp ? `<div class="chat-ts">${ago(m.timestamp)}</div>` : ''}
+    </div>`).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+async function pollChat(taskId) {
+  try {
+    const data = await apiFetch(`/api/chat/${taskId}`);
+    _chatMessages[taskId] = data.messages || [];
+    renderChatMessages(taskId);
+  } catch { /* silent fail — main refresh will surface errors */ }
+}
+
+function startChatPoll(taskId) {
+  if (_chatPollers[taskId]) return; // already running
+  pollChat(taskId);
+  _chatPollers[taskId] = setInterval(() => pollChat(taskId), CHAT_POLL_INTERVAL);
+}
+
+window.sendChat = async function(taskId) {
+  const input = document.getElementById(`chat-in-${taskId}`);
+  if (!input) return;
+  const message = input.value.trim();
+  if (!message) return;
+  input.value    = '';
+  input.disabled = true;
+
+  // Optimistic UI update
+  if (!_chatMessages[taskId]) _chatMessages[taskId] = [];
+  _chatMessages[taskId].push({ role: 'user', text: message, timestamp: new Date().toISOString() });
+  renderChatMessages(taskId);
+
+  try {
+    const res = await fetch(`/api/chat/${taskId}`, {
+      method:  'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ message }),
+    });
+    if (res.status === 401) { clearToken(); window.location.href = '/login'; return; }
+  } catch (e) {
+    console.error('Chat send failed:', e);
+  } finally {
+    input.disabled = false;
+    input.focus();
+  }
+};
+
+// ── Program editor ────────────────────────────────────────────────────────────
+
+const _programLoaded = new Set();
+
+window.loadProgram = async function(taskId) {
+  const container = document.getElementById(`tab-program-${taskId}`);
+  if (!container) return;
+  if (_programLoaded.has(taskId) && container.children.length > 0) return;
+  container.innerHTML = '<div class="loading"><span class="spinner"></span> Loading…</div>';
+  try {
+    const data = await apiFetch(`/api/program/${taskId}`);
+    _programLoaded.add(taskId);
+    container.innerHTML = `
+      <div class="program-editor">
+        <textarea class="program-textarea" id="prog-ta-${taskId}">${escapeHtml(data.content || '')}</textarea>
+        <div class="program-actions">
+          <button class="program-save-btn" onclick="saveProgram(${taskId})">Save</button>
+          <span class="program-status" id="prog-status-${taskId}"></span>
+        </div>
+      </div>`;
+  } catch (e) {
+    container.innerHTML = `<div class="chat-empty">Failed to load: ${escapeHtml(e.message)}</div>`;
+  }
+};
+
+window.saveProgram = async function(taskId) {
+  const ta       = document.getElementById(`prog-ta-${taskId}`);
+  const statusEl = document.getElementById(`prog-status-${taskId}`);
+  if (!ta) return;
+  try {
+    const res = await fetch(`/api/program/${taskId}`, {
+      method:  'PUT',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ content: ta.value }),
+    });
+    if (res.status === 401) { clearToken(); window.location.href = '/login'; return; }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (statusEl) {
+      statusEl.textContent = 'Saved ✓';
+      setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 2000);
+    }
+  } catch (e) {
+    if (statusEl) statusEl.textContent = 'Save failed: ' + e.message;
+  }
+};
+
+// ── Fetch & Render ────────────────────────────────────────────────────────────
 
 // Cache for results TSV (keyed by taskId)
 const _resultsCache = {};
-
-async function fetchResultsForTask(taskId) {
-  const url = `./results-${taskId}.tsv`;
-  try {
-    const results = await fetchTSV(url);
-    _resultsCache[taskId] = results;
-    return results;
-  } catch {
-    return _resultsCache[taskId] || [];
-  }
-}
+const _activeTab    = {}; // taskId -> 'results' | 'chat' | 'program'
 
 async function refresh() {
   const indicator = document.getElementById('last-refresh');
   try {
-    const [data, kpis, agentStatus, loopStatus] = await Promise.all([
-      fetchJSON(DATA_PATH),
-      fetchJSON(KPI_PATH).catch(() => ({})),
-      fetchJSON(AGENT_PATH).catch(() => ({})),
-      fetchJSON(LOOP_PATH).catch(() => ({})),
-    ]);
+    const { data, kpis, agentStatus, loopStatus } = await apiFetch('/api/status');
 
     const all = flatten(data.tree || []);
 
@@ -411,19 +589,20 @@ async function refresh() {
     const activeTasks = all.filter(n => n.status === 'in_progress' && !n.children?.length);
     await Promise.all(activeTasks.map(n => fetchResultsForTask(n.id)));
 
-    renderStatusBar(agentStatus);
-    renderActiveCards(all, kpis, agentStatus, loopStatus);
+    renderStatusBar(agentStatus || {});
+    renderActiveCards(all, kpis || {}, agentStatus || {}, loopStatus || {});
     renderQueue(all);
     renderActivity(all);
 
     if (indicator) indicator.textContent = 'Updated ' + new Date().toLocaleTimeString();
   } catch (e) {
+    if (e.message === 'Unauthorized') return; // redirect already triggered
     console.error('Refresh failed:', e);
     if (indicator) indicator.textContent = 'Refresh failed — ' + e.message;
   }
 }
 
-// ── Boot ─────────────────────────────────────────────────────────────────────
+// ── Boot ──────────────────────────────────────────────────────────────────────
 
 refresh();
 setInterval(refresh, REFRESH_INTERVAL);

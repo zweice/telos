@@ -9,6 +9,7 @@
   "scripts": {
     "init": "node src/cli.js init",
     "start": "node server.js",
+    "serve": "node src/server.js",
     "api": "node api-server.js",
     "test": "node src/cli.js list",
     "postinstall": "node-gyp rebuild --directory node_modules/better-sqlite3 2>/dev/null || true"
@@ -25,7 +26,9 @@
   "license": "PROPRIETARY",
   "dependencies": {
     "better-sqlite3": "^11.10.0",
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "express": "4.22.1",
+    "jsonwebtoken": "9.0.3"
   },
   "devDependencies": {
     "http-server": "^14.1.1"
