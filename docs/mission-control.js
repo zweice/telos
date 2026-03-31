@@ -27,7 +27,8 @@ function authHeaders() {
 })();
 
 async function apiFetch(url) {
-  const res = await fetch(url + '?t=' + Date.now(), { headers: authHeaders() });
+  const sep = url.includes('?') ? '&' : '?';
+  const res = await fetch(url + sep + 't=' + Date.now(), { headers: authHeaders() });
   if (res.status === 401) { clearToken(); window.location.href = '/login'; throw new Error('Unauthorized'); }
   if (!res.ok) throw new Error(`${res.status} ${url}`);
   return res.json();
