@@ -445,6 +445,7 @@ function renderMessages(taskId) {
 
   const key     = `${taskId}:${state.chatMode[taskId] || 'relay'}`;
   const msgs    = state.chatMessages[key] || [];
+  console.log('[render]', taskId, 'key='+key, 'msgs='+msgs.length);
   const waiting = state.waitingReply[key];
 
   if (!msgs.length && !waiting) {
@@ -517,6 +518,7 @@ async function pollChat(taskId) {
   try {
     const mode       = state.chatMode[taskId] || 'relay';
     const key        = `${taskId}:${mode}`;
+    console.log('[poll]', taskId, 'mode='+mode, 'key='+key);
     const data       = await apiFetch(`/api/chat/${taskId}?mode=${mode}`);
     const serverMsgs = data.messages || [];
     const clientMsgs = state.chatMessages[key] || [];
@@ -945,6 +947,7 @@ document.getElementById('chat-tabs').addEventListener('click', e => {
   chatScrollPos[`${taskId}:${state.chatMode[taskId]}`] = messagesEl.scrollTop;
 
   // Switch mode
+  console.log('[tab-click] switching', taskId, 'from', state.chatMode[taskId], 'to', newMode);
   state.chatMode[taskId] = newMode;
   updateTabUI(taskId);
 
