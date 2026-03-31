@@ -1,0 +1,13 @@
+{
+  "conductor": {
+    "status": "cooking",
+    "task": "#258 Entity Register",
+    "pid": 1254072,
+    "started": "2026-03-31T11:36:00Z",
+    "last_heartbeat": "2026-03-31T12:07:36.854Z"
+  },
+  "main": {
+    "status": "idle",
+    "last_heartbeat": "2026-03-31T13:00:00Z"
+  }
+}

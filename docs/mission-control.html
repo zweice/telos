@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telos — Mission Control</title>
+  <link rel="stylesheet" href="mission-control.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <div id="mc-header">
+    <h1>🛰️ Mission Control</h1>
+    <div class="nav-links">
+      <span id="last-refresh" style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);"></span>
+      <div id="refresh-indicator">
+        <span class="dot"></span>
+        <span>live</span>
+      </div>
+      <a href="index.html">🌳 <span>Goal Tree</span></a>
+    </div>
+  </div>
+
+  <!-- Agent Status Bar -->
+  <div id="status-bar">
+    <span class="status-bar-label">Agents</span>
+    <!-- populated by JS -->
+  </div>
+
+  <!-- Main grid -->
+  <div id="mc-main">
+
+    <!-- Left: active cards + activity feed -->
+    <div id="mc-content">
+
+      <!-- Active Work -->
+      <div>
+        <div class="section-header">
+          <span class="section-title">⚡ Active Work</span>
+          <span class="section-count" id="active-count">…</span>
+        </div>
+        <div id="active-cards">
+          <div class="loading"><span class="spinner"></span> Loading…</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right: queue -->
+    <div id="mc-sidebar">
+
+      <div>
+        <div class="section-header">
+          <span class="section-title">📋 Up Next</span>
+        </div>
+        <div id="queue-list">
+          <div class="loading"><span class="spinner"></span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Activity Feed (full width bottom) -->
+  <div id="activity-feed">
+    <div class="section-header">
+      <span class="section-title">🕐 Recent Activity</span>
+    </div>
+    <div id="activity-list">
+      <div class="loading"><span class="spinner"></span> Loading…</div>
+    </div>
+  </div>
+
+  <script src="mission-control.js"></script>
+</body>
+</html>

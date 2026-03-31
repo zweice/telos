@@ -1,0 +1,37 @@
+{
+  "233": {
+    "title": "Mission Control",
+    "metrics": {
+      "phase": {
+        "value": 1,
+        "target": 3,
+        "updated": "2026-03-31T13:57:00Z"
+      }
+    }
+  },
+  "253": {
+    "title": "Chunk Optimization",
+    "metrics": {
+      "R@5": {
+        "value": 0.8796,
+        "target": 0.9,
+        "updated": "2026-03-28T12:00:00Z"
+      }
+    }
+  },
+  "258": {
+    "title": "Entity Tracking",
+    "metrics": {
+      "R@5": {
+        "value": 0.854,
+        "target": 0.99,
+        "updated": "2026-03-31T12:07:36.791Z"
+      },
+      "MC_Acc": {
+        "value": 0.919,
+        "target": 0.9,
+        "updated": "2026-03-31T12:07:36.821Z"
+      }
+    }
+  }
+}

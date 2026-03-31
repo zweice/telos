@@ -1,0 +1,2 @@
+#!/bin/bash
+exec /home/linuxbrew/.linuxbrew/bin/node "$(dirname "$0")/src/cli.js" "$@"
