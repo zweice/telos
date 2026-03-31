@@ -444,6 +444,7 @@ function renderResultsTab(taskId, results, loopStatus) {
 // ── Chat panel ────────────────────────────────────────────────────────────────
 
 const _chatPollers  = {}; // taskId -> intervalId
+const _waitingReply = {}; // taskId -> true if waiting for assistant response
 const _chatMessages = {}; // taskId -> [{role, text, timestamp}]
 
 function renderChatPanel(taskId) {
@@ -481,6 +482,10 @@ function renderChatMessages(taskId) {
       <div class="chat-bubble">${escapeHtml(m.text)}</div>
       ${m.timestamp ? `<div class="chat-ts">${ago(m.timestamp)}</div>` : ''}
     </div>`).join('');
+  // Show typing indicator if waiting for reply
+  if (_waitingReply[taskId]) {
+    container.innerHTML += '<div class="typing-indicator"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="typing-label">Conductor is thinking…</span></div>';
+  }
   container.scrollTop = container.scrollHeight;
 }
 
@@ -491,6 +496,9 @@ async function pollChat(taskId) {
     const oldMsgs = _chatMessages[taskId] || [];
     // Only re-render if message count changed (avoids flash)
     if (newMsgs.length !== oldMsgs.length) {
+      // Clear typing indicator if assistant replied
+      const hasNewAssistant = newMsgs.slice(oldMsgs.length).some(m => m.role === 'assistant');
+      if (hasNewAssistant) _waitingReply[taskId] = false;
       _chatMessages[taskId] = newMsgs;
       renderChatMessages(taskId);
     }
@@ -511,6 +519,7 @@ window.sendChat = async function(taskId) {
   input.value    = '';
   input.disabled = true;
 
+  _waitingReply[taskId] = true;
   // Optimistic UI update
   if (!_chatMessages[taskId]) _chatMessages[taskId] = [];
   _chatMessages[taskId].push({ role: 'user', text: message, timestamp: new Date().toISOString() });
