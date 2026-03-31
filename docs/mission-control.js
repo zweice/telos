@@ -1,27 +1,25 @@
 'use strict';
 
 const REFRESH_INTERVAL   = 60_000;
-const CHAT_POLL_INTERVAL = 5_000;
+const CHAT_POLL_INTERVAL = 3_000;
 const TOKEN_KEY          = 'mc_token';
+const LAST_SEEN_KEY      = 'mc_last_seen';
 
-// Agent emoji map
 const AGENT_EMOJI = {
   conductor: '🚀',
-  main: '🐙',
-  jared: '🐙',
-  atlas: '🤖',
+  main:      '🐙',
+  jared:     '🐙',
+  atlas:     '🤖',
 };
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
-function getToken()   { return localStorage.getItem(TOKEN_KEY); }
-function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+function getToken()    { return localStorage.getItem(TOKEN_KEY); }
+function clearToken()  { localStorage.removeItem(TOKEN_KEY); }
 function authHeaders() {
   const t = getToken();
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
-
-// Redirect to login if no token
 (function checkAuth() {
   if (!getToken()) window.location.href = '/login';
 })();
@@ -33,19 +31,12 @@ async function apiFetch(url) {
   return res.json();
 }
 
-async function apiFetchText(url) {
-  const res = await fetch(url + '?t=' + Date.now(), { headers: authHeaders() });
-  if (res.status === 401) { clearToken(); window.location.href = '/login'; throw new Error('Unauthorized'); }
-  if (!res.ok) return '';
-  return res.text();
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function ago(ts) {
   if (!ts) return '—';
-  const date = typeof ts === 'number' ? new Date(ts * 1000) : new Date(ts);
-  const diffMs = Date.now() - date.getTime();
+  const date    = typeof ts === 'number' ? new Date(ts * 1000) : new Date(ts);
+  const diffMs  = Date.now() - date.getTime();
   const diffMin = Math.floor(diffMs / 60000);
   if (diffMin < 1)  return 'just now';
   if (diffMin < 60) return `${diffMin}m ago`;
@@ -64,7 +55,7 @@ function agentAgeClass(heartbeat) {
 
 function el(tag, cls, html) {
   const e = document.createElement(tag);
-  if (cls) e.className = cls;
+  if (cls)             e.className = cls;
   if (html !== undefined) e.innerHTML = html;
   return e;
 }
@@ -76,22 +67,11 @@ function fmt(v) {
 }
 
 function kpiColor(value, target) {
-  if (typeof value !== 'number' || typeof target !== 'number') return 'green';
+  if (typeof value !== 'number' || typeof target !== 'number') return '';
   const ratio = value / target;
   if (ratio >= 1)   return 'green';
   if (ratio >= 0.8) return 'yellow';
   return 'red';
-}
-
-function kpiBarPct(value, target) {
-  if (typeof value !== 'number' || typeof target !== 'number') return 0;
-  return Math.min(100, (value / target) * 100);
-}
-
-function progressClass(pct) {
-  if (pct >= 75) return 'high';
-  if (pct >= 40) return 'mid';
-  return '';
 }
 
 function escapeHtml(str) {
@@ -102,8 +82,6 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-// ── Flatten tree ──────────────────────────────────────────────────────────────
-
 function flatten(nodes, out = []) {
   for (const n of nodes) {
     out.push(n);
@@ -112,418 +90,373 @@ function flatten(nodes, out = []) {
   return out;
 }
 
+function lastTs(node) {
+  const note = Array.isArray(node.notes) ? node.notes[node.notes.length - 1]
+             : (node.notes && typeof node.notes === 'object') ? node.notes
+             : null;
+  return note?.ts || 0;
+}
+
+function taskIcon(node) {
+  if (node.status === 'blocked')                           return '🚫';
+  if (node.status === 'done' || node.status === 'completed') return '✅';
+  if (node.status === 'in_progress')                       return '🔄';
+  return '📋';
+}
+
+function ownerClass(owner) {
+  if (!owner) return 'other';
+  const o = owner.toLowerCase();
+  if (o === 'conductor') return 'conductor';
+  if (o === 'andreas')   return 'andreas';
+  if (o === 'atlas')     return 'atlas';
+  return 'other';
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+const state = {
+  activeTaskId:  null,
+  tasks:         [],
+  kpis:          {},
+  agentStatus:   {},
+  loopStatus:    {},
+  chatMessages:  {},   // taskId -> [{role, text, timestamp}]
+  waitingReply:  {},   // taskId -> bool
+  chatPollTimer: null,
+  lastSeen:      JSON.parse(localStorage.getItem(LAST_SEEN_KEY) || '{}'),
+};
+
+function saveLastSeen() {
+  localStorage.setItem(LAST_SEEN_KEY, JSON.stringify(state.lastSeen));
+}
+
+function markSeen(taskId) {
+  const msgs = state.chatMessages[taskId] || [];
+  if (!msgs.length) return;
+  state.lastSeen[taskId] = msgs[msgs.length - 1].timestamp || new Date().toISOString();
+  saveLastSeen();
+}
+
+function hasUnread(taskId) {
+  if (taskId === state.activeTaskId) return false;
+  const msgs = state.chatMessages[taskId] || [];
+  if (!msgs.length) return false;
+  const lastSeenTs = state.lastSeen[taskId];
+  if (!lastSeenTs) return msgs.length > 0;
+  const lastMsg = msgs[msgs.length - 1];
+  if (!lastMsg.timestamp) return false;
+  return new Date(lastMsg.timestamp) > new Date(lastSeenTs);
+}
+
 // ── Status Bar ────────────────────────────────────────────────────────────────
 
-function renderStatusBar(agents) {
+function renderStatusBar() {
   const bar = document.getElementById('status-bar');
   bar.innerHTML = '<span class="status-bar-label">Agents</span>';
-
-  for (const [name, info] of Object.entries(agents)) {
+  for (const [name, info] of Object.entries(state.agentStatus)) {
     const cls   = agentAgeClass(info.last_heartbeat);
     const emoji = AGENT_EMOJI[name] || '🤖';
     const pill  = el('div', `agent-pill ${cls}`);
     pill.innerHTML = `
       <span class="pill-status-dot"></span>
       <span>${emoji} ${name}</span>
-      ${info.task ? `<span style="color:var(--text-dim);font-size:11px;">${info.task}</span>` : ''}
+      ${info.task ? `<span style="color:var(--text-muted);font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(info.task)}</span>` : ''}
       <span class="pill-time">${ago(info.last_heartbeat)}</span>
     `;
-    if (info.task) pill.title = info.task;
     bar.appendChild(pill);
   }
 }
 
-// ── Work Cards ────────────────────────────────────────────────────────────────
+// ── Task Inference ────────────────────────────────────────────────────────────
 
-function inferCardStatus(node, agentStatus) {
+function inferStatus(node) {
   if (node.status === 'blocked') return 'blocked';
   const owner = node.owner?.toLowerCase();
-  if (owner && agentStatus[owner]) {
-    const agent    = agentStatus[owner];
-    const agentCls = agentAgeClass(agent.last_heartbeat);
-    if (agentCls === 'active' && agent.status === 'cooking') return 'cooking';
-    if (agentCls === 'stale') return 'idle';
-    return agentCls === 'active' ? 'cooking' : 'idle';
+  if (owner && state.agentStatus[owner]) {
+    const agent = state.agentStatus[owner];
+    const cls   = agentAgeClass(agent.last_heartbeat);
+    if (cls === 'active' && agent.status === 'cooking') return 'cooking';
+    if (cls === 'stale')  return 'idle';
+    return cls === 'active' ? 'cooking' : 'idle';
   }
-  return 'idle';
+  if (node.status === 'in_progress') return 'idle';
+  return node.status || 'idle';
 }
 
-function renderKPIs(taskId, kpis) {
-  const data = kpis[String(taskId)];
-  if (!data?.metrics) return '';
-  const rows = Object.entries(data.metrics).map(([key, m]) => {
-    const col = kpiColor(m.value, m.target);
-    const pct = kpiBarPct(m.value, m.target);
-    return `
-      <div class="kpi-row">
-        <span class="kpi-name">${key}</span>
-        <div class="kpi-bar-wrap"><div class="kpi-bar-fill ${col}" style="width:${pct}%"></div></div>
-        <span class="kpi-value ${col}">${fmt(m.value)}</span>
-        <span class="kpi-target">/ ${fmt(m.target)}</span>
-      </div>`;
-  }).join('');
-  return `<div class="kpi-section">
-    <div class="kpi-section-title">KPIs</div>
-    <div class="kpi-grid">${rows}</div>
-  </div>`;
+function lastPreview(node) {
+  // Prefer chat messages
+  const msgs = state.chatMessages[node.id];
+  if (msgs && msgs.length) {
+    const last = msgs[msgs.length - 1];
+    return { text: last.text || '', ts: last.timestamp };
+  }
+  // Fall back to notes
+  const note = Array.isArray(node.notes) ? node.notes[node.notes.length - 1]
+             : (node.notes && typeof node.notes === 'object') ? node.notes
+             : null;
+  if (note) return { text: note.text || '', ts: note.ts };
+  return { text: node.description || '', ts: null };
 }
 
-function renderCard(node, kpis, agentStatus, loopStatus) {
-  const status  = inferCardStatus(node, agentStatus);
-  const pct     = node.progress || 0;
-  const lastNote = Array.isArray(node.notes) ? node.notes[node.notes.length - 1] :
-                   (node.notes && typeof node.notes === 'object') ? node.notes : null;
+// ── Task List ─────────────────────────────────────────────────────────────────
 
-  const noteHtml = lastNote ? `
-    <div class="last-note">
-      <div class="last-note-time">${ago(lastNote.ts)}</div>
-      <div>${lastNote.text || ''}</div>
-    </div>` : '';
+function renderTaskList() {
+  const container = document.getElementById('task-list');
 
-  const descHtml = node.description ? `
-    <div class="card-desc collapsed" id="desc-${node.id}">${node.description}</div>
-    <button class="expand-btn" onclick="toggleDesc(${node.id})" id="expand-${node.id}">▾ more</button>` : '';
-
-  const results    = _resultsCache[node.id] || [];
-  const resultsHtml = renderResultsTab(node.id, results, loopStatus || {});
-  const activeTab  = _activeTab[node.id] || 'results';
-
-  const card = el('div', `work-card ${status}`);
-  card.innerHTML = `
-    <div class="card-header">
-      <div>
-        <div class="card-title">${node.title}</div>
-        <div class="card-id">#${node.id}</div>
-      </div>
-      <div class="card-meta">
-        ${node.owner ? `<span class="card-owner">${node.owner}</span>` : ''}
-        <span class="card-status-badge ${status}">${status}</span>
-      </div>
-    </div>
-    <div class="progress-wrap">
-      <div class="progress-label"><span>Progress</span><span>${pct}%</span></div>
-      <div class="progress-bar">
-        <div class="progress-fill ${progressClass(pct)}" style="width:${pct}%"></div>
-      </div>
-    </div>
-    ${descHtml}
-    ${renderKPIs(node.id, kpis)}
-    <div class="card-tabs">
-      <button class="tab-btn${activeTab === 'results' ? ' active' : ''}" data-tab="results" data-task="${node.id}" onclick="switchTab(${node.id},'results')">Results</button>
-      <button class="tab-btn${activeTab === 'chat' ? ' active' : ''}" data-tab="chat" data-task="${node.id}" onclick="switchTab(${node.id},'chat')">💬 Chat</button>
-      <button class="tab-btn${activeTab === 'program' ? ' active' : ''}" data-tab="program" data-task="${node.id}" onclick="switchTab(${node.id},'program')">📋 Program</button>
-    </div>
-    <div id="tab-results-${node.id}" class="tab-pane${activeTab !== 'results' ? ' hidden' : ''}">
-      ${resultsHtml || '<div class="chat-empty">No results yet</div>'}
-    </div>
-    <div id="tab-chat-${node.id}" class="tab-pane${activeTab !== 'chat' ? ' hidden' : ''}">
-      ${renderChatPanel(node.id)}
-    </div>
-    <div id="tab-program-${node.id}" class="tab-pane${activeTab !== 'program' ? ' hidden' : ''}"></div>
-    ${noteHtml}
-  `;
-
-  // Restore active state after DOM insert
-  if (activeTab === 'chat')    setTimeout(() => startChatPoll(node.id), 0);
-  if (activeTab === 'program') setTimeout(() => loadProgram(node.id), 0);
-
-  return card;
-}
-
-function renderActiveCards(all, kpis, agentStatus, loopStatus) {
-  const container = document.getElementById('active-cards');
-  const active = all
-    .filter(n => n.status === 'in_progress' && (!n.children?.length))
+  // Leaf tasks only (no parent containers), sorted by most recent activity
+  const tasks = state.tasks
+    .filter(n => !n.children?.length)
     .sort((a, b) => {
-      const ta = lastTs(a), tb = lastTs(b);
+      const ta = lastTs(a) || 0;
+      const tb = lastTs(b) || 0;
       return tb - ta;
     });
 
-  document.getElementById('active-count').textContent = active.length;
-
-  if (!active.length) {
-    container.innerHTML = '<div class="empty-state">No active tasks</div>';
+  if (!tasks.length) {
+    container.innerHTML = '<div class="loading">No tasks found</div>';
     return;
   }
 
   container.innerHTML = '';
-  for (const node of active) {
-    container.appendChild(renderCard(node, kpis, agentStatus, loopStatus));
+  for (const task of tasks) {
+    container.appendChild(buildTaskItem(task));
   }
 }
 
-function lastTs(node) {
-  const note = Array.isArray(node.notes) ? node.notes[node.notes.length - 1] :
-               (node.notes && typeof node.notes === 'object') ? node.notes : null;
-  return note?.ts || 0;
+function buildTaskItem(task) {
+  const preview  = lastPreview(task);
+  const isActive = task.id === state.activeTaskId;
+  const unread   = hasUnread(task.id);
+  const timeStr  = ago(preview.ts || lastTs(task) || null);
+
+  const item = el('div', `task-item${isActive ? ' active' : ''}`);
+  item.dataset.taskId = String(task.id);
+
+  item.innerHTML = `
+    <div class="task-item-icon">${taskIcon(task)}</div>
+    <div class="task-item-body">
+      <div class="task-item-top">
+        <span class="task-item-title">${escapeHtml(task.title)}</span>
+        <span class="task-item-time">${timeStr}</span>
+      </div>
+      <div class="task-item-bottom">
+        <span class="owner-dot ${ownerClass(task.owner)}" title="${escapeHtml(task.owner || '')}"></span>
+        <span class="task-item-preview">${escapeHtml(preview.text.slice(0, 90))}</span>
+        <span class="task-item-id">#${task.id}</span>
+        ${unread ? '<span class="unread-dot"></span>' : ''}
+      </div>
+    </div>
+  `;
+  item.addEventListener('click', () => openChat(task.id));
+  return item;
 }
 
-// ── Tab switching ─────────────────────────────────────────────────────────────
-
-window.switchTab = function(taskId, tab) {
-  _activeTab[taskId] = tab;
-  for (const t of ['results', 'chat', 'program']) {
-    const pane = document.getElementById(`tab-${t}-${taskId}`);
-    const btn  = document.querySelector(`.tab-btn[data-tab="${t}"][data-task="${taskId}"]`);
-    if (pane) pane.classList.toggle('hidden', t !== tab);
-    if (btn)  btn.classList.toggle('active', t === tab);
+function updateTaskItemUnread(taskId) {
+  const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+  if (!item) return;
+  const dot  = item.querySelector('.unread-dot');
+  const show = hasUnread(taskId);
+  if (show && !dot) {
+    item.querySelector('.task-item-bottom')?.appendChild(el('span', 'unread-dot'));
+  } else if (!show && dot) {
+    dot.remove();
   }
-  if (tab === 'chat')    startChatPoll(taskId);
-  if (tab === 'program') loadProgram(taskId);
-};
+}
 
-// ── Queue Panel ───────────────────────────────────────────────────────────────
+// ── Chat ──────────────────────────────────────────────────────────────────────
 
-function renderQueue(all) {
-  const container = document.getElementById('queue-list');
-  const queue = all
-    .filter(n => n.status === 'new' || n.status === 'open')
-    .filter(n => !n.locked)
-    .sort((a, b) => (b.roi || 0) - (a.roi || 0))
-    .slice(0, 5);
+function openChat(taskId) {
+  state.activeTaskId = taskId;
 
-  if (!queue.length) {
-    container.innerHTML = '<div class="empty-state">Queue empty</div>';
+  // Sidebar active highlight
+  document.querySelectorAll('.task-item').forEach(it => {
+    it.classList.toggle('active', it.dataset.taskId === String(taskId));
+    it.querySelector('.unread-dot')?.remove();
+  });
+
+  // Mobile: slide to chat
+  document.body.classList.add('chat-open');
+
+  // Populate header
+  const task = state.tasks.find(t => t.id === taskId);
+  if (task) {
+    document.getElementById('chat-title').textContent = `${task.title} #${task.id}`;
+    renderChatHeader(task);
+  }
+
+  // Enable input
+  document.getElementById('chat-input-area').classList.remove('disabled');
+  document.getElementById('chat-input').disabled  = false;
+  document.getElementById('send-btn').disabled    = false;
+
+  // Render existing messages and mark seen
+  renderMessages(taskId);
+  markSeen(taskId);
+
+  // Start polling
+  startChatPoll(taskId);
+}
+
+function closeChat() {
+  document.body.classList.remove('chat-open');
+  stopChatPoll();
+  state.activeTaskId = null;
+
+  document.querySelectorAll('.task-item').forEach(it => it.classList.remove('active'));
+  document.getElementById('chat-input-area').classList.add('disabled');
+  document.getElementById('chat-input').disabled = true;
+  document.getElementById('send-btn').disabled   = true;
+}
+
+function renderChatHeader(task) {
+  const status  = inferStatus(task);
+  const badgeEl = document.getElementById('chat-status-badge');
+  badgeEl.textContent = status;
+  badgeEl.className   = `badge-${status === 'cooking' ? 'cooking' : status === 'blocked' ? 'blocked' : 'idle'}`;
+
+  const kpiEl   = document.getElementById('chat-kpis');
+  const kpiData = state.kpis[String(task.id)];
+  if (kpiData?.metrics) {
+    kpiEl.innerHTML = Object.entries(kpiData.metrics).map(([key, m]) => {
+      const col = kpiColor(m.value, m.target);
+      return `<span class="kpi-pill ${col}">${key}: ${fmt(m.value)}/${fmt(m.target)}</span>`;
+    }).join('');
+  } else {
+    kpiEl.innerHTML = '';
+  }
+}
+
+// ── Message Rendering ─────────────────────────────────────────────────────────
+
+const MAX_MSG_LEN = 500;
+
+function renderMessages(taskId) {
+  const container = document.getElementById('chat-messages');
+  if (taskId !== state.activeTaskId) return;
+
+  const msgs    = state.chatMessages[taskId] || [];
+  const waiting = state.waitingReply[taskId];
+
+  if (!msgs.length && !waiting) {
+    container.innerHTML = '<div class="chat-placeholder">No messages yet. Start the conversation!</div>';
     return;
   }
 
-  container.innerHTML = '';
-  queue.forEach((n, i) => {
-    const item   = el('div', 'queue-item');
-    const effort = n.effort_hours_estimate ? `${n.effort_hours_estimate}h` : null;
-    const roi    = n.roi ? `ROI ${n.roi}` : null;
-    const tags   = [n.owner, effort, roi].filter(Boolean).map(t =>
-      `<span class="queue-tag">${t}</span>`).join('');
-    item.innerHTML = `
-      <span class="queue-rank">${i + 1}.</span>
-      <div class="queue-info">
-        <div class="queue-title" title="${n.title}">${n.title}</div>
-        <div class="queue-meta">${tags}</div>
+  let html         = '';
+  let prevDateStr  = null;
+
+  for (let i = 0; i < msgs.length; i++) {
+    const m       = msgs[i];
+    const dateStr = m.timestamp ? new Date(m.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+
+    if (dateStr && dateStr !== prevDateStr) {
+      html += `<div class="date-separator">${dateStr}</div>`;
+      prevDateStr = dateStr;
+    }
+
+    const text    = m.text || '';
+    const isLong  = text.length > MAX_MSG_LEN;
+    const display = isLong ? text.slice(0, MAX_MSG_LEN) + '…' : text;
+
+    html += `
+      <div class="chat-msg ${m.role === 'user' ? 'user' : 'assistant'}">
+        <div class="chat-bubble" data-full="${isLong ? escapeHtml(text) : ''}">${escapeHtml(display)}${isLong ? `<button class="msg-expand-btn" data-idx="${i}"> Show more</button>` : ''}</div>
+        ${m.timestamp ? `<div class="chat-ts">${ago(m.timestamp)}</div>` : ''}
       </div>`;
-    container.appendChild(item);
+  }
+
+  if (waiting) {
+    html += `
+      <div class="typing-row">
+        <div class="typing-bubble">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+        <span class="typing-label">Thinking…</span>
+      </div>`;
+  }
+
+  container.innerHTML = html;
+  container.scrollTop = container.scrollHeight;
+
+  // Wire expand buttons
+  container.querySelectorAll('.msg-expand-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const bubble = btn.closest('.chat-bubble');
+      if (!bubble) return;
+      bubble.innerHTML = escapeHtml(bubble.dataset.full || '');
+    });
+  });
+
+  // Long-press to copy
+  container.querySelectorAll('.chat-bubble').forEach(bubble => {
+    let timer;
+    bubble.addEventListener('touchstart', () => {
+      timer = setTimeout(() => copyText(bubble.textContent), 600);
+    }, { passive: true });
+    bubble.addEventListener('touchend', () => clearTimeout(timer), { passive: true });
   });
 }
 
-// ── Activity Feed ─────────────────────────────────────────────────────────────
-
-function renderActivity(all) {
-  const container = document.getElementById('activity-list');
-  const events = [];
-
-  for (const n of all) {
-    const notes = Array.isArray(n.notes) ? n.notes :
-                  (n.notes && typeof n.notes === 'object') ? [n.notes] : [];
-    for (const note of notes) {
-      if (note?.ts && note?.text) {
-        events.push({ ts: note.ts, task: n.title, taskId: n.id, text: note.text });
-      }
-    }
-  }
-
-  events.sort((a, b) => b.ts - a.ts);
-  const recent = events.slice(0, 10);
-
-  if (!recent.length) {
-    container.innerHTML = '<div class="empty-state">No recent activity</div>';
-    return;
-  }
-
-  container.innerHTML = '';
-  for (const ev of recent) {
-    const item = el('div', 'activity-item');
-    item.innerHTML = `
-      <div class="activity-meta">
-        <span class="activity-time">${ago(ev.ts)}</span>
-        <span class="activity-task">#${ev.taskId} ${ev.task}</span>
-      </div>
-      <div class="activity-text">${ev.text}</div>`;
-    container.appendChild(item);
-  }
+function copyText(text) {
+  navigator.clipboard?.writeText(text).catch(() => {});
 }
 
-// ── Toggle description ────────────────────────────────────────────────────────
-
-window.toggleDesc = function(id) {
-  const desc = document.getElementById(`desc-${id}`);
-  const btn  = document.getElementById(`expand-${id}`);
-  if (!desc) return;
-  const collapsed = desc.classList.toggle('collapsed');
-  btn.textContent = collapsed ? '▾ more' : '▴ less';
-};
-
-// ── Results TSV ───────────────────────────────────────────────────────────────
-
-async function fetchResultsForTask(taskId) {
-  try {
-    const text = await apiFetchText(`/api/results/${taskId}`);
-    if (!text) { _resultsCache[taskId] = []; return []; }
-    const lines = text.trim().split('\n');
-    if (lines.length < 2) { _resultsCache[taskId] = []; return []; }
-    const results = lines.slice(1).map(line => {
-      const parts = line.split('\t');
-      return {
-        commit:      parts[0] || '',
-        r5:          parseFloat(parts[1]) || 0,
-        mc:          parseFloat(parts[2]) || 0,
-        status:      parts[3] || '',
-        description: parts.slice(4).join('\t') || '',
-      };
-    });
-    _resultsCache[taskId] = results;
-    return results;
-  } catch {
-    return _resultsCache[taskId] || [];
-  }
-}
-
-// ── Sparkline ─────────────────────────────────────────────────────────────────
-
-function renderSparkline(values, color) {
-  if (!values.length) return '';
-  const w = 80, h = 22, pad = 2;
-  const min   = Math.min(...values);
-  const max   = Math.max(...values);
-  const range = max - min || 0.001;
-  const pts   = values.map((v, i) => {
-    const x = pad + (i / Math.max(values.length - 1, 1)) * (w - pad * 2);
-    const y = h - pad - ((v - min) / range) * (h - pad * 2);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
-  const last = values[values.length - 1];
-  return `<svg class="sparkline" width="${w}" height="${h}" title="R@5 trend — latest: ${last.toFixed(4)}">
-    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
-    <circle cx="${parseFloat(pts.split(' ').pop().split(',')[0])}" cy="${parseFloat(pts.split(' ').pop().split(',')[1])}" r="2" fill="${color}"/>
-  </svg>`;
-}
-
-// ── Results tab ───────────────────────────────────────────────────────────────
-
-function renderResultsTab(taskId, results, loopStatus) {
-  if (!results.length) return '';
-
-  const loop       = loopStatus[String(taskId)];
-  const keeps      = results.filter(r => r.status === 'keep');
-  const r5vals     = keeps.map(r => r.r5);
-  const sparkColor = '#58a6ff';
-  const spark      = r5vals.length > 1 ? renderSparkline(r5vals, sparkColor) : '';
-
-  const loopBadge = loop?.running
-    ? `<span class="loop-badge running">⚡ Exp #${loop.experiment_num} running</span>`
-    : `<span class="loop-badge idle">◎ idle</span>`;
-
-  const rows = results.slice(-10).reverse().map(r => {
-    const cls   = r.status === 'keep' ? 'result-keep' : 'result-discard';
-    const short = r.commit.length > 9 ? r.commit.slice(0, 9) : r.commit;
-    return `<tr class="${cls}">
-      <td class="res-commit">${short}</td>
-      <td class="res-r5">${r.r5.toFixed(4)}</td>
-      <td class="res-mc">${r.mc.toFixed(4)}</td>
-      <td class="res-status ${r.status}">${r.status}</td>
-      <td class="res-desc">${r.description}</td>
-    </tr>`;
-  }).join('');
-
-  return `
-    <div class="results-section">
-      <div class="results-header">
-        <span class="kpi-section-title">Experiments</span>
-        <div class="results-meta">
-          ${spark}
-          ${loopBadge}
-        </div>
-      </div>
-      <table class="results-table">
-        <thead><tr>
-          <th>commit</th><th>R@5</th><th>MC</th><th>status</th><th>description</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
-}
-
-// ── Chat panel ────────────────────────────────────────────────────────────────
-
-const _chatPollers  = {}; // taskId -> intervalId
-const _waitingReply = {}; // taskId -> true if waiting for assistant response
-const _chatMessages = {}; // taskId -> [{role, text, timestamp}]
-
-function renderChatPanel(taskId) {
-  const msgs    = _chatMessages[taskId] || [];
-  const msgsHtml = msgs.length
-    ? msgs.map(m => `
-        <div class="chat-msg ${m.role === 'user' ? 'user' : 'assistant'}">
-          <div class="chat-bubble">${escapeHtml(m.text)}</div>
-          ${m.timestamp ? `<div class="chat-ts">${ago(m.timestamp)}</div>` : ''}
-        </div>`).join('')
-    : '<div class="chat-empty">No messages yet</div>';
-
-  return `
-    <div class="chat-panel">
-      <div class="chat-messages" id="chat-msgs-${taskId}">${msgsHtml}</div>
-      <div class="chat-input-row">
-        <input class="chat-input" id="chat-in-${taskId}"
-               placeholder="Message to agent…"
-               onkeydown="if(event.key==='Enter')sendChat(${taskId})">
-        <button class="chat-send-btn" onclick="sendChat(${taskId})">Send</button>
-      </div>
-    </div>`;
-}
-
-function renderChatMessages(taskId) {
-  const container = document.getElementById(`chat-msgs-${taskId}`);
-  if (!container) return;
-  const msgs = _chatMessages[taskId] || [];
-  if (!msgs.length) {
-    container.innerHTML = '<div class="chat-empty">No messages yet</div>';
-    return;
-  }
-  container.innerHTML = msgs.map(m => `
-    <div class="chat-msg ${m.role === 'user' ? 'user' : 'assistant'}">
-      <div class="chat-bubble">${escapeHtml(m.text)}</div>
-      ${m.timestamp ? `<div class="chat-ts">${ago(m.timestamp)}</div>` : ''}
-    </div>`).join('');
-  // Show typing indicator if waiting for reply
-  if (_waitingReply[taskId]) {
-    container.innerHTML += '<div class="typing-indicator"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="typing-label">Conductor is thinking…</span></div>';
-  }
-  container.scrollTop = container.scrollHeight;
-}
+// ── Chat Polling ──────────────────────────────────────────────────────────────
 
 async function pollChat(taskId) {
   try {
-    const data = await apiFetch(`/api/chat/${taskId}`);
+    const data    = await apiFetch(`/api/chat/${taskId}`);
     const newMsgs = data.messages || [];
-    const oldMsgs = _chatMessages[taskId] || [];
-    // Only re-render if message count changed (avoids flash)
+    const oldMsgs = state.chatMessages[taskId] || [];
+
     if (newMsgs.length !== oldMsgs.length) {
-      // Clear typing indicator if assistant replied
       const hasNewAssistant = newMsgs.slice(oldMsgs.length).some(m => m.role === 'assistant');
-      if (hasNewAssistant) _waitingReply[taskId] = false;
-      _chatMessages[taskId] = newMsgs;
-      renderChatMessages(taskId);
+      if (hasNewAssistant) state.waitingReply[taskId] = false;
+      state.chatMessages[taskId] = newMsgs;
+
+      if (taskId === state.activeTaskId) {
+        renderMessages(taskId);
+        markSeen(taskId);
+      } else {
+        updateTaskItemUnread(taskId);
+      }
     }
-  } catch { /* silent fail — main refresh will surface errors */ }
+  } catch { /* silent */ }
 }
 
 function startChatPoll(taskId) {
-  if (_chatPollers[taskId]) return; // already running
+  stopChatPoll();
   pollChat(taskId);
-  _chatPollers[taskId] = setInterval(() => pollChat(taskId), CHAT_POLL_INTERVAL);
+  state.chatPollTimer = setInterval(() => pollChat(taskId), CHAT_POLL_INTERVAL);
 }
 
-window.sendChat = async function(taskId) {
-  const input = document.getElementById(`chat-in-${taskId}`);
-  if (!input) return;
+function stopChatPoll() {
+  if (state.chatPollTimer) {
+    clearInterval(state.chatPollTimer);
+    state.chatPollTimer = null;
+  }
+}
+
+// ── Send Message ──────────────────────────────────────────────────────────────
+
+async function sendMessage() {
+  const taskId = state.activeTaskId;
+  if (!taskId) return;
+
+  const input   = document.getElementById('chat-input');
   const message = input.value.trim();
   if (!message) return;
-  input.value    = '';
-  input.disabled = true;
 
-  _waitingReply[taskId] = true;
-  // Optimistic UI update
-  if (!_chatMessages[taskId]) _chatMessages[taskId] = [];
-  _chatMessages[taskId].push({ role: 'user', text: message, timestamp: new Date().toISOString() });
-  renderChatMessages(taskId);
+  input.value = '';
+  input.style.height = '';
+  input.disabled = true;
+  document.getElementById('send-btn').disabled = true;
+
+  state.waitingReply[taskId] = true;
+  if (!state.chatMessages[taskId]) state.chatMessages[taskId] = [];
+  state.chatMessages[taskId].push({ role: 'user', text: message, timestamp: new Date().toISOString() });
+  renderMessages(taskId);
 
   try {
     const res = await fetch(`/api/chat/${taskId}`, {
@@ -533,88 +466,159 @@ window.sendChat = async function(taskId) {
     });
     if (res.status === 401) { clearToken(); window.location.href = '/login'; return; }
   } catch (e) {
-    console.error('Chat send failed:', e);
+    console.error('Send failed:', e);
+    state.waitingReply[taskId] = false;
+    renderMessages(taskId);
   } finally {
     input.disabled = false;
+    document.getElementById('send-btn').disabled = false;
     input.focus();
   }
-};
+}
 
-// ── Program editor ────────────────────────────────────────────────────────────
+// ── Program Panel ─────────────────────────────────────────────────────────────
 
-const _programLoaded = new Set();
+function openProgramPanel() {
+  const taskId = state.activeTaskId;
+  if (!taskId) return;
 
-window.loadProgram = async function(taskId) {
-  const container = document.getElementById(`tab-program-${taskId}`);
-  if (!container) return;
-  if (_programLoaded.has(taskId) && container.children.length > 0) return;
-  container.innerHTML = '<div class="loading"><span class="spinner"></span> Loading…</div>';
-  try {
-    const data = await apiFetch(`/api/program/${taskId}`);
-    _programLoaded.add(taskId);
-    container.innerHTML = `
-      <div class="program-editor">
-        <textarea class="program-textarea" id="prog-ta-${taskId}">${escapeHtml(data.content || '')}</textarea>
-        <div class="program-actions">
-          <button class="program-save-btn" onclick="saveProgram(${taskId})">Save</button>
-          <span class="program-status" id="prog-status-${taskId}"></span>
-        </div>
-      </div>`;
-  } catch (e) {
-    container.innerHTML = `<div class="chat-empty">Failed to load: ${escapeHtml(e.message)}</div>`;
-  }
-};
+  const panel    = document.getElementById('program-panel');
+  const backdrop = document.getElementById('panel-backdrop');
 
-window.saveProgram = async function(taskId) {
-  const ta       = document.getElementById(`prog-ta-${taskId}`);
-  const statusEl = document.getElementById(`prog-status-${taskId}`);
-  if (!ta) return;
+  document.getElementById('program-textarea').value = 'Loading…';
+  document.getElementById('program-status').textContent = '';
+
+  panel.classList.remove('hidden');
+  backdrop.classList.remove('hidden');
+  requestAnimationFrame(() => panel.classList.add('open'));
+
+  apiFetch(`/api/program/${taskId}`)
+    .then(data => { document.getElementById('program-textarea').value = data.content || ''; })
+    .catch(() => { document.getElementById('program-textarea').value = ''; });
+}
+
+function closeProgramPanel() {
+  const panel    = document.getElementById('program-panel');
+  const backdrop = document.getElementById('panel-backdrop');
+  panel.classList.remove('open');
+  backdrop.classList.add('hidden');
+  setTimeout(() => panel.classList.add('hidden'), 300);
+}
+
+async function saveProgram() {
+  const taskId   = state.activeTaskId;
+  if (!taskId) return;
+  const content  = document.getElementById('program-textarea').value;
+  const statusEl = document.getElementById('program-status');
+  statusEl.textContent = 'Saving…';
   try {
     const res = await fetch(`/api/program/${taskId}`, {
       method:  'PUT',
       headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ content: ta.value }),
+      body:    JSON.stringify({ content }),
     });
     if (res.status === 401) { clearToken(); window.location.href = '/login'; return; }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    if (statusEl) {
-      statusEl.textContent = 'Saved ✓';
-      setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 2000);
-    }
+    statusEl.textContent = 'Saved ✓';
+    setTimeout(() => { statusEl.textContent = ''; }, 2000);
   } catch (e) {
-    if (statusEl) statusEl.textContent = 'Save failed: ' + e.message;
+    statusEl.textContent = 'Failed: ' + e.message;
   }
-};
+}
 
-// ── Fetch & Render ────────────────────────────────────────────────────────────
+// ── Dropdown Menu ─────────────────────────────────────────────────────────────
 
-// Cache for results TSV (keyed by taskId)
-const _resultsCache = {};
-const _activeTab    = {}; // taskId -> 'results' | 'chat' | 'program'
+function openMenu() { document.getElementById('task-menu').classList.remove('hidden'); }
+function closeMenu() { document.getElementById('task-menu').classList.add('hidden'); }
+
+// ── Swipe-back gesture (mobile) ───────────────────────────────────────────────
+
+let touchStartX = 0;
+document.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (dx > 70 && document.body.classList.contains('chat-open')) {
+    closeChat();
+  }
+}, { passive: true });
+
+// ── Main Refresh ──────────────────────────────────────────────────────────────
 
 async function refresh() {
   const indicator = document.getElementById('last-refresh');
   try {
     const { data, kpis, agentStatus, loopStatus } = await apiFetch('/api/status');
 
-    const all = flatten(data.tree || []);
+    state.tasks       = flatten(data.tree || []);
+    state.kpis        = kpis         || {};
+    state.agentStatus = agentStatus  || {};
+    state.loopStatus  = loopStatus   || {};
 
-    // Fetch results for active tasks
-    const activeTasks = all.filter(n => n.status === 'in_progress' && !n.children?.length);
-    await Promise.all(activeTasks.map(n => fetchResultsForTask(n.id)));
+    renderStatusBar();
+    renderTaskList();
 
-    renderStatusBar(agentStatus || {});
-    renderActiveCards(all, kpis || {}, agentStatus || {}, loopStatus || {});
-    renderQueue(all);
-    renderActivity(all);
+    if (state.activeTaskId) {
+      const task = state.tasks.find(t => t.id === state.activeTaskId);
+      if (task) renderChatHeader(task);
+    }
 
-    if (indicator) indicator.textContent = 'Updated ' + new Date().toLocaleTimeString();
+    if (indicator) indicator.textContent = new Date().toLocaleTimeString();
   } catch (e) {
-    if (e.message === 'Unauthorized') return; // redirect already triggered
+    if (e.message === 'Unauthorized') return;
     console.error('Refresh failed:', e);
-    if (indicator) indicator.textContent = 'Refresh failed — ' + e.message;
+    if (indicator) indicator.textContent = '⚠ ' + e.message;
   }
 }
+
+// ── Event Wiring ──────────────────────────────────────────────────────────────
+
+document.getElementById('back-btn').addEventListener('click', closeChat);
+
+document.getElementById('send-btn').addEventListener('click', sendMessage);
+
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// Auto-grow textarea
+document.getElementById('chat-input').addEventListener('input', function () {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 130) + 'px';
+});
+
+document.getElementById('menu-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('task-menu').classList.contains('hidden') ? openMenu() : closeMenu();
+});
+
+document.getElementById('task-menu').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  closeMenu();
+  const action = btn.dataset.action;
+  if (action === 'program') openProgramPanel();
+  if (action === 'results') {
+    const id = state.activeTaskId;
+    if (id) window.open(`/api/results/${id}`, '_blank');
+  }
+  if (action === 'copy-id') {
+    const id = state.activeTaskId;
+    if (id) navigator.clipboard?.writeText(String(id)).catch(() => {});
+  }
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#menu-btn') && !e.target.closest('#task-menu')) closeMenu();
+});
+
+document.getElementById('panel-backdrop').addEventListener('click', closeProgramPanel);
+document.getElementById('program-close-btn').addEventListener('click', closeProgramPanel);
+document.getElementById('save-program-btn').addEventListener('click', saveProgram);
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 

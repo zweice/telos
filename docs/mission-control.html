@@ -2,74 +2,81 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Telos — Mission Control</title>
   <link rel="stylesheet" href="mission-control.css">
 </head>
 <body>
 
-  <!-- Header -->
-  <div id="mc-header">
-    <h1>🛰️ Mission Control</h1>
-    <div class="nav-links">
-      <span id="last-refresh" style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);"></span>
-      <div id="refresh-indicator">
-        <span class="dot"></span>
-        <span>live</span>
-      </div>
-      <a href="index.html">🌳 <span>Goal Tree</span></a>
-    </div>
-  </div>
-
-  <!-- Agent Status Bar -->
+  <!-- Thin agent status bar (pinned top) -->
   <div id="status-bar">
     <span class="status-bar-label">Agents</span>
-    <!-- populated by JS -->
   </div>
 
-  <!-- Main grid -->
-  <div id="mc-main">
+  <!-- App shell: sidebar + chat -->
+  <div id="app">
 
-    <!-- Left: active cards + activity feed -->
-    <div id="mc-content">
+    <!-- Left: Task list (Telegram-style chat list) -->
+    <div id="sidebar">
+      <div id="sidebar-header">
+        <span class="sidebar-logo">🛰️ Telos</span>
+        <div class="sidebar-actions">
+          <span id="last-refresh"></span>
+          <div id="refresh-indicator"><span class="dot"></span><span>live</span></div>
+          <a href="index.html" class="icon-link" title="Goal Tree">🌳</a>
+        </div>
+      </div>
+      <div id="task-list">
+        <div class="loading"><span class="spinner"></span> Loading…</div>
+      </div>
+    </div>
 
-      <!-- Active Work -->
-      <div>
-        <div class="section-header">
-          <span class="section-title">⚡ Active Work</span>
-          <span class="section-count" id="active-count">…</span>
+    <!-- Right: Chat area -->
+    <div id="chat-area">
+
+      <!-- Chat header: back + title + kpis + status + menu -->
+      <div id="chat-header">
+        <button id="back-btn" class="icon-btn" title="Back">←</button>
+        <div id="chat-header-info">
+          <div id="chat-title">Select a task</div>
+          <div id="chat-kpis"></div>
         </div>
-        <div id="active-cards">
-          <div class="loading"><span class="spinner"></span> Loading…</div>
-        </div>
+        <div id="chat-status-badge"></div>
+        <button id="menu-btn" class="icon-btn" title="More options">⋮</button>
+      </div>
+
+      <!-- Message list -->
+      <div id="chat-messages">
+        <div class="chat-placeholder">← Select a task to view its chat</div>
+      </div>
+
+      <!-- Input bar -->
+      <div id="chat-input-area" class="disabled">
+        <textarea id="chat-input" placeholder="Message…" rows="1" disabled></textarea>
+        <button id="send-btn" disabled>↑</button>
       </div>
 
     </div>
-
-    <!-- Right: queue -->
-    <div id="mc-sidebar">
-
-      <div>
-        <div class="section-header">
-          <span class="section-title">📋 Up Next</span>
-        </div>
-        <div id="queue-list">
-          <div class="loading"><span class="spinner"></span></div>
-        </div>
-      </div>
-
-    </div>
   </div>
 
-  <!-- Activity Feed (full width bottom) -->
-  <div id="activity-feed">
-    <div class="section-header">
-      <span class="section-title">🕐 Recent Activity</span>
-    </div>
-    <div id="activity-list">
-      <div class="loading"><span class="spinner"></span> Loading…</div>
-    </div>
+  <!-- Dropdown menu (⋮) -->
+  <div id="task-menu" class="dropdown hidden">
+    <button data-action="program">📋 Program Editor</button>
+    <button data-action="results">📊 Open Results</button>
+    <button data-action="copy-id">🔗 Copy Task ID</button>
   </div>
+
+  <!-- Program slide-in panel -->
+  <div id="program-panel" class="hidden">
+    <div class="panel-header">
+      <button id="program-close-btn" class="panel-close-btn" title="Close">✕</button>
+      <span class="panel-title">Program Editor</span>
+      <button id="save-program-btn">Save</button>
+    </div>
+    <textarea id="program-textarea" spellcheck="false"></textarea>
+    <span id="program-status"></span>
+  </div>
+  <div id="panel-backdrop" class="hidden"></div>
 
   <script src="mission-control.js"></script>
 </body>
