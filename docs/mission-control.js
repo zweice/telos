@@ -33,11 +33,14 @@ async function apiFetch(url) {
   return res.json();
 }
 
-async function apiFetchPost(url) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: authHeaders(),
-  });
+async function apiFetchPost(url, body) {
+  const h = authHeaders();
+  const opts = { method: 'POST', headers: h };
+  if (body !== undefined) {
+    h['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, opts);
   if (res.status === 401) { clearToken(); window.location.href = '/login'; throw new Error('Unauthorized'); }
   return res.json();
 }
@@ -134,6 +137,7 @@ const state = {
   loopStatus:    {},
   chatMessages:  {},   // taskId -> [{role, text, timestamp}]
   waitingReply:  {},   // taskId -> bool
+  chatMode:      {},   // taskId -> 'relay' | 'cc'
   chatPollTimer: null,
   logPollTimer:  null,
   lastSeen:      JSON.parse(localStorage.getItem(LAST_SEEN_KEY) || '{}'),
@@ -336,6 +340,16 @@ function openChat(taskId) {
   renderMessages(taskId);
   markSeen(taskId);
 
+  // Mode toggle — load persisted mode then show toggle
+  apiFetch(`/api/chat/${taskId}/mode`).then(data => {
+    state.chatMode[taskId] = data.mode || 'relay';
+    updateModeUI(taskId);
+  }).catch(() => {
+    state.chatMode[taskId] = 'relay';
+    updateModeUI(taskId);
+  });
+  document.getElementById('chat-mode-toggle').classList.remove('hidden');
+
   // Loop controls bar
   renderLoopControls(taskId);
 
@@ -364,6 +378,23 @@ function closeChat() {
   document.getElementById('chat-input').disabled = true;
   document.getElementById('send-btn').disabled   = true;
   document.getElementById('loop-controls').classList.add('hidden');
+  document.getElementById('chat-mode-toggle').classList.add('hidden');
+}
+
+function updateModeUI(taskId) {
+  const mode = state.chatMode[taskId] || 'relay';
+  document.getElementById('mode-relay-btn').classList.toggle('active', mode === 'relay');
+  document.getElementById('mode-cc-btn').classList.toggle('active', mode === 'cc');
+}
+
+async function switchMode(taskId, mode) {
+  try {
+    await apiFetchPost(`/api/chat/${taskId}/mode`, { mode });
+    state.chatMode[taskId] = mode;
+    updateModeUI(taskId);
+  } catch (e) {
+    console.error('switchMode failed:', e);
+  }
 }
 
 function renderChatHeader(task) {
@@ -516,10 +547,11 @@ async function sendMessage() {
   renderMessages(taskId);
 
   try {
+    const mode = state.chatMode[taskId] || 'relay';
     const res = await fetch(`/api/chat/${taskId}`, {
       method:  'POST',
       headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ message }),
+      body:    JSON.stringify({ message, mode }),
     });
     if (res.status === 401) { clearToken(); window.location.href = '/login'; return; }
   } catch (e) {
@@ -866,6 +898,13 @@ document.getElementById('save-program-btn').addEventListener('click', saveProgra
 document.getElementById('loop-start-btn').addEventListener('click', () => loopAction('start'));
 document.getElementById('loop-pause-btn').addEventListener('click', () => loopAction('pause'));
 document.getElementById('loop-stop-btn').addEventListener('click',  () => loopAction('stop'));
+
+document.getElementById('mode-relay-btn').addEventListener('click', () => {
+  if (state.activeTaskId) switchMode(state.activeTaskId, 'relay');
+});
+document.getElementById('mode-cc-btn').addEventListener('click', () => {
+  if (state.activeTaskId) switchMode(state.activeTaskId, 'cc');
+});
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 

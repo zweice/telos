@@ -613,6 +613,27 @@ body.chat-open #chat-area { transform: translateX(0); }
   #back-btn { display: none; }
 }
 
+/* ── Mode Toggle ─────────────────────────────────────────────────────────────── */
+#chat-mode-toggle { display: flex; align-items: center; flex-shrink: 0; }
+.mode-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-input);
+  border-radius: 6px;
+  padding: 2px;
+}
+.mode-btn {
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: background 0.15s, color 0.15s;
+}
+.mode-btn.active { background: var(--border); color: var(--text); }
+
 /* ── Loop Controls ──────────────────────────────────────────────────────────── */
 #loop-controls {
   display: flex;

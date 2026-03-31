@@ -5,6 +5,7 @@ const jwt        = require('jsonwebtoken');
 const fs         = require('fs');
 const path       = require('path');
 const { execSync }   = require('child_process');
+const ccSession      = require('./cc-session');
 
 const PORT        = parseInt(process.env.PORT) || 8088;
 const HOST        = process.env.HOST || '127.0.0.1';
@@ -61,8 +62,18 @@ function requireAuth(req, res, next) {
 
 // ── Chat log helpers ──────────────────────────────────────────────────────────
 
-const CHAT_LOG_DIR = path.join(DOCS_DIR, 'chat-logs');
+const CHAT_LOG_DIR   = path.join(DOCS_DIR, 'chat-logs');
+const CHAT_MODES_FILE = path.join(DOCS_DIR, 'chat-modes.json');
 if (!fs.existsSync(CHAT_LOG_DIR)) fs.mkdirSync(CHAT_LOG_DIR, { recursive: true });
+
+function readModes() {
+  try { return JSON.parse(fs.readFileSync(CHAT_MODES_FILE, 'utf8')); }
+  catch { return {}; }
+}
+
+function writeModes(modes) {
+  fs.writeFileSync(CHAT_MODES_FILE, JSON.stringify(modes, null, 2));
+}
 
 function appendChatLog(taskId, entry) {
   const fp = path.join(CHAT_LOG_DIR, `${taskId}.jsonl`);
@@ -201,17 +212,51 @@ app.get('/api/chat/:taskId', requireAuth, (req, res) => {
 app.post('/api/chat/:taskId', requireAuth, async (req, res) => {
   const { taskId } = req.params;
   if (!/^\d+$/.test(taskId)) return res.status(400).json({ error: 'Bad taskId' });
-  const { message } = req.body || {};
+  const { message, mode } = req.body || {};
   if (!message || typeof message !== 'string' || !message.trim()) {
     return res.status(400).json({ error: 'message required' });
   }
-  try {
-    await sendToGateway(taskId, message.trim());
-    appendChatLog(taskId, { role: 'user', text: message.trim(), timestamp: new Date().toISOString(), source: 'web' });
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(502).json({ error: e.message });
+
+  const msg      = message.trim();
+  const chatMode = mode || readModes()[taskId] || 'relay';
+
+  if (chatMode === 'cc') {
+    appendChatLog(taskId, { role: 'user', text: msg, timestamp: new Date().toISOString(), source: 'web', mode: 'cc' });
+    ccSession.sendAsync(taskId, msg)
+      .then(response => {
+        appendChatLog(taskId, { role: 'assistant', text: response, timestamp: new Date().toISOString(), source: 'cc', mode: 'cc' });
+      })
+      .catch(err => {
+        appendChatLog(taskId, { role: 'assistant', text: `❌ CC error: ${err.message}`, timestamp: new Date().toISOString(), source: 'cc', mode: 'cc' });
+      });
+    res.json({ ok: true, mode: 'cc', status: 'processing' });
+  } else {
+    try {
+      await sendToGateway(taskId, msg);
+      appendChatLog(taskId, { role: 'user', text: msg, timestamp: new Date().toISOString(), source: 'web', mode: 'relay' });
+      res.json({ ok: true, mode: 'relay' });
+    } catch (e) {
+      res.status(502).json({ error: e.message });
+    }
   }
+});
+
+app.get('/api/chat/:taskId/mode', requireAuth, (req, res) => {
+  const { taskId } = req.params;
+  if (!/^\d+$/.test(taskId)) return res.status(400).json({ error: 'Bad taskId' });
+  const modes = readModes();
+  res.json({ mode: modes[taskId] || 'relay' });
+});
+
+app.post('/api/chat/:taskId/mode', requireAuth, (req, res) => {
+  const { taskId } = req.params;
+  if (!/^\d+$/.test(taskId)) return res.status(400).json({ error: 'Bad taskId' });
+  const { mode } = req.body || {};
+  if (mode !== 'relay' && mode !== 'cc') return res.status(400).json({ error: 'mode must be relay or cc' });
+  const modes = readModes();
+  modes[taskId] = mode;
+  writeModes(modes);
+  res.json({ ok: true, mode });
 });
 
 app.get('/api/program/:taskId', requireAuth, (req, res) => {
