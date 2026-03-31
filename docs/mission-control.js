@@ -499,6 +499,14 @@ function openProgramPanel() {
 }
 
 function closeProgramPanel() {
+  // Restore textarea if results were shown
+  const ta = document.getElementById('program-textarea');
+  if (ta) ta.style.display = '';
+  const rd = document.getElementById('results-display');
+  if (rd) rd.style.display = 'none';
+  const sb = document.getElementById('save-program-btn');
+  if (sb) sb.style.display = '';
+
   const panel    = document.getElementById('program-panel');
   const backdrop = document.getElementById('panel-backdrop');
   panel.classList.remove('open');
@@ -641,12 +649,25 @@ document.getElementById('task-menu').addEventListener('click', e => {
         }).join('') + '</tr>').join('') +
         '</tbody></table>';
       const panel = document.getElementById('program-panel');
+      const backdrop = document.getElementById('panel-backdrop');
       panel.querySelector('.panel-title').textContent = 'Results — #' + id;
-      document.getElementById('program-editor').innerHTML = html;
-      document.getElementById('program-editor').style.fontFamily = 'monospace';
-      document.getElementById('program-editor').readOnly = true;
+      const textarea = document.getElementById('program-textarea');
+      // Hide textarea, inject results table before it
+      textarea.style.display = 'none';
+      let resultsDiv = document.getElementById('results-display');
+      if (!resultsDiv) {
+        resultsDiv = document.createElement('div');
+        resultsDiv.id = 'results-display';
+        resultsDiv.style.cssText = 'overflow-x:auto;padding:8px;flex:1;';
+        textarea.parentNode.insertBefore(resultsDiv, textarea);
+      }
+      resultsDiv.innerHTML = html;
+      resultsDiv.style.display = 'block';
       document.getElementById('save-program-btn').style.display = 'none';
+      document.getElementById('program-status').textContent = '';
       panel.classList.remove('hidden');
+      backdrop.classList.remove('hidden');
+      requestAnimationFrame(() => panel.classList.add('open'));
     });
   }
   if (action === 'copy-id') {
