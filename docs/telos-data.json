@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-31T11:36:09.272Z",
+  "generated_at": "2026-03-31T11:57:28.871Z",
   "tree": [
     {
       "id": 1,
@@ -3027,7 +3027,7 @@
                   "type": "goal",
                   "owner": "conductor",
                   "status": "in_progress",
-                  "value": 34,
+                  "value": 55,
                   "cost_estimate": 0,
                   "cost_actual": null,
                   "roi": 0,
@@ -3036,12 +3036,16 @@
                   "start_date": null,
                   "end_date": null,
                   "completed_at": null,
-                  "progress": 0,
-                  "description": "Web UI showing major Telos nodes as topic cards. Each topic has: title, expandable info, sub-tasks in kanban lanes (New/Active/Blocked/Done), dynamic KPI fields agents can create/update. Motivated by chat being terrible for state visibility — hard to see multiple workstreams at once. Each topic could map to its own agent session. KPI example: MemoryHub LoCoMo strict/lenient scores. Tasks have short IDs (#frosty-bacon), titles, progress bars (agent-controlled). Think mission control, not project management.",
+                  "progress": 5,
+                  "description": "Mission Control dashboard + agentic work harness. Two intertwined problems:\n\n## Problem 1: Visibility (Dashboard)\nChat is terrible for state visibility. Andreas cant tell:\n- Is Conductor stale, missed a notification, or actively cooking?\n- Whats the current task state/performance?\n- Whats next in the queue?\n- Which context belongs to which task?\n\nSolution: Web UI showing active workstreams as cards with:\n- Task title + description\n- Current status (idle / cooking / blocked / done)\n- Live KPIs (R@5, MC_Acc, etc) that agents update\n- Queue/backlog visibility\n- Last activity timestamp\n- CC process status (running PID, elapsed time, log tail)\n\n## Problem 2: Work Continuity (Agentic Harness)\nCurrently using 30-min cron jobs to keep work flowing. Tasks should chain:\n- Task A completes -> immediately triggers Task B\n- No 30-min idle gap between tasks\n- Self-scheduling work loop with break conditions\n- Human can pause/steer/reprioritize from dashboard\n\nSolution: Work loop harness that:\n- Picks next task from queue\n- Launches CC / subagent\n- Monitors completion (event-driven, not polling)\n- On completion: logs results, picks next task, continues\n- Human override: pause, skip, reprioritize via dashboard\n- Automatic notification on completion + state change\n\n## Design Principles\n- Dashboard reads from Telos DB + agent state files\n- Agents update KPIs via simple CLI/API calls\n- No new infra — static HTML + SQLite reads (like Telos viz)\n- Work harness is an OpenClaw feature request or custom orchestrator script",
                   "notes": [
                     {
                       "ts": 1774117261,
                       "text": "Origin: Andreas observation that working on multiple topics in chat is cumbersome. Can't see state at a glance, has to ask agent for status already discussed. Irony: a good memory system would partially solve this too. Key insight: the board IS the shared context between human and agent — replaces 'what's the status?' with a live dashboard. Not a task yet — idea stage, needs design thinking."
+                    },
+                    {
+                      "ts": 1774958227,
+                      "text": "Promoted from idea to active task (2026-03-31). Andreas pain points: stale notifications, invisible task state, 30-min cron gaps, context confusion between tasks. Two deliverables: (1) dashboard UI, (2) work loop harness."
                     }
                   ],
                   "children": []
