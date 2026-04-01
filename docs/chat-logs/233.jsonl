@@ -100,3 +100,5 @@
 {"role":"user","text":"Say hello","timestamp":"2026-04-01T11:16:28.259Z","source":"web"}
 {"role":"user","text":"ping from smoke test","timestamp":"2026-04-01T11:22:35.166Z","source":"web"}
 {"role":"user","text":"ping smoke test","timestamp":"2026-04-01T11:24:23.136Z","source":"web"}
+{"role":"user","text":"Conductor smoke test — reply with OK","timestamp":"2026-04-01T11:27:34.992Z","source":"web"}
+{"role":"assistant","text":"Callback test — relay working!","timestamp":"2026-04-01T11:35:26.515Z","source":"agent","agent":"conductor"}

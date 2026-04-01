@@ -270,7 +270,18 @@ function appendChatMessage(taskId, entry) {
 
 async function relayToAgent(taskId, sessionKey, message, taskInfo) {
   const gatewayToken = readGatewayToken();
-  const prefix = taskInfo ? `[Mission Control — Task #${taskId}: ${taskInfo.title}]\n` : '';
+  const title = taskInfo ? taskInfo.title : `Task #${taskId}`;
+  const agentId = sessionKey.split(':')[1];
+  
+  // Use unique session key per message to avoid blocking busy agents
+  const uniqueKey = `agent:${agentId}:mc-${taskId}-${Date.now()}`;
+  
+  const prefix = `[Mission Control — Task #${taskId}: ${title}]\n` +
+    `After responding, deliver your answer by running:\n` +
+    `curl -s -X POST http://127.0.0.1:8088/api/chat/${taskId}/callback ` +
+    `-H "Content-Type: application/json" ` +
+    `-d '{"text":"<your response>","agent":"${agentId}"}' ` +
+    `(JSON-escape the text field)\n\nUser message:\n`;
 
   try {
     const resp = await fetch('http://localhost:18789/tools/invoke', {
@@ -282,45 +293,44 @@ async function relayToAgent(taskId, sessionKey, message, taskInfo) {
       body: JSON.stringify({
         tool: 'sessions_send',
         args: {
-          sessionKey,
-          message:        prefix + message,
-          timeoutSeconds: 120,
+          sessionKey: uniqueKey,
+          message:    prefix + message,
+          timeoutSeconds: 90,
         },
       }),
     });
 
     const data = await resp.json();
-
-    // Gateway wraps response: { ok, result: { content: [{type,text}], details: {status,...} } }
     const details = data.result?.details || {};
     const status  = details.status;
 
-    if (status === 'timeout') {
-      appendChatMessage(taskId, {
-        role:      'system',
-        text:      '⏳ Agent is busy — message delivered but response timed out. It may reply later.',
-        timestamp: new Date().toISOString(),
-        source:    'system',
-      });
-    } else if (data.ok && data.result?.content?.length) {
+    if (data.ok && data.result?.content?.length) {
+      // Got a direct response — extract text
       const text = data.result.content
         .filter(c => c.type === 'text')
         .map(c => c.text)
         .join('\n')
         .trim();
-      if (text) {
+      if (text && !text.startsWith('{')) {
+        // Plain text response (not JSON metadata)
         appendChatMessage(taskId, {
           role:      'assistant',
           text,
           timestamp: new Date().toISOString(),
           source:    'agent',
-          agent:     sessionKey.split(':')[1],
+          agent:     agentId,
         });
+        console.log(`[relay] Task #${taskId} — direct response (${text.length} chars)`);
       }
+    } else if (status === 'timeout') {
+      console.log(`[relay] Task #${taskId} — timeout, waiting for callback`);
+      // Don't write system message — callback may still arrive
+    } else if (status === 'accepted') {
+      console.log(`[relay] Task #${taskId} → ${uniqueKey} — accepted (async)`);
     } else if (!data.ok) {
       appendChatMessage(taskId, {
         role:      'system',
-        text:      `⚠ Gateway error: ${data.error?.message || JSON.stringify(data.error)}`,
+        text:      `⚠ Relay error: ${data.error?.message || JSON.stringify(data.error || data)}`,
         timestamp: new Date().toISOString(),
         source:    'system',
       });
@@ -404,8 +414,13 @@ const server = http.createServer(async (req, res) => {
   // ── Auth middleware for all /api/* ────────────────────────────────────────
 
   if (pathname.startsWith('/api/')) {
-    if (!checkToken(extractToken(req))) {
-      return json(res, 401, { error: 'Unauthorized' });
+    // Callback from agents — localhost only, no auth required
+    const isCallback = /^\/api\/chat\/\d+\/callback$/.test(pathname) && method === 'POST';
+    const isLocalhost = req.socket.remoteAddress === '127.0.0.1' || req.socket.remoteAddress === '::1' || req.socket.remoteAddress === '::ffff:127.0.0.1';
+    if (!isCallback || !isLocalhost) {
+      if (!checkToken(extractToken(req))) {
+        return json(res, 401, { error: 'Unauthorized' });
+      }
     }
   }
 
@@ -442,6 +457,31 @@ const server = http.createServer(async (req, res) => {
       const modes      = hasProgram ? ['relay'] : ['relay'];
       if (hasProgram && hasCCLog) modes.push('cc');
       return json(res, 200, { modes, mode: modes[0], activeMode: modes[0] });
+    }
+
+
+    // POST /api/chat/:id/callback — agent callback with response
+    const callbackMatch = pathname.match(/^\/api\/chat\/(\d+)\/callback$/);
+    if (callbackMatch && method === 'POST') {
+      const id = callbackMatch[1];
+      try {
+        const body = JSON.parse((await readBody(req)) || '{}');
+        const text = body.text || body.message || '';
+        if (text) {
+          appendChatMessage(id, {
+            role:      'assistant',
+            text,
+            timestamp: new Date().toISOString(),
+            source:    'agent',
+            agent:     body.agent || 'unknown',
+          });
+          console.log(`[callback] Task #${id} — got agent response (${text.length} chars)`);
+          return json(res, 200, { ok: true });
+        }
+        return json(res, 400, { error: 'No text in callback' });
+      } catch (e) {
+        return json(res, 400, { error: e.message });
+      }
     }
 
     // GET|POST /api/chat/:id
