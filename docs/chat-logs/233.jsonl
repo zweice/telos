@@ -94,3 +94,9 @@
 {"role":"user","text":"This is the message that I got as a reply now: \n\n❌ CC error: CC exit 1:","timestamp":"2026-04-01T09:28:19.470Z","source":"web","mode":"cc"}
 {"role":"assistant","text":"❌ CC error: CC exit 1: ","timestamp":"2026-04-01T09:28:20.992Z","source":"cc","mode":"cc"}
 {"role":"user","text":"I get this message from cc as reply (in this task chat):\n\n❌ CC error: CC exit 1:","timestamp":"2026-04-01T09:28:56.139Z","source":"web","mode":"relay"}
+{"role":"user","text":"say \"hi\"","timestamp":"2026-04-01T11:07:38.230Z","source":"web"}
+{"role":"user","text":"say hi","timestamp":"2026-04-01T11:08:45.559Z","source":"web"}
+{"role":"user","text":"this is mission control chat. reply with a qick \"hi\" so we know that it's working","timestamp":"2026-04-01T11:14:59.062Z","source":"web"}
+{"role":"user","text":"Say hello","timestamp":"2026-04-01T11:16:28.259Z","source":"web"}
+{"role":"user","text":"ping from smoke test","timestamp":"2026-04-01T11:22:35.166Z","source":"web"}
+{"role":"user","text":"ping smoke test","timestamp":"2026-04-01T11:24:23.136Z","source":"web"}

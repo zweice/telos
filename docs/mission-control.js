@@ -412,10 +412,27 @@ function closeChat() {
 }
 
 function updateTabUI(taskId) {
-  const mode = state.chatMode[taskId] || 'relay';
+  const mode    = state.chatMode[taskId] || 'relay';
+  const isCC    = mode === 'cc';
+  const input   = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('send-btn');
+  const area    = document.getElementById('chat-input-area');
+
   document.querySelectorAll('.chat-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.mode === mode);
   });
+
+  if (isCC) {
+    input.disabled   = true;
+    sendBtn.disabled = true;
+    area.classList.add('disabled');
+    input.placeholder = 'CC mode — viewing experiment logs';
+  } else {
+    input.disabled   = false;
+    sendBtn.disabled = false;
+    area.classList.remove('disabled');
+    input.placeholder = 'Message…';
+  }
 }
 
 function renderChatHeader(task) {
@@ -469,8 +486,9 @@ function renderMessages(taskId) {
     const isLong  = text.length > MAX_MSG_LEN;
     const display = isLong ? text.slice(0, MAX_MSG_LEN) + '…' : text;
 
+    const msgClass = m.role === 'user' ? 'user' : m.role === 'system' ? 'system' : 'assistant';
     html += `
-      <div class="chat-msg ${m.role === 'user' ? 'user' : 'assistant'}">
+      <div class="chat-msg ${msgClass}">
         <div class="chat-bubble" data-full="${isLong ? escapeHtml(text) : ''}">${escapeHtml(display)}${isLong ? `<button class="msg-expand-btn" data-idx="${i}"> Show more</button>` : ''}</div>
         ${m.timestamp ? `<div class="chat-ts">${ago(m.timestamp)}</div>` : ''}
       </div>`;

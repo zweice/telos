@@ -268,6 +268,73 @@ function appendChatMessage(taskId, entry) {
   fs.appendFileSync(logPath, JSON.stringify(entry) + '\n');
 }
 
+async function relayToAgent(taskId, sessionKey, message, taskInfo) {
+  const gatewayToken = readGatewayToken();
+  const prefix = taskInfo ? `[Mission Control — Task #${taskId}: ${taskInfo.title}]\n` : '';
+
+  try {
+    const resp = await fetch('http://localhost:18789/tools/invoke', {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${gatewayToken}`,
+      },
+      body: JSON.stringify({
+        tool: 'sessions_send',
+        args: {
+          sessionKey,
+          message:        prefix + message,
+          timeoutSeconds: 120,
+        },
+      }),
+    });
+
+    const data = await resp.json();
+
+    // Gateway wraps response: { ok, result: { content: [{type,text}], details: {status,...} } }
+    const details = data.result?.details || {};
+    const status  = details.status;
+
+    if (status === 'timeout') {
+      appendChatMessage(taskId, {
+        role:      'system',
+        text:      '⏳ Agent is busy — message delivered but response timed out. It may reply later.',
+        timestamp: new Date().toISOString(),
+        source:    'system',
+      });
+    } else if (data.ok && data.result?.content?.length) {
+      const text = data.result.content
+        .filter(c => c.type === 'text')
+        .map(c => c.text)
+        .join('\n')
+        .trim();
+      if (text) {
+        appendChatMessage(taskId, {
+          role:      'assistant',
+          text,
+          timestamp: new Date().toISOString(),
+          source:    'agent',
+          agent:     sessionKey.split(':')[1],
+        });
+      }
+    } else if (!data.ok) {
+      appendChatMessage(taskId, {
+        role:      'system',
+        text:      `⚠ Gateway error: ${data.error?.message || JSON.stringify(data.error)}`,
+        timestamp: new Date().toISOString(),
+        source:    'system',
+      });
+    }
+  } catch (err) {
+    appendChatMessage(taskId, {
+      role:      'system',
+      text:      `❌ Relay error: ${err.message}`,
+      timestamp: new Date().toISOString(),
+      source:    'system',
+    });
+  }
+}
+
 // ── HTTP helpers ──────────────────────────────────────────────────────────────
 
 function json(res, status, data) {
@@ -385,9 +452,22 @@ const server = http.createServer(async (req, res) => {
         return json(res, 200, { messages: readChatLog(id) });
       }
       if (method === 'POST') {
-        const { message } = JSON.parse((await readBody(req)) || '{}');
-        if (message) appendChatMessage(id, { role: 'user', text: message, timestamp: new Date().toISOString(), source: 'web' });
-        return json(res, 200, { ok: true });
+        const body    = JSON.parse((await readBody(req)) || '{}');
+        const { message, mode } = body;
+        if (!message) return json(res, 400, { error: 'No message' });
+
+        appendChatMessage(id, { role: 'user', text: message, timestamp: new Date().toISOString(), source: 'web' });
+
+        if (mode !== 'cc') {
+          const task      = db.get(parseInt(id));
+          const agentId   = task?.owner || 'conductor';
+          const sessionKey = `agent:${agentId}:main`;
+          relayToAgent(id, sessionKey, message, task).catch(err =>
+            console.error(`Relay failed for task ${id}:`, err.message)
+          );
+        }
+
+        return json(res, 200, { ok: true, relayed: mode !== 'cc' });
       }
     }
 

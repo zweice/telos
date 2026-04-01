@@ -344,6 +344,14 @@ body.chat-open #chat-area { transform: translateX(0); }
 }
 .chat-msg.user      { align-self: flex-end;   align-items: flex-end; }
 .chat-msg.assistant { align-self: flex-start; align-items: flex-start; }
+.chat-msg.system    { align-self: center; align-items: center; }
+.chat-msg.system .chat-bubble {
+  background:  transparent;
+  color:       var(--text-muted);
+  font-size:   0.75rem;
+  font-style:  italic;
+  padding:     4px 16px;
+}
 
 .chat-bubble {
   padding: 8px 12px;
