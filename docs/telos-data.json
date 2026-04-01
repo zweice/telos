@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-04-01T00:08:26.304Z",
+  "generated_at": "2026-04-01T00:19:38.083Z",
   "tree": [
     {
       "id": 1,
@@ -4423,7 +4423,7 @@
                   "title": "Outreach Wave 1: Send faxes to 8 HOT leads",
                   "type": "task",
                   "owner": "atlas",
-                  "status": "blocked",
+                  "status": "done",
                   "value": 21,
                   "cost_estimate": 5,
                   "cost_actual": null,
@@ -4432,23 +4432,23 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1775002777,
                   "progress": 0,
                   "description": null,
-                  "notes": [],
-                  "children": [],
-                  "locked": true,
-                  "locked_by": {
-                    "id": 47,
-                    "title": "Andreas: approve outreach launch (first wave 8 companies)"
-                  }
+                  "notes": [
+                    {
+                      "ts": 1775002777,
+                      "text": "2026-04-01 02:20: Wave 1 sent — Rhenus (Janine Cousain), HD-Logistics, BRELOG (Thorsten Dornia), transmaritim (Theresa Luft), Interfracht, FFI (Andreas Hellriegel), F.W. Neukirch, Kunzendorf. All via email, phone calls still needed for 5 of them."
+                    }
+                  ],
+                  "children": []
                 },
                 {
                   "id": 62,
                   "title": "Track + follow up Wave 1 responses",
                   "type": "task",
                   "owner": "atlas",
-                  "status": "blocked",
+                  "status": "in_progress",
                   "value": 21,
                   "cost_estimate": 5,
                   "cost_actual": null,
@@ -4460,13 +4460,13 @@
                   "completed_at": null,
                   "progress": 0,
                   "description": null,
-                  "notes": [],
-                  "children": [],
-                  "locked": true,
-                  "locked_by": {
-                    "id": 61,
-                    "title": "Outreach Wave 1: Send faxes to 8 HOT leads"
-                  }
+                  "notes": [
+                    {
+                      "ts": 1775002778,
+                      "text": "Monitoring atlas-macrohard@agentmail.to for replies. Will escalate any response to Andreas within 1h."
+                    }
+                  ],
+                  "children": []
                 },
                 {
                   "id": 63,
@@ -4486,12 +4486,7 @@
                   "progress": 0,
                   "description": null,
                   "notes": [],
-                  "children": [],
-                  "locked": true,
-                  "locked_by": {
-                    "id": 61,
-                    "title": "Outreach Wave 1: Send faxes to 8 HOT leads"
-                  }
+                  "children": []
                 },
                 {
                   "id": 80,
@@ -5159,6 +5154,10 @@
                     {
                       "ts": 1774011289,
                       "text": "Notary completed 2026-03-20. Handelsregister submission in progress — waiting for registration brief from notary."
+                    },
+                    {
+                      "ts": 1775002297,
+                      "text": "2026-04-01: Notary filed Handelsregister. Awaiting entry confirmation. UG i.G."
                     }
                   ],
                   "children": []
@@ -5218,7 +5217,7 @@
                   "title": "Open business bank account (UG)",
                   "type": "task",
                   "owner": "andreas",
-                  "status": "in_progress",
+                  "status": "done",
                   "value": 8,
                   "cost_estimate": 2,
                   "cost_actual": null,
@@ -5227,10 +5226,15 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1775002296,
                   "progress": 0,
                   "description": "Open a business bank account for Pyfio UG. Can be done pre-HR-registration at some banks (FYRST, Qonto, Kontist accept notary confirmation). Required before Stammkapital transfer.",
-                  "notes": [],
+                  "notes": [
+                    {
+                      "ts": 1775002296,
+                      "text": "Finom account opened. Stammkapital transferred."
+                    }
+                  ],
                   "children": []
                 },
                 {
@@ -5238,7 +5242,7 @@
                   "title": "Transfer Stammkapital to business account",
                   "type": "task",
                   "owner": "andreas",
-                  "status": "open",
+                  "status": "done",
                   "value": 8,
                   "cost_estimate": 1,
                   "cost_actual": null,
@@ -5247,23 +5251,23 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1775002296,
                   "progress": 0,
                   "description": "Transfer the Stammkapital (min. €1, agreed amount) to the newly opened business bank account.",
-                  "notes": [],
-                  "children": [],
-                  "locked": true,
-                  "locked_by": {
-                    "id": 211,
-                    "title": "Open business bank account (UG)"
-                  }
+                  "notes": [
+                    {
+                      "ts": 1775002296,
+                      "text": "Stammkapital transferred to Finom."
+                    }
+                  ],
+                  "children": []
                 },
                 {
                   "id": 213,
                   "title": "Send proof of Stammkapital transfer to notary",
                   "type": "task",
                   "owner": "andreas",
-                  "status": "open",
+                  "status": "done",
                   "value": 8,
                   "cost_estimate": 1,
                   "cost_actual": null,
@@ -5272,16 +5276,16 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": null,
+                  "completed_at": 1775002296,
                   "progress": 0,
                   "description": "Send bank confirmation/screenshot of Stammkapital transfer to the notary. Required for them to proceed with Handelsregister submission.",
-                  "notes": [],
-                  "children": [],
-                  "locked": true,
-                  "locked_by": {
-                    "id": 212,
-                    "title": "Transfer Stammkapital to business account"
-                  }
+                  "notes": [
+                    {
+                      "ts": 1775002297,
+                      "text": "Proof sent to notary. HR filing submitted 2026-04-01."
+                    }
+                  ],
+                  "children": []
                 },
                 {
                   "id": 214,
@@ -5315,7 +5319,7 @@
               "title": "Andreas: approve outreach launch (first wave 8 companies)",
               "type": "task",
               "owner": "andreas",
-              "status": "blocked",
+              "status": "done",
               "value": 5,
               "cost_estimate": 0,
               "cost_actual": null,
@@ -5324,10 +5328,15 @@
               "effort_hours_actual": null,
               "start_date": null,
               "end_date": null,
-              "completed_at": null,
+              "completed_at": 1775002777,
               "progress": 0,
               "description": null,
-              "notes": [],
+              "notes": [
+                {
+                  "ts": 1775002777,
+                  "text": "2026-04-01: Andreas approved outreach. Wave 1 emails sent to all 8 targets via atlas-macrohard@agentmail.to"
+                }
+              ],
               "children": [],
               "locked": true,
               "locked_by": {
