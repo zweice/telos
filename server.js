@@ -489,14 +489,22 @@ const server = http.createServer(async (req, res) => {
     if (chatMatch) {
       const id = chatMatch[1];
       if (method === 'GET') {
-        return json(res, 200, { messages: readChatLog(id) });
+        const urlObj = new URL(req.url, 'http://localhost');
+        const mode   = urlObj.searchParams.get('mode');
+        const all    = readChatLog(id);
+        const messages = mode
+          ? all.filter(m => mode === 'cc'
+              ? m.mode === 'cc'
+              : (!m.mode || m.mode === 'relay'))
+          : all;
+        return json(res, 200, { messages });
       }
       if (method === 'POST') {
         const body    = JSON.parse((await readBody(req)) || '{}');
         const { message, mode } = body;
         if (!message) return json(res, 400, { error: 'No message' });
 
-        appendChatMessage(id, { role: 'user', text: message, timestamp: new Date().toISOString(), source: 'web' });
+        appendChatMessage(id, { role: 'user', text: message, timestamp: new Date().toISOString(), source: 'web', mode: mode || 'relay' });
 
         if (mode !== 'cc') {
           const task      = db.get(parseInt(id));
