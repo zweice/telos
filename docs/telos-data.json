@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-03-31T22:43:56.592Z",
+  "generated_at": "2026-04-01T00:08:26.304Z",
   "tree": [
     {
       "id": 1,
@@ -2482,7 +2482,7 @@
               "children": []
             },
             {
-              "id": 259,
+              "id": 263,
               "title": "Agent Harness: Spec→Implement→Evaluate Loop",
               "type": "milestone",
               "owner": "conductor",
@@ -2497,9 +2497,111 @@
               "end_date": null,
               "completed_at": null,
               "progress": 0,
-              "description": "Three-agent architecture for task execution:\n1. Intent Agent — interprets user intent (not literal words), gathers context from MemoryHub/projects/trends/Telos, produces a rich spec\n2. Generator Agent — implements based on spec\n3. Evaluator Agent — reviews implementation with context from MemoryHub (failure modes, past dissatisfaction), provides feedback → generator iterates until evaluator approves\n\nEvery Telos task follows: Spec → Implement → Evaluate → Iterate → Approve",
-              "notes": [],
-              "children": []
+              "description": "Three-agent architecture for task execution: 1) Intent Agent interprets user intent, gathers context from MemoryHub/projects/trends/Telos, produces rich spec. 2) Generator Agent implements based on spec. 3) Evaluator Agent reviews with MemoryHub context (failure modes, past dissatisfaction), provides feedback, generator iterates until evaluator approves. Every Telos task follows: Spec → Implement → Evaluate → Iterate → Approve.",
+              "notes": [
+                {
+                  "ts": 1774998056,
+                  "text": "Key insight (Andreas, 2026-04-01): Memory extraction pipeline should be purpose-built to serve the harness. Not generic fact storage — targeted extraction of intent, errors, corrections, satisfaction/dissatisfaction signals. mem90 + MemoryHub are the data backbone for all three harness agents."
+                }
+              ],
+              "children": [
+                {
+                  "id": 264,
+                  "title": "Intent Agent — context-aware spec generation",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Agent that interprets user intent (not literal words). Gathers context from MemoryHub, existing projects, current trends, Telos tasks/aims, user history. Produces rich actionable spec with success criteria, constraints, and evaluation rubric.",
+                  "notes": [
+                    {
+                      "ts": 1774998056,
+                      "text": "Memory extraction (mem90/MemoryHub) should be geared toward capturing: user intent patterns, things going wrong, dissatisfaction signals, success patterns, correction patterns. The memory system feeds the harness agents — Intent Agent needs intent history, Evaluator needs failure modes, Meta-Harness needs interaction quality signals. Memory collection = fuel for the harness."
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": 267,
+                      "title": "User Psych Profile — analyze sessions to build intent/communication model",
+                      "type": "task",
+                      "owner": "conductor",
+                      "status": "open",
+                      "value": 0,
+                      "cost_estimate": 0,
+                      "cost_actual": null,
+                      "roi": 0,
+                      "effort_hours_estimate": null,
+                      "effort_hours_actual": null,
+                      "start_date": null,
+                      "end_date": null,
+                      "completed_at": null,
+                      "progress": 0,
+                      "description": "Analyze all Andreas-agent sessions to extract: communication patterns, intent inference rules, frustration triggers, satisfaction signals, preferred response styles, common misunderstandings. Build a structured psych profile that agents use to interpret input and communicate more effectively. This is the foundation for the Intent Agent.",
+                      "notes": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": 265,
+                  "title": "Evaluator Agent — implementation review with memory context",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Separate agent that evaluates implementations against spec. Pulls MemoryHub context: common failure modes, past user dissatisfaction. Provides structured feedback to generator. Loop continues until evaluator satisfied. Must be different agent/session than generator (fresh eyes, no sunk cost bias).",
+                  "notes": [],
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 264,
+                    "title": "Intent Agent — context-aware spec generation"
+                  }
+                },
+                {
+                  "id": 266,
+                  "title": "Meta-Harness Agent — self-improving orchestration",
+                  "type": "task",
+                  "owner": "conductor",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Ref: https://yoonholee.com/meta-harness/ — Agent that continuously monitors and adjusts the harness itself. Observes all user-agent interactions. Detects discontent, frustration, repeated corrections. Detects success patterns and reinforces them. Modifies agent prompts, routing, evaluation criteria. The learning layer that improves the harness.",
+                  "notes": [],
+                  "children": [],
+                  "locked": true,
+                  "locked_by": {
+                    "id": 265,
+                    "title": "Evaluator Agent — implementation review with memory context"
+                  }
+                }
+              ]
             }
           ]
         },
@@ -4931,6 +5033,10 @@
                 {
                   "ts": 1773518193,
                   "text": "2026-03-14: Notary appointment completed. Now 'in Gründung' — waiting for Handelsregister confirmation letter."
+                },
+                {
+                  "ts": 1775002106,
+                  "text": "2026-04-01: Pyfio UG i.G. confirmed — notary process complete. Awaiting Handelsregister Eintragung."
                 }
               ],
               "children": [
@@ -5112,7 +5218,7 @@
                   "title": "Open business bank account (UG)",
                   "type": "task",
                   "owner": "andreas",
-                  "status": "open",
+                  "status": "in_progress",
                   "value": 8,
                   "cost_estimate": 2,
                   "cost_actual": null,
@@ -5423,76 +5529,6 @@
           ]
         }
       ]
-    },
-    {
-      "id": 260,
-      "title": "Intent Agent — context-aware spec generation",
-      "type": "task",
-      "owner": "conductor",
-      "status": "open",
-      "value": 0,
-      "cost_estimate": 0,
-      "cost_actual": null,
-      "roi": 0,
-      "effort_hours_estimate": null,
-      "effort_hours_actual": null,
-      "start_date": null,
-      "end_date": null,
-      "completed_at": null,
-      "progress": 0,
-      "description": "Agent that interprets user intent (not just literal words). Gathers context from:\n- MemoryHub (relevant memories, past decisions)\n- Existing projects (code, docs, architecture)\n- Current trends (web research if needed)  \n- Telos tasks and aims (what we're building toward)\n- User inputs and conversation history\n\nProduces a rich, actionable spec that the generator agent can execute without ambiguity. The spec includes success criteria, constraints, and evaluation rubric.",
-      "notes": [],
-      "children": []
-    },
-    {
-      "id": 261,
-      "title": "Evaluator Agent — implementation review with memory context",
-      "type": "task",
-      "owner": "conductor",
-      "status": "open",
-      "value": 0,
-      "cost_estimate": 0,
-      "cost_actual": null,
-      "roi": 0,
-      "effort_hours_estimate": null,
-      "effort_hours_actual": null,
-      "start_date": null,
-      "end_date": null,
-      "completed_at": null,
-      "progress": 0,
-      "description": "Agent that evaluates implementations against the spec. Key features:\n- Reviews code/output against spec success criteria\n- Pulls context from MemoryHub: common failure modes, past user dissatisfaction patterns\n- Provides structured feedback to generator agent\n- Generator iterates based on feedback\n- Loop continues until evaluator is sufficiently satisfied\n- Final approval gate before marking task done\n\nMust be a DIFFERENT agent/session than the generator (fresh eyes, no sunk cost bias).",
-      "notes": [],
-      "children": [],
-      "locked": true,
-      "locked_by": {
-        "id": 260,
-        "title": "Intent Agent — context-aware spec generation"
-      }
-    },
-    {
-      "id": 262,
-      "title": "Meta-Harness Agent — self-improving agent orchestration",
-      "type": "task",
-      "owner": "conductor",
-      "status": "open",
-      "value": 0,
-      "cost_estimate": 0,
-      "cost_actual": null,
-      "roi": 0,
-      "effort_hours_estimate": null,
-      "effort_hours_actual": null,
-      "start_date": null,
-      "end_date": null,
-      "completed_at": null,
-      "progress": 0,
-      "description": "Inspired by: https://yoonholee.com/meta-harness/\n\nAgent that continuously monitors and adjusts the agent harness itself by:\n- Observing user-agent interactions across all sessions\n- Detecting user discontent, frustration, repeated corrections\n- Detecting success patterns (things that work well → reinforce)\n- Detecting failure patterns (things that don't work → adjust)\n- Modifying agent prompts, routing rules, evaluation criteria\n- Adjusting the spec→implement→evaluate loop parameters\n\nThis is the 'learning layer' — the harness that improves the harness.\nPositive reinforcement matters as much as error correction.",
-      "notes": [],
-      "children": [],
-      "locked": true,
-      "locked_by": {
-        "id": 261,
-        "title": "Evaluator Agent — implementation review with memory context"
-      }
     }
   ],
   "ideas": [
@@ -6106,15 +6142,15 @@
       "type": "hard"
     },
     {
-      "id": 63,
-      "blocked_id": 261,
-      "blocker_id": 260,
+      "id": 65,
+      "blocked_id": 265,
+      "blocker_id": 264,
       "type": "hard"
     },
     {
-      "id": 64,
-      "blocked_id": 262,
-      "blocker_id": 261,
+      "id": 66,
+      "blocked_id": 266,
+      "blocker_id": 265,
       "type": "hard"
     }
   ]
