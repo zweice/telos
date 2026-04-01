@@ -6,6 +6,7 @@ const fs         = require('fs');
 const path       = require('path');
 const { execSync }   = require('child_process');
 const ccSession      = require('./cc-session');
+const TelosDB        = require('./db');
 
 const PORT        = parseInt(process.env.PORT) || 8088;
 const HOST        = process.env.HOST || '127.0.0.1';
@@ -190,6 +191,19 @@ app.get('/api/status', requireAuth, (req, res) => {
     agentStatus: readJSON(path.join(DOCS_DIR, 'agent-status.json')),
     loopStatus:  readJSON(path.join(DOCS_DIR, 'loop-status.json')),
   });
+});
+
+app.get('/api/task/:id', requireAuth, (req, res) => {
+  const { id } = req.params;
+  if (!/^\d+$/.test(id)) return res.status(400).json({ error: 'Bad id' });
+  const db   = new TelosDB();
+  const node = db.getWithMetrics(parseInt(id));
+  db.close();
+  if (!node) return res.status(404).json({ error: 'Not found' });
+  // Parse metadata JSON blob
+  let meta = {};
+  try { meta = JSON.parse(node.metadata || '{}'); } catch { /* ignore */ }
+  res.json({ ...node, meta });
 });
 
 app.get('/api/results/:taskId', requireAuth, (req, res) => {

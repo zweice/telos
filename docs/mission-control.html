@@ -37,7 +37,7 @@
       <!-- Chat header: back + title + kpis + status + menu -->
       <div id="chat-header">
         <button id="back-btn" class="icon-btn" title="Back">←</button>
-        <div id="chat-header-info">
+        <div id="chat-header-info" title="View task details" style="cursor:pointer">
           <div id="chat-title">Select a task</div>
           <div id="chat-kpis"></div>
         </div>
@@ -81,6 +81,15 @@
     <button data-action="results">📊 Open Results</button>
     <button data-action="copy-id">🔗 Copy Task ID</button>
     <button data-action="log">📜 View Log</button>
+  </div>
+
+  <!-- Task details (maintenance) slide-in panel -->
+  <div id="task-details-panel" class="hidden">
+    <div class="panel-header">
+      <button id="task-details-close-btn" class="panel-close-btn" title="Close">✕</button>
+      <span class="panel-title" id="task-details-title">Task Details</span>
+    </div>
+    <div id="task-details-body"></div>
   </div>
 
   <!-- Program slide-in panel -->

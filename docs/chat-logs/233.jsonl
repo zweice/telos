@@ -86,3 +86,4 @@
 {"role":"assistant","text":"Hi!","timestamp":"2026-03-31T21:32:35.737Z","source":"cc","mode":"cc"}
 {"role":"user","text":"Say hi. Name","timestamp":"2026-03-31T21:32:53.433Z","source":"web","mode":"relay"}
 {"role":"assistant","text":"Hi! I'm Conductor 🚀 — your OpenClaw architect. You're in the Relay tab right now (talking to me through OpenClaw). Switch to the CC tab for Claude Code with full repo access.","timestamp":"2026-03-31T21:33:30.000Z","source":"session","mode":"relay"}
+{"role":"user","text":"I would like to see in mission control:\nOn a task view, where I see the chat: when I click the header I would expect to see the \"maintenance\" screen with description, cost, step notes, etc, all fields","timestamp":"2026-04-01T07:38:39.920Z","source":"web","mode":"cc"}

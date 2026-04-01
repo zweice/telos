@@ -659,6 +659,111 @@ async function saveProgram() {
   }
 }
 
+// ── Task Details Panel ────────────────────────────────────────────────────────
+
+function fmtDate(ts) {
+  if (!ts) return '—';
+  const d = typeof ts === 'number' ? new Date(ts * 1000) : new Date(ts);
+  return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtCost(v) {
+  if (v === null || v === undefined) return '—';
+  return '$' + Number(v).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function detailRow(label, value) {
+  if (value === null || value === undefined || value === '' || value === '—') return '';
+  return `<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value">${escapeHtml(String(value))}</span></div>`;
+}
+
+async function openTaskDetailsPanel() {
+  const taskId = state.activeTaskId;
+  if (!taskId) return;
+
+  const panel    = document.getElementById('task-details-panel');
+  const backdrop = document.getElementById('panel-backdrop');
+  const body     = document.getElementById('task-details-body');
+  const titleEl  = document.getElementById('task-details-title');
+
+  body.innerHTML = '<div class="detail-loading">Loading…</div>';
+  titleEl.textContent = `Task #${taskId}`;
+
+  panel.classList.remove('hidden');
+  backdrop.classList.remove('hidden');
+  requestAnimationFrame(() => panel.classList.add('open'));
+
+  try {
+    const node = await apiFetch(`/api/task/${taskId}`);
+    const meta  = node.meta || {};
+    const notes = Array.isArray(meta.notes) ? meta.notes : [];
+
+    titleEl.textContent = node.title || `Task #${taskId}`;
+
+    const statusColors = {
+      done: '#3fb950', in_progress: '#d29922', blocked: '#f85149',
+      open: '#8b949e', shelved: '#8b949e', refused: '#f85149',
+    };
+    const statusColor = statusColors[node.status] || '#8b949e';
+
+    let notesHtml = '';
+    if (notes.length) {
+      notesHtml = `<div class="detail-section-title">Step Notes</div>` +
+        notes.map(n => {
+          const ts   = n.ts ? fmtDate(n.ts) : '';
+          const prog = n.progress !== undefined ? ` <span class="detail-note-prog">${n.progress}%</span>` : '';
+          return `<div class="detail-note"><span class="detail-note-ts">${ts}${prog}</span><span class="detail-note-text">${escapeHtml(n.text || '')}</span></div>`;
+        }).join('');
+    }
+
+    const blockReason = meta.block_reason || meta.refuse_reason || meta.shelve_reason || meta.reject_reason || meta.question_reason;
+
+    body.innerHTML = `
+      <div class="detail-status-row">
+        <span class="detail-status-badge" style="background:${statusColor}22;color:${statusColor};">${node.status || '—'}</span>
+        <span class="detail-type-badge">${node.type || 'task'}</span>
+      </div>
+
+      ${node.description ? `<div class="detail-section-title">Description</div><div class="detail-description">${escapeHtml(node.description)}</div>` : ''}
+
+      ${(node.success_criteria) ? `<div class="detail-section-title">Success Criteria</div><div class="detail-description">${escapeHtml(node.success_criteria)}</div>` : ''}
+
+      ${blockReason ? `<div class="detail-section-title">Reason</div><div class="detail-description detail-reason">${escapeHtml(blockReason)}</div>` : ''}
+
+      <div class="detail-section-title">Details</div>
+      <div class="detail-grid">
+        ${detailRow('Owner', node.owner)}
+        ${detailRow('Progress', node.progress != null ? node.progress + '%' : null)}
+        ${detailRow('Value', node.value)}
+        ${detailRow('Cost (est)', fmtCost(node.cost_estimate))}
+        ${detailRow('Cost (actual)', node.cost_actual != null ? fmtCost(node.cost_actual) : null)}
+        ${detailRow('Budget', node.budget != null ? fmtCost(node.budget) : null)}
+        ${detailRow('Risk', node.risk != null ? (node.risk * 100).toFixed(0) + '%' : null)}
+        ${detailRow('ROI', node.roi)}
+        ${detailRow('Effort (est)', node.effort_hours_estimate != null ? node.effort_hours_estimate + 'h' : null)}
+        ${detailRow('Effort (actual)', node.effort_hours_actual != null ? node.effort_hours_actual + 'h' : null)}
+        ${detailRow('Start date', fmtDate(node.start_date))}
+        ${detailRow('End date', fmtDate(node.end_date))}
+        ${detailRow('Created', fmtDate(node.created_at))}
+        ${detailRow('Started', fmtDate(node.started_at))}
+        ${detailRow('Completed', fmtDate(node.completed_at))}
+      </div>
+
+      ${notesHtml}
+    `;
+  } catch (e) {
+    body.innerHTML = `<div class="detail-loading">Failed to load: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function closeTaskDetailsPanel() {
+  const panel    = document.getElementById('task-details-panel');
+  const backdrop = document.getElementById('panel-backdrop');
+  panel.classList.remove('open');
+  backdrop.classList.add('hidden');
+  setTimeout(() => panel.classList.add('hidden'), 300);
+}
+
 // ── Loop Controls ─────────────────────────────────────────────────────────────
 
 function renderLoopControls(taskId) {
@@ -924,8 +1029,18 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#menu-btn') && !e.target.closest('#task-menu')) closeMenu();
 });
 
-document.getElementById('panel-backdrop').addEventListener('click', closeProgramPanel);
+document.getElementById('panel-backdrop').addEventListener('click', () => {
+  if (!document.getElementById('task-details-panel').classList.contains('hidden')) {
+    closeTaskDetailsPanel();
+  } else {
+    closeProgramPanel();
+  }
+});
 document.getElementById('program-close-btn').addEventListener('click', closeProgramPanel);
+document.getElementById('task-details-close-btn').addEventListener('click', closeTaskDetailsPanel);
+document.getElementById('chat-header-info').addEventListener('click', () => {
+  if (state.activeTaskId) openTaskDetailsPanel();
+});
 document.getElementById('save-program-btn').addEventListener('click', saveProgram);
 
 document.getElementById('loop-start-btn').addEventListener('click', () => loopAction('start'));
