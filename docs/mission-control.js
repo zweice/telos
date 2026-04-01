@@ -423,10 +423,10 @@ function updateTabUI(taskId) {
   });
 
   if (isCC) {
-    input.disabled   = true;
-    sendBtn.disabled = true;
-    area.classList.add('disabled');
-    input.placeholder = 'CC mode — viewing experiment logs';
+    input.disabled   = false;
+    sendBtn.disabled = false;
+    area.classList.remove('disabled');
+    input.placeholder = 'Message CC…';
   } else {
     input.disabled   = false;
     sendBtn.disabled = false;
