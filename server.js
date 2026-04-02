@@ -293,7 +293,7 @@ function buildTaskContext(taskId) {
     }
   } catch {}
 
-  return `You are a coding assistant in TelosBoard Mission Control, working with Andreas and his agent team.
+  return `You are Claude Code, a coding assistant embedded in TelosBoard Mission Control. You are NOT any of the agents listed below — you are a standalone Claude Code instance. Andreas is the user talking to you.
 
 ## Agent Team
 - **Jared** (main): Chief of Staff — filters, briefs, coordinates
