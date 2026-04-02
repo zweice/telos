@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-04-01T00:19:38.083Z",
+  "generated_at": "2026-04-02T15:11:11.886Z",
   "tree": [
     {
       "id": 1,
@@ -5541,6 +5541,17 @@
     }
   ],
   "ideas": [
+    {
+      "id": 26,
+      "title": "Pivot BD to AI-powered phone call service (Reddit r/openclaw model)",
+      "description": "If freight document parser doesn't gain traction, pivot to an AI-powered outbound phone call service — agents making sales/appointment calls on behalf of SMEs. Model referenced: https://www.reddit.com/r/openclaw/s/ynZ8oGaJkC (content not yet retrieved — Andreas to share details). Core concept: use OpenClaw agents + voice capability to run outbound call campaigns for clients.",
+      "rationale": "Natural extension of current agent stack. Voice calling already partially in config (Twilio auth token present). Lower barrier for clients than software adoption — pure service model. Andreas flagged this as a fallback if freight BD fails.",
+      "status": "active",
+      "key_decisions": "1. What exactly is the Reddit model? Andreas to share post content. 2. Target market: same freight forwarders, or broader SME? 3. Revenue model: per-call, retainer, or rev-share? 4. Technical: Twilio already configured — how much build needed? 5. Pursue in parallel or only on freight failure?",
+      "tags": [],
+      "created_at": 1775142671,
+      "updated_at": 1775142671
+    },
     {
       "id": 25,
       "title": "Evaluate Paperclip for MacroHard orchestration + Clipmart distribution",
