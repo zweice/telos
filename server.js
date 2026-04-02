@@ -336,16 +336,21 @@ ${childList}${notes}
 
 async function sendToCC(taskId, message) {
   const sessionId = getSessionId(taskId);
-  const isNew = !ccSessions[taskId];
   ccSessions[taskId] = { sessionId, lastActive: Date.now() };
 
-  const prompt = isNew
-    ? buildTaskContext(taskId) + '\n\n---\n\nUser message:\n' + message
-    : message;
+  // Always try --resume first (survives dashboard restarts).
+  // If resume fails (no existing session), retry with --session-id + context.
+  return _runCC(taskId, sessionId, message, true);
+}
 
-  const args = isNew
-    ? ['--print', '--permission-mode', 'bypassPermissions', '--session-id', sessionId, '-p', prompt]
-    : ['--print', '--permission-mode', 'bypassPermissions', '--resume', sessionId, '-p', prompt];
+async function _runCC(taskId, sessionId, message, tryResume) {
+  const prompt = tryResume
+    ? message
+    : buildTaskContext(taskId) + '\n\n---\n\nUser message:\n' + message;
+
+  const args = tryResume
+    ? ['--print', '--permission-mode', 'bypassPermissions', '--resume', sessionId, '-p', prompt]
+    : ['--print', '--permission-mode', 'bypassPermissions', '--session-id', sessionId, '-p', prompt];
 
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -365,6 +370,11 @@ async function sendToCC(taskId, message) {
 
     proc.on('close', code => {
       const output = Buffer.concat(chunks).toString().trim();
+      // If resume failed (session not found), retry with new session + context
+      if (tryResume && (output.includes('not found') || output.includes('No session found'))) {
+        resolve(_runCC(taskId, sessionId, message, false));
+        return;
+      }
       if (code === 0 && output) {
         resolve(output);
       } else if (output) {
