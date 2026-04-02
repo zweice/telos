@@ -358,40 +358,25 @@ function openChat(taskId) {
   const tabsEl  = document.getElementById('chat-tabs');
   const loopBar = document.getElementById('loop-controls');
 
-  apiFetch(`/api/program/${taskId}`).then(data => {
-    const hasProgram    = !!(data.content && data.content.trim());
-    const hasExperiment = hasProgram && data.content.includes('## How to run');
-
-    if (hasProgram) {
-      // Restore persisted server-side mode
-      return apiFetch(`/api/chat/${taskId}/mode`).then(modeData => {
-        const resolvedMode = modeData.mode || 'relay';
-        state.chatMode[taskId] = resolvedMode;
-        updateTabUI(taskId);
-        tabsEl.classList.remove('hidden');
-        if (loopBar) loopBar.style.display = hasExperiment ? '' : 'none';
-        // Re-render + re-poll with correct mode (fixes race with initial poll)
-        renderMessages(taskId);
-        startChatPoll(taskId);
-      }).catch(() => {
-        state.chatMode[taskId] = 'relay';
-        updateTabUI(taskId);
-        tabsEl.classList.remove('hidden');
-        if (loopBar) loopBar.style.display = hasExperiment ? '' : 'none';
-        renderMessages(taskId);
-        startChatPoll(taskId);
-      });
-    } else {
-      // No program — force relay, hide tabs
-      state.chatMode[taskId] = 'relay';
-      updateTabUI(taskId);
-      tabsEl.classList.add('hidden');
+  // Always show both tabs (relay + CC)
+  apiFetch(`/api/chat/${taskId}/mode`).then(modeData => {
+    const resolvedMode = modeData.mode || 'relay';
+    state.chatMode[taskId] = resolvedMode;
+    updateTabUI(taskId);
+    tabsEl.classList.remove('hidden');
+    // Check for experiment program (loop controls)
+    apiFetch(`/api/program/${taskId}`).then(data => {
+      const hasExperiment = data.content && data.content.includes('## How to run');
+      if (loopBar) loopBar.style.display = hasExperiment ? '' : 'none';
+    }).catch(() => {
       if (loopBar) loopBar.style.display = 'none';
-    }
+    });
+    renderMessages(taskId);
+    startChatPoll(taskId);
   }).catch(() => {
     state.chatMode[taskId] = 'relay';
     updateTabUI(taskId);
-    tabsEl.classList.add('hidden');
+    tabsEl.classList.remove('hidden');
     if (loopBar) loopBar.style.display = 'none';
   });
 
