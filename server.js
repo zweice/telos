@@ -44,10 +44,15 @@ const CACHE = {
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
-function readGatewayToken() {
+function readLoginPassword() {
   if (process.env.MC_PASSWORD) return process.env.MC_PASSWORD;
   try { return fs.readFileSync(path.join(OPENCLAW, '.gateway_token'), 'utf8').trim(); }
   catch { return 'changeme'; }
+}
+
+function readGatewayApiToken() {
+  try { return fs.readFileSync(path.join(OPENCLAW, '.gateway_token'), 'utf8').trim(); }
+  catch { return ''; }
 }
 
 const validTokens = new Set();
@@ -269,7 +274,7 @@ function appendChatMessage(taskId, entry) {
 }
 
 async function relayToAgent(taskId, sessionKey, message, taskInfo) {
-  const gatewayToken = readGatewayToken();
+  const gatewayToken = readGatewayApiToken();
   const title = taskInfo ? taskInfo.title : `Task #${taskId}`;
   const agentId = sessionKey.split(':')[1];
   
@@ -345,6 +350,57 @@ async function relayToAgent(taskId, sessionKey, message, taskInfo) {
   }
 }
 
+async function relayCCToAgent(taskId, sessionKey, message, taskInfo) {
+  const gatewayToken = readGatewayApiToken();
+  const title = taskInfo ? taskInfo.title : `Task #${taskId}`;
+  const agentId = sessionKey.split(':')[1];
+
+  const prefix = `[Mission Control — CC Mode — Task #${taskId}: ${title}]\n` +
+    `You are acting as a coding assistant for this task.\n` +
+    `After responding, deliver your answer by running:\n` +
+    `curl -s -X POST http://127.0.0.1:8088/api/chat/${taskId}/callback ` +
+    `-H "Content-Type: application/json" ` +
+    `-d '{"text":"<your response>","agent":"${agentId}","mode":"cc"}' ` +
+    `(JSON-escape the text field)\n\nUser message:\n`;
+
+  try {
+    const uniqueKey = `agent:${agentId}:mc-cc-${taskId}-${Date.now()}`;
+    const resp = await fetch('http://localhost:18789/tools/invoke', {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${gatewayToken}`,
+      },
+      body: JSON.stringify({
+        tool: 'sessions_send',
+        args: {
+          sessionKey: uniqueKey,
+          message:    prefix + message,
+          timeoutSeconds: 90,
+        },
+      }),
+    });
+    const result = await resp.json();
+    if (result.content) {
+      appendChatMessage(taskId, {
+        role:      'assistant',
+        text:      result.content,
+        timestamp: new Date().toISOString(),
+        source:    'cc',
+        mode:      'cc',
+      });
+    }
+  } catch (err) {
+    appendChatMessage(taskId, {
+      role:      'system',
+      text:      `❌ CC error: ${err.message}`,
+      timestamp: new Date().toISOString(),
+      source:    'system',
+      mode:      'cc',
+    });
+  }
+}
+
 // ── HTTP helpers ──────────────────────────────────────────────────────────────
 
 function json(res, status, data) {
@@ -402,7 +458,7 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/auth' && method === 'POST') {
     try {
       const { passphrase } = JSON.parse((await readBody(req)) || '{}');
-      if (passphrase === readGatewayToken()) {
+      if (passphrase === readLoginPassword()) {
         return json(res, 200, { token: issueToken() });
       }
       return json(res, 401, { error: 'Invalid passphrase' });
@@ -472,8 +528,9 @@ const server = http.createServer(async (req, res) => {
             role:      'assistant',
             text,
             timestamp: new Date().toISOString(),
-            source:    'agent',
+            source:    body.mode === 'cc' ? 'cc' : 'agent',
             agent:     body.agent || 'unknown',
+            mode:      body.mode || 'relay',
           });
           console.log(`[callback] Task #${id} — got agent response (${text.length} chars)`);
           return json(res, 200, { ok: true });
@@ -506,16 +563,23 @@ const server = http.createServer(async (req, res) => {
 
         appendChatMessage(id, { role: 'user', text: message, timestamp: new Date().toISOString(), source: 'web', mode: mode || 'relay' });
 
-        if (mode !== 'cc') {
-          const task      = db.get(parseInt(id));
-          const agentId   = task?.owner || 'conductor';
+        const task    = db.get(parseInt(id));
+        const agentId = task?.owner || 'conductor';
+
+        if (mode === 'cc') {
+          // CC mode: relay to conductor with CC-specific instructions
+          relayCCToAgent(id, `agent:${agentId}:main`, message, task).catch(err => {
+            console.error(`CC relay failed for task ${id}:`, err.message);
+            appendChatMessage(id, { role: 'assistant', text: `❌ CC error: ${err.message}`, timestamp: new Date().toISOString(), source: 'cc', mode: 'cc' });
+          });
+        } else {
           const sessionKey = `agent:${agentId}:main`;
           relayToAgent(id, sessionKey, message, task).catch(err =>
             console.error(`Relay failed for task ${id}:`, err.message)
           );
         }
 
-        return json(res, 200, { ok: true, relayed: mode !== 'cc' });
+        return json(res, 200, { ok: true, relayed: true });
       }
     }
 
