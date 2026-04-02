@@ -371,7 +371,7 @@ async function _runCC(taskId, sessionId, message, tryResume) {
     proc.on('close', code => {
       const output = Buffer.concat(chunks).toString().trim();
       // If resume failed (session not found), retry with new session + context
-      if (tryResume && (output.includes('not found') || output.includes('No session found'))) {
+      if (tryResume && (output.includes('not found') || output.includes('No session found') || output.includes('No conversation found'))) {
         resolve(_runCC(taskId, sessionId, message, false));
         return;
       }
@@ -599,8 +599,7 @@ const server = http.createServer(async (req, res) => {
       const id         = chatModeMatch[1];
       const hasProgram = fs.existsSync(path.join(TELOS_DIR, 'programs', `${id}.md`));
       const hasCCLog   = fs.existsSync(path.join(ROOT, 'chat-logs', `${id}.jsonl`));
-      const modes      = hasProgram ? ['relay'] : ['relay'];
-      if (hasProgram && hasCCLog) modes.push('cc');
+      const modes      = ['relay', 'cc'];
       return json(res, 200, { modes, mode: modes[0], activeMode: modes[0] });
     }
 
