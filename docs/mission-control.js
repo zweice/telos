@@ -1,5 +1,9 @@
 'use strict';
 
+if (typeof marked !== 'undefined') {
+  marked.setOptions({ breaks: true, gfm: true });
+}
+
 const REFRESH_INTERVAL   = 60_000;
 const CHAT_POLL_INTERVAL = 3_000;
 const TOKEN_KEY          = 'mc_token';
@@ -487,9 +491,12 @@ function renderMessages(taskId) {
     const display = isLong ? text.slice(0, MAX_MSG_LEN) + '…' : text;
 
     const msgClass = m.role === 'user' ? 'user' : m.role === 'system' ? 'system' : 'assistant';
+    const rendered = (msgClass !== 'user' && typeof marked !== 'undefined')
+      ? marked.parse(display)
+      : escapeHtml(display);
     html += `
       <div class="chat-msg ${msgClass}">
-        <div class="chat-bubble" data-full="${isLong ? escapeHtml(text) : ''}">${escapeHtml(display)}${isLong ? `<button class="msg-expand-btn" data-idx="${i}"> Show more</button>` : ''}</div>
+        <div class="chat-bubble markdown-body" data-full="${isLong ? escapeHtml(text) : ''}">${rendered}${isLong ? `<button class="msg-expand-btn" data-idx="${i}"> Show more</button>` : ''}</div>
         ${m.timestamp ? `<div class="chat-ts">${ago(m.timestamp)}</div>` : ''}
       </div>`;
   }

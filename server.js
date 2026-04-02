@@ -254,6 +254,136 @@ function getLoopStatus() {
   return result;
 }
 
+// ── CC Session Manager ────────────────────────────────────────────────────────
+const ccSessions = {}; // taskId -> { sessionId, lastActive }
+
+function getSessionId(taskId) {
+  const hash = crypto.createHash('md5').update('telos-cc-' + taskId).digest('hex');
+  return [hash.slice(0,8), hash.slice(8,12), hash.slice(12,16), hash.slice(16,20), hash.slice(20,32)].join('-');
+}
+
+function buildTaskContext(taskId) {
+  const task = db.get(parseInt(taskId));
+  if (!task) return `Task #${taskId} not found.`;
+
+  // Walk ancestry
+  const ancestry = [];
+  let current = task;
+  while (current) {
+    ancestry.unshift(`#${current.id}: ${current.title} (${current.type}, ${current.status})`);
+    if (current.parent_id) {
+      current = db.get(current.parent_id);
+    } else {
+      break;
+    }
+  }
+
+  // Get children
+  const children = db.list({ parent_id: parseInt(taskId) });
+  const childList = children.length
+    ? children.map(c => `  - #${c.id}: ${c.title} (${c.status})`).join('\n')
+    : '  (none)';
+
+  // Get notes
+  let notes = '';
+  try {
+    const taskNotes = db.getNotes ? db.getNotes(parseInt(taskId)) : [];
+    if (taskNotes.length) {
+      notes = '\n\nRecent notes:\n' + taskNotes.slice(-5).map(n => `  [${n.created_at}] ${n.text}`).join('\n');
+    }
+  } catch {}
+
+  return `You are a coding assistant in TelosBoard Mission Control, working with Andreas and his agent team.
+
+## Agent Team
+- **Jared** (main): Chief of Staff — filters, briefs, coordinates
+- **Atlas**: COO-Agent — strategy, ops rhythm, standards
+- **Conductor**: OpenClaw architect — config, health, optimization
+- **Forge**: Code specialist (suspended)
+
+## Telos
+Telos is a hierarchical goal/task management system. Tasks form a DAG with parent-child relationships.
+CLI: \`node /home/jared/code/macrohard/telos/src/cli.js\`
+DB: \`/home/jared/code/macrohard/telos/telos.db\`
+
+## Current Task
+**#${task.id}: ${task.title}**
+- Type: ${task.type}
+- Status: ${task.status}
+- Owner: ${task.owner || 'unassigned'}
+- Description: ${task.description || '(none)'}
+
+## Task Hierarchy (root → current)
+${ancestry.join(' → ')}
+
+## Child Tasks
+${childList}${notes}
+
+## Working Environment
+- Telos repo: /home/jared/code/macrohard/telos
+- Dashboard frontend: docs/mission-control.{js,css,html}
+- Dashboard server: server.js (running as systemd service on port 8088)
+- API server: api-server.js (port 8089)
+- OpenClaw workspace: /home/jared/.openclaw
+
+## Instructions
+- You have full shell/file access. Use it to research, read code, run commands.
+- When editing server.js or frontend files, the changes go live after service restart.
+- Use Telos CLI for task queries: \`node /home/jared/code/macrohard/telos/src/cli.js show <id>\`
+- After completing work, commit changes with git.
+`;
+}
+
+async function sendToCC(taskId, message) {
+  const sessionId = getSessionId(taskId);
+  const isNew = !ccSessions[taskId];
+  ccSessions[taskId] = { sessionId, lastActive: Date.now() };
+
+  const prompt = isNew
+    ? buildTaskContext(taskId) + '\n\n---\n\nUser message:\n' + message
+    : message;
+
+  const args = isNew
+    ? ['--print', '--permission-mode', 'bypassPermissions', '--session-id', sessionId, '-p', prompt]
+    : ['--print', '--permission-mode', 'bypassPermissions', '--resume', sessionId, '-p', prompt];
+
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    const proc = require('child_process').spawn('claude', args, {
+      cwd: '/home/jared/code/macrohard/telos',
+      env: {
+        ...process.env,
+        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || (() => {
+          try { return require('fs').readFileSync('/home/jared/.claude/settings.json', 'utf8').match(/"apiKey"\s*:\s*"([^"]+)"/)?.[1] || ''; } catch { return ''; }
+        })()
+      },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    proc.stdout.on('data', d => chunks.push(d));
+    proc.stderr.on('data', d => chunks.push(d));
+
+    proc.on('close', code => {
+      const output = Buffer.concat(chunks).toString().trim();
+      if (code === 0 && output) {
+        resolve(output);
+      } else if (output) {
+        resolve(output); // Still return output even on non-zero exit
+      } else {
+        reject(new Error(`CC exited with code ${code}, no output`));
+      }
+    });
+
+    proc.on('error', reject);
+
+    // 5 minute timeout
+    setTimeout(() => {
+      proc.kill('SIGTERM');
+      reject(new Error('CC timeout (5 min)'));
+    }, 300_000);
+  });
+}
+
 // ── Chat helpers ──────────────────────────────────────────────────────────────
 
 function readChatLog(taskId) {
@@ -346,57 +476,6 @@ async function relayToAgent(taskId, sessionKey, message, taskInfo) {
       text:      `❌ Relay error: ${err.message}`,
       timestamp: new Date().toISOString(),
       source:    'system',
-    });
-  }
-}
-
-async function relayCCToAgent(taskId, sessionKey, message, taskInfo) {
-  const gatewayToken = readGatewayApiToken();
-  const title = taskInfo ? taskInfo.title : `Task #${taskId}`;
-  const agentId = sessionKey.split(':')[1];
-
-  const prefix = `[Mission Control — CC Mode — Task #${taskId}: ${title}]\n` +
-    `You are acting as a coding assistant for this task.\n` +
-    `After responding, deliver your answer by running:\n` +
-    `curl -s -X POST http://127.0.0.1:8088/api/chat/${taskId}/callback ` +
-    `-H "Content-Type: application/json" ` +
-    `-d '{"text":"<your response>","agent":"${agentId}","mode":"cc"}' ` +
-    `(JSON-escape the text field)\n\nUser message:\n`;
-
-  try {
-    const uniqueKey = `agent:${agentId}:mc-cc-${taskId}-${Date.now()}`;
-    const resp = await fetch('http://localhost:18789/tools/invoke', {
-      method:  'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${gatewayToken}`,
-      },
-      body: JSON.stringify({
-        tool: 'sessions_send',
-        args: {
-          sessionKey: uniqueKey,
-          message:    prefix + message,
-          timeoutSeconds: 90,
-        },
-      }),
-    });
-    const result = await resp.json();
-    if (result.content) {
-      appendChatMessage(taskId, {
-        role:      'assistant',
-        text:      result.content,
-        timestamp: new Date().toISOString(),
-        source:    'cc',
-        mode:      'cc',
-      });
-    }
-  } catch (err) {
-    appendChatMessage(taskId, {
-      role:      'system',
-      text:      `❌ CC error: ${err.message}`,
-      timestamp: new Date().toISOString(),
-      source:    'system',
-      mode:      'cc',
     });
   }
 }
@@ -567,11 +646,26 @@ const server = http.createServer(async (req, res) => {
         const agentId = task?.owner || 'conductor';
 
         if (mode === 'cc') {
-          // CC mode: relay to conductor with CC-specific instructions
-          relayCCToAgent(id, `agent:${agentId}:main`, message, task).catch(err => {
-            console.error(`CC relay failed for task ${id}:`, err.message);
-            appendChatMessage(id, { role: 'assistant', text: `❌ CC error: ${err.message}`, timestamp: new Date().toISOString(), source: 'cc', mode: 'cc' });
-          });
+          // CC mode: spawn/resume Claude Code session
+          sendToCC(id, message)
+            .then(response => {
+              appendChatMessage(id, {
+                role: 'assistant',
+                text: response,
+                timestamp: new Date().toISOString(),
+                source: 'cc',
+                mode: 'cc',
+              });
+            })
+            .catch(err => {
+              appendChatMessage(id, {
+                role: 'assistant',
+                text: `❌ CC error: ${err.message}`,
+                timestamp: new Date().toISOString(),
+                source: 'cc',
+                mode: 'cc',
+              });
+            });
         } else {
           const sessionKey = `agent:${agentId}:main`;
           relayToAgent(id, sessionKey, message, task).catch(err =>

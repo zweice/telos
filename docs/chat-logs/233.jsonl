@@ -102,3 +102,18 @@
 {"role":"user","text":"ping smoke test","timestamp":"2026-04-01T11:24:23.136Z","source":"web"}
 {"role":"user","text":"Conductor smoke test — reply with OK","timestamp":"2026-04-01T11:27:34.992Z","source":"web"}
 {"role":"assistant","text":"Callback test — relay working!","timestamp":"2026-04-01T11:35:26.515Z","source":"agent","agent":"conductor"}
+{"role":"user","text":"another test. reply \"test confirmed\"","timestamp":"2026-04-01T11:37:08.870Z","source":"web"}
+{"role":"assistant","text":"callback test","timestamp":"2026-04-01T11:37:50.735Z","source":"agent","agent":"unknown"}
+{"role":"user","text":"say hi","timestamp":"2026-04-01T11:48:41.582Z","source":"web","mode":"cc"}
+{"role":"assistant","text":"Hi! Yes, that was my bad — I ran the commands and showed the output but didn't actually send a closing text message. Not a framework bug, just me dropping the ball.\n\nOn the `❌ CC error: CC exit 1` — that's a separate issue happening inside Mission Control's CC relay mode when it tries to spawn a Claude Code subprocess. Want me to dig into that? If you can share what task/mode you were in when it happened, that would help narrow it down.","timestamp":"2026-04-01T11:49:02.275Z","source":"cc","mode":"cc"}
+{"role":"user","text":"chat messages in telos board should render markdown. they currently don't","timestamp":"2026-04-01T13:57:21.677Z","source":"web","mode":"cc"}
+{"role":"user","text":"say hi","timestamp":"2026-04-01T14:58:00.032Z","source":"web","mode":"cc"}
+{"role":"user","text":"Say hi","timestamp":"2026-04-02T14:34:48.162Z","source":"web","mode":"cc"}
+{"role":"user","text":"CC not responding here on telos board","timestamp":"2026-04-02T14:44:38.932Z","source":"web","mode":"relay"}
+{"role":"system","text":"⚠ Relay error: Unauthorized","timestamp":"2026-04-02T14:44:39.013Z","source":"system"}
+{"role":"user","text":"relay test from conductor","timestamp":"2026-04-02T14:55:03.032Z","source":"web","mode":"relay"}
+{"role":"assistant","text":"🚀 Relay test received. Conductor is online and responding via Mission Control callback. All systems nominal.","timestamp":"2026-04-02T14:55:10.750Z","source":"agent","agent":"conductor","mode":"relay"}
+{"role":"user","text":"Say hi again pls","timestamp":"2026-04-02T14:59:56.003Z","source":"web","mode":"cc"}
+{"role":"user","text":"Test. Say hi","timestamp":"2026-04-02T15:01:22.770Z","source":"web","mode":"relay"}
+{"role":"assistant","text":"Hey there! 👋 Conductor here, ready to help with the TelosBoard UI. What do you need?","timestamp":"2026-04-02T15:03:01.863Z","source":"cc","agent":"conductor","mode":"cc"}
+{"role":"assistant","text":"Hi! 👋 Conductor here. What do you need?","timestamp":"2026-04-02T15:03:14.495Z","source":"agent","agent":"conductor","mode":"relay"}
