@@ -357,7 +357,7 @@ async function sendToCC(taskId, message) {
           try { return require('fs').readFileSync('/home/jared/.claude/settings.json', 'utf8').match(/"apiKey"\s*:\s*"([^"]+)"/)?.[1] || ''; } catch { return ''; }
         })()
       },
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
 
     proc.stdout.on('data', d => chunks.push(d));
