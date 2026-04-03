@@ -1175,17 +1175,9 @@ function initNotifications() {
   if (!('Notification' in window)) return;
   if (Notification.permission === 'granted') return;
   if (Notification.permission === 'denied') return;
-  // Show bell prompt button in status bar
-  const btn = document.createElement('button');
-  btn.id        = 'notif-enable-btn';
-  btn.className = 'notif-enable-btn';
-  btn.title     = 'Enable push notifications';
-  btn.textContent = '🔔 Enable notifications';
-  btn.onclick = async () => {
-    const perm = await Notification.requestPermission();
-    if (perm === 'granted' || perm === 'denied') btn.remove();
-  };
-  document.getElementById('status-bar').after(btn);
+  // Auto-prompt on load (browser requires a user gesture on some platforms,
+  // but requestPermission() is safe to call speculatively here)
+  Notification.requestPermission();
 }
 
 function maybeNotify(taskId) {

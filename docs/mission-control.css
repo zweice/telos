@@ -874,18 +874,3 @@ body.chat-open #chat-area { transform: translateX(0); }
 .chat-bubble.markdown-body th, .chat-bubble.markdown-body td { border: 1px solid rgba(255,255,255,0.2); padding: 0.3em 0.6em; }
 
 /* Notification enable button */
-.notif-enable-btn {
-  display: block;
-  width: 100%;
-  margin: 0;
-  padding: 6px 12px;
-  background: rgba(210, 153, 34, 0.15);
-  border: none;
-  border-bottom: 1px solid var(--border);
-  color: #d29922;
-  font-size: 12px;
-  text-align: center;
-  cursor: pointer;
-  font-family: var(--font-sans);
-}
-.notif-enable-btn:hover { background: rgba(210, 153, 34, 0.25); }
