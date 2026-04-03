@@ -267,7 +267,7 @@ app.get('/api/chat/:taskId/mode', requireAuth, (req, res) => {
   const { taskId } = req.params;
   if (!/^\d+$/.test(taskId)) return res.status(400).json({ error: 'Bad taskId' });
   const modes = readModes();
-  res.json({ mode: modes[taskId] || 'relay' });
+  res.json({ mode: modes[taskId] || 'cc' });
 });
 
 app.post('/api/chat/:taskId/mode', requireAuth, (req, res) => {

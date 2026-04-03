@@ -624,7 +624,7 @@ const server = http.createServer(async (req, res) => {
       const hasProgram = fs.existsSync(path.join(TELOS_DIR, 'programs', `${id}.md`));
       const hasCCLog   = fs.existsSync(path.join(ROOT, 'chat-logs', `${id}.jsonl`));
       const modes      = ['relay', 'cc'];
-      return json(res, 200, { modes, mode: modes[0], activeMode: modes[0] });
+      return json(res, 200, { modes, mode: 'cc', activeMode: 'cc' });
     }
 
 

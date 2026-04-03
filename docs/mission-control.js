@@ -155,7 +155,7 @@ function saveLastSeen() {
 }
 
 function markSeen(taskId) {
-  const mode = state.chatMode[taskId] || 'relay';
+  const mode = state.chatMode[taskId] || 'cc';
   const key  = `${taskId}:${mode}`;
   const msgs = state.chatMessages[key] || [];
   if (!msgs.length) return;
@@ -214,7 +214,7 @@ function inferStatus(node) {
 
 function lastPreview(node) {
   // Prefer chat messages — check relay first, then cc
-  const mode  = state.chatMode[node.id] || 'relay';
+  const mode  = state.chatMode[node.id] || 'cc';
   const key   = `${node.id}:${mode}`;
   const msgs  = state.chatMessages[key];
   if (msgs && msgs.length) {
@@ -419,14 +419,14 @@ function openChat(taskId) {
   markSeen(taskId);
 
   // Tabs — load persisted mode, then check for CC program support
-  if (!state.chatMode[taskId]) state.chatMode[taskId] = 'relay';
+  if (!state.chatMode[taskId]) state.chatMode[taskId] = 'cc';
 
   const tabsEl  = document.getElementById('chat-tabs');
   const loopBar = document.getElementById('loop-controls');
 
   // Always show both tabs (relay + CC)
   apiFetch(`/api/chat/${taskId}/mode`).then(modeData => {
-    const resolvedMode = modeData.mode || 'relay';
+    const resolvedMode = modeData.mode || 'cc';
     state.chatMode[taskId] = resolvedMode;
     updateTabUI(taskId);
     tabsEl.classList.remove('hidden');
@@ -440,7 +440,7 @@ function openChat(taskId) {
     renderMessages(taskId);
     startChatPoll(taskId);
   }).catch(() => {
-    state.chatMode[taskId] = 'relay';
+    state.chatMode[taskId] = 'cc';
     updateTabUI(taskId);
     tabsEl.classList.remove('hidden');
     if (loopBar) loopBar.style.display = 'none';
@@ -467,7 +467,7 @@ function closeChat() {
 }
 
 function updateTabUI(taskId) {
-  const mode    = state.chatMode[taskId] || 'relay';
+  const mode    = state.chatMode[taskId] || 'cc';
   const isCC    = mode === 'cc';
   const input   = document.getElementById('chat-input');
   const sendBtn = document.getElementById('send-btn');
@@ -516,7 +516,7 @@ function renderMessages(taskId) {
   const container = document.getElementById('chat-messages');
   if (taskId !== state.activeTaskId) return;
 
-  const key     = `${taskId}:${state.chatMode[taskId] || 'relay'}`;
+  const key     = `${taskId}:${state.chatMode[taskId] || 'cc'}`;
   const msgs    = state.chatMessages[key] || [];
   const waiting = state.waitingReply[key];
 
@@ -571,7 +571,11 @@ function renderMessages(taskId) {
     btn.addEventListener('click', () => {
       const bubble = btn.closest('.chat-bubble');
       if (!bubble) return;
-      bubble.innerHTML = escapeHtml(bubble.dataset.full || '');
+      const full = bubble.dataset.full || '';
+      const isAssistant = btn.closest('.chat-msg')?.classList.contains('assistant');
+      bubble.innerHTML = (isAssistant && typeof marked !== 'undefined')
+        ? marked.parse(full)
+        : escapeHtml(full);
     });
   });
 
@@ -593,7 +597,7 @@ function copyText(text) {
 
 async function pollChat(taskId) {
   try {
-    const mode       = state.chatMode[taskId] || 'relay';
+    const mode       = state.chatMode[taskId] || 'cc';
     const key        = `${taskId}:${mode}`;
     const data       = await apiFetch(`/api/chat/${taskId}?mode=${mode}`);
     const serverMsgs = data.messages || [];
@@ -648,7 +652,7 @@ async function sendMessage() {
   input.disabled = true;
   document.getElementById('send-btn').disabled = true;
 
-  const mode = state.chatMode[taskId] || 'relay';
+  const mode = state.chatMode[taskId] || 'cc';
   const key  = `${taskId}:${mode}`;
 
   state.waitingReply[key] = true;
