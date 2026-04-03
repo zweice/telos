@@ -85,6 +85,27 @@ try {
 
 // ── Tree (ported from api-server.js) ─────────────────────────────────────────
 
+function lastChatTimestamp(taskId) {
+  const logPath = path.join(ROOT, 'chat-logs', `${taskId}.jsonl`);
+  try {
+    const buf  = Buffer.alloc(512);
+    const fd   = fs.openSync(logPath, 'r');
+    const size = fs.fstatSync(fd).size;
+    const start = Math.max(0, size - 512);
+    const read = fs.readSync(fd, buf, 0, 512, start);
+    fs.closeSync(fd);
+    const tail  = buf.slice(0, read).toString('utf8');
+    const lines = tail.split('\n').filter(Boolean);
+    for (let i = lines.length - 1; i >= 0; i--) {
+      try {
+        const msg = JSON.parse(lines[i]);
+        if (msg.timestamp) return msg.timestamp;
+      } catch { /* skip */ }
+    }
+  } catch { /* no log */ }
+  return null;
+}
+
 function buildTree(nodes) {
   const nodeMap = new Map();
   const roots   = [];
@@ -105,7 +126,9 @@ function buildTree(nodes) {
       start_date:            n.start_date   || null,
       end_date:              n.end_date     || null,
       completed_at:          n.completed_at || null,
+      started_at:            n.started_at   || null,
       created_at:            n.created_at   || null,
+      last_chat_at:          lastChatTimestamp(n.id),
       progress:              n.progress     || 0,
       description:           n.description  || null,
       notes: (() => { try { return JSON.parse(n.metadata || '{}').notes || []; } catch { return []; } })(),

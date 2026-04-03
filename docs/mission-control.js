@@ -281,14 +281,19 @@ function sortedTasks(tasks) {
         diff = b.id - a.id;
         break;
       case 'created':
-        diff = new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        // created_at is unix seconds → convert to ms for consistent comparison
+        diff = (b.created_at || 0) * 1000 - (a.created_at || 0) * 1000;
         break;
       case 'updated':
-        diff = new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+        // no updated_at in DB; use started_at → last note (ts=unix s) → created_at
+        diff = (b.started_at || lastTs(b) || b.created_at || 0) * 1000
+             - (a.started_at || lastTs(a) || a.created_at || 0) * 1000;
         break;
-      default: { // activity: last chat msg, fall back to updated_at then created_at
-        const ta = lastChatTs(a.id) || new Date(a.updated_at || a.created_at || 0).getTime();
-        const tb = lastChatTs(b.id) || new Date(b.updated_at || b.created_at || 0).getTime();
+      default: { // activity: in-memory chat (freshest) → last_chat_at (server) → started_at → created_at
+        const chatA = lastChatTs(a.id) || (a.last_chat_at ? new Date(a.last_chat_at).getTime() : 0);
+        const chatB = lastChatTs(b.id) || (b.last_chat_at ? new Date(b.last_chat_at).getTime() : 0);
+        const ta = chatA || (a.started_at || a.created_at || 0) * 1000;
+        const tb = chatB || (b.started_at || b.created_at || 0) * 1000;
         diff = tb - ta;
         break;
       }
