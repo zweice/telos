@@ -404,7 +404,7 @@ async function sendToCC(taskId, message) {
   }
 }
 
-async function _runCC(taskId, sessionId, message) {
+async function _runCC(taskId, sessionId, message, retried = false) {
   // --session-id works for both new and existing sessions (--resume is broken with --print)
   const args = ['--print', '--permission-mode', 'bypassPermissions', '--session-id', sessionId];
 
@@ -462,7 +462,13 @@ async function _runCC(taskId, sessionId, message) {
       ];
       const isKnownError = code !== 0 && CC_ERROR_PATTERNS.some(p => output.includes(p));
 
-      if (isKnownError) {
+      if (isKnownError && output.includes('Invalid API key') && !retried) {
+        console.log(`[CC] Task #${taskId} auth error — retrying in 3s...`);
+        setTimeout(() => {
+          _runCC(taskId, require('crypto').randomUUID(), message, true).then(resolve).catch(reject);
+        }, 3000);
+        return;
+      } else if (isKnownError) {
         console.error(`[CC] Task #${taskId} auth/connection error (exit ${code}): ${output.slice(0, 200)}`);
         reject(new Error(output.slice(0, 200)));
       } else if (code === 0 && output) {
