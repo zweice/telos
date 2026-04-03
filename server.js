@@ -282,8 +282,9 @@ function getLoopStatus() {
 const ccSessions = {}; // taskId -> { sessionId, lastActive }
 
 function getSessionId(taskId) {
-  // Each CC --print invocation needs a fresh session ID (--session-id is single-use)
-  return crypto.randomUUID();
+  // Deterministic session ID per task — enables persistent CC sessions via --resume
+  const hash = crypto.createHash('md5').update('telos-cc-' + taskId).digest('hex');
+  return [hash.slice(0,8), hash.slice(8,12), hash.slice(12,16), hash.slice(16,20), hash.slice(20,32)].join('-');
 }
 
 function buildTaskContext(taskId) {
@@ -387,12 +388,16 @@ async function sendToCC(taskId, message) {
 
   const promise = (async () => {
 
-  // Always inject task context (sessions are ephemeral in --print mode)
-  // Also inject recent chat history for continuity
-  const chatHistory = getRecentChatHistory(taskId, 'cc', 30);
-  const prompt = buildTaskContext(taskId) 
-    + (chatHistory ? '\n\n## Recent Chat History (read-only context — do NOT generate or simulate user messages)\n' + chatHistory + '\n--- END HISTORY ---' : '')
-    + '\n\n## Current User Message (respond ONLY to this):\n' + message;
+  // Check if CC session exists on disk (persistent sessions via --resume)
+  const ccSessionFile = path.join(
+    require('os').homedir(), '.claude', 'projects', 
+    '-home-jared-code-macrohard-telos', sessionId + '.jsonl'
+  );
+  const isNew = !fs.existsSync(ccSessionFile);
+  // First message gets full context; subsequent messages use --resume (CC has full history)
+  const prompt = isNew
+    ? buildTaskContext(taskId) + '\n\n---\n\nUser message:\n' + message
+    : message;
     return _runCC(taskId, sessionId, prompt);
   })();
 
@@ -406,7 +411,15 @@ async function sendToCC(taskId, message) {
 
 async function _runCC(taskId, sessionId, message, retried = false) {
   // --session-id works for both new and existing sessions (--resume is broken with --print)
-  const args = ['--print', '--permission-mode', 'bypassPermissions', '--session-id', sessionId];
+  // Check if session exists — use --resume for existing, --session-id for new
+  const ccSessionFile = path.join(
+    require('os').homedir(), '.claude', 'projects',
+    '-home-jared-code-macrohard-telos', sessionId + '.jsonl'
+  );
+  const sessionExists = require('fs').existsSync(ccSessionFile);
+  const args = sessionExists
+    ? ['--print', '--permission-mode', 'bypassPermissions', '--resume', sessionId]
+    : ['--print', '--permission-mode', 'bypassPermissions', '--session-id', sessionId];
 
   return new Promise((resolve, reject) => {
     const chunks = [];
