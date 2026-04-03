@@ -394,12 +394,34 @@ async function _runCC(taskId, sessionId, message) {
     proc.on('close', code => {
       const output = Buffer.concat(chunks).toString().trim();
 
+      // "already in use" = stale session-env or duplicate project entry. Clean up and retry once.
+      if (output.includes('already in use') && !message.__retried) {
+        console.log('[CC] Task #' + taskId + ' session conflict — cleaning and retrying');
+        try {
+          const os = require('os'), fs = require('fs');
+          const envDir = require('path').join(os.homedir(), '.claude', 'session-env', sessionId);
+          if (fs.existsSync(envDir)) fs.rmSync(envDir, { recursive: true });
+          const projBase = require('path').join(os.homedir(), '.claude', 'projects');
+          const telosProj = '-home-jared-code-macrohard-telos';
+          fs.readdirSync(projBase).forEach(d => {
+            if (d !== telosProj) {
+              const f = require('path').join(projBase, d, sessionId + '.jsonl');
+              if (fs.existsSync(f)) fs.unlinkSync(f);
+            }
+          });
+        } catch (e) { console.error('[CC] cleanup error:', e.message); }
+        message = typeof message === 'string' ? { text: message, __retried: true } : Object.assign(message, { __retried: true });
+        _runCC(taskId, sessionId, typeof message === 'object' ? message.text || message : message).then(resolve).catch(reject);
+        return;
+      }
+
       // Known CC error patterns that should NOT be passed as valid responses
       const CC_ERROR_PATTERNS = [
         'Invalid API key',
         'Authentication error',
         'Connection error',
         'ECONNREFUSED',
+        'already in use',
       ];
       const isKnownError = code !== 0 && CC_ERROR_PATTERNS.some(p => output.includes(p));
 
