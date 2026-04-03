@@ -395,9 +395,7 @@ async function sendToCC(taskId, message) {
 
 async function _runCC(taskId, sessionId, message) {
   // --session-id works for both new and existing sessions (--resume is broken with --print)
-  // Prefix message with space if it starts with dash (prevents CC arg parser confusion)
-  const safeMsg = message.startsWith('-') ? ' ' + message : message;
-  const args = ['--print', '--permission-mode', 'bypassPermissions', '--session-id', sessionId, '-p', safeMsg];
+  const args = ['--print', '--permission-mode', 'bypassPermissions', '--session-id', sessionId];
 
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -409,8 +407,12 @@ async function _runCC(taskId, sessionId, message) {
           try { return require('fs').readFileSync('/home/jared/.claude/settings.json', 'utf8').match(/"apiKey"\s*:\s*"([^"]+)"/)?.[1] || ''; } catch { return ''; }
         })()
       },
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe'],
     });
+
+    // Write prompt via stdin (avoids -p flag arg parsing issues with dashes)
+    proc.stdin.write(message);
+    proc.stdin.end();
 
     proc.stdout.on('data', d => chunks.push(d));
     proc.stderr.on('data', d => chunks.push(d));
