@@ -1213,17 +1213,46 @@ function updateNotifBtn() {
   btn.style.opacity = p === 'granted' ? '1' : '0.55';
 }
 
-document.getElementById('notif-btn')?.addEventListener('click', async () => {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'denied') {
-    alert('Notifications are blocked. Please enable them in your browser settings for this site.');
-    return;
+function showToast(msg, ms = 2500) {
+  let el = document.getElementById('mc-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'mc-toast';
+    el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e293b;color:#e2e8f0;padding:8px 16px;border-radius:8px;font-size:13px;z-index:9999;pointer-events:none;transition:opacity 0.3s';
+    document.body.appendChild(el);
   }
-  if (Notification.permission === 'default') {
-    await Notification.requestPermission();
-    updateNotifBtn();
-  }
-});
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, ms);
+}
+
+(function attachNotifBtn() {
+  const btn = document.getElementById('notif-btn');
+  if (!btn) { console.warn('[notif] button not found'); return; }
+  btn.addEventListener('click', async () => {
+    if (!('Notification' in window)) { showToast('Notifications not supported in this browser'); return; }
+    const p = Notification.permission;
+    if (p === 'denied') {
+      showToast('Blocked — enable in Vivaldi Settings → Site Info → Notifications', 4000);
+      return;
+    }
+    if (p === 'default') {
+      const result = await Notification.requestPermission();
+      updateNotifBtn();
+      if (result === 'granted') showToast('Notifications enabled ✓');
+      else showToast('Permission not granted');
+      return;
+    }
+    // Already granted — fire a test notification to verify the pipeline works
+    if (_swReg && _swReg.active) {
+      _swReg.active.postMessage({ type: 'SHOW_NOTIFICATION', title: 'Telos', body: 'Notifications are working ✓', icon: '/icons/icon-192.png', tag: 'mc-test', taskId: null });
+    } else {
+      new Notification('Telos', { body: 'Notifications are working ✓', icon: '/icons/icon-192.png', tag: 'mc-test' });
+    }
+    showToast('Notifications on — test sent ✓');
+  });
+}());
 
 function maybeNotify(taskId) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
