@@ -373,7 +373,7 @@ async function _runCC(taskId, sessionId, message, tryResume) {
       const output = Buffer.concat(chunks).toString().trim();
       // If resume failed (session not found), retry with new session + context
       if (tryResume && (output.includes('not found') || output.includes('No session found') || output.includes('No conversation found'))) {
-        resolve(_runCC(taskId, sessionId, message, false));
+        _runCC(taskId, sessionId, message, false).then(resolve).catch(reject);
         return;
       }
       if (code === 0 && output) {
@@ -659,6 +659,7 @@ const server = http.createServer(async (req, res) => {
           // CC mode: spawn/resume Claude Code session
           sendToCC(id, message)
             .then(response => {
+              console.log(`[CC] Task #${id} response: ${typeof response}, len=${String(response||'').length}`);
               appendChatMessage(id, {
                 role: 'assistant',
                 text: response,
@@ -668,6 +669,7 @@ const server = http.createServer(async (req, res) => {
               });
             })
             .catch(err => {
+              console.error(`[CC] Task #${id} error:`, err.message);
               appendChatMessage(id, {
                 role: 'assistant',
                 text: `❌ CC error: ${err.message}`,
