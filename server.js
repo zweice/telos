@@ -395,7 +395,9 @@ async function sendToCC(taskId, message) {
 
 async function _runCC(taskId, sessionId, message) {
   // --session-id works for both new and existing sessions (--resume is broken with --print)
-  const args = ['--print', '--permission-mode', 'bypassPermissions', '--session-id', sessionId, '-p', message];
+  // Prefix message with space if it starts with dash (prevents CC arg parser confusion)
+  const safeMsg = message.startsWith('-') ? ' ' + message : message;
+  const args = ['--print', '--permission-mode', 'bypassPermissions', '--session-id', sessionId, '-p', safeMsg];
 
   return new Promise((resolve, reject) => {
     const chunks = [];
