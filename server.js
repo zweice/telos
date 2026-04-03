@@ -10,6 +10,8 @@ const path   = require('path');
 const crypto = require('crypto');
 const os     = require('os');
 
+const webpush = require('web-push');
+
 const TelosDB      = require('./src/db');
 const TelosQueries = require('./src/queries');
 
@@ -18,6 +20,36 @@ const HOST      = process.env.HOST || '127.0.0.1';
 const ROOT      = path.join(__dirname, 'docs');
 const TELOS_DIR = __dirname;
 const OPENCLAW  = path.join(os.homedir(), '.openclaw');
+
+// ── Web Push / VAPID ──────────────────────────────────────────────────────────
+
+const VAPID_FILE = path.join(OPENCLAW, 'vapid-keys.json');
+let vapidKeys;
+try {
+  vapidKeys = JSON.parse(fs.readFileSync(VAPID_FILE, 'utf8'));
+} catch {
+  vapidKeys = webpush.generateVAPIDKeys();
+  fs.writeFileSync(VAPID_FILE, JSON.stringify(vapidKeys, null, 2));
+  console.log('✅ Generated VAPID keys →', VAPID_FILE);
+}
+webpush.setVapidDetails('mailto:forge@macrohard.dev', vapidKeys.publicKey, vapidKeys.privateKey);
+
+// endpoint → subscription object (re-registered on each page load)
+const pushSubscriptions = new Map();
+
+function sendPushNotifications(taskId, text) {
+  if (pushSubscriptions.size === 0) return;
+  const payload = JSON.stringify({
+    title:  `Task #${taskId}`,
+    body:   (text || 'New message').replace(/\n+/g, ' ').slice(0, 120),
+    taskId,
+  });
+  for (const [endpoint, sub] of pushSubscriptions) {
+    webpush.sendNotification(sub, payload).catch(err => {
+      if (err.statusCode === 410 || err.statusCode === 404) pushSubscriptions.delete(endpoint);
+    });
+  }
+}
 
 // ── MIME / Cache ──────────────────────────────────────────────────────────────
 
@@ -522,6 +554,7 @@ function appendChatMessage(taskId, entry) {
   fs.appendFileSync(logPath, JSON.stringify(entry) + '\n');
   if (entry.role === 'assistant') {
     notifyTelegramAssistant(taskId, entry.text || '');
+    sendPushNotifications(taskId, entry.text || '');
   }
 }
 
@@ -904,6 +937,21 @@ const server = http.createServer(async (req, res) => {
       const { progress, note } = JSON.parse((await readBody(req)) || '{}');
       db.setProgress(id, progress !== undefined ? progress : db.get(id).progress, note);
       return json(res, 200, { ok: true, id, progress, note });
+    }
+
+    // GET /api/push/vapid-public-key
+    if (pathname === '/api/push/vapid-public-key' && method === 'GET') {
+      return json(res, 200, { publicKey: vapidKeys.publicKey });
+    }
+
+    // POST /api/push/subscribe
+    if (pathname === '/api/push/subscribe' && method === 'POST') {
+      const sub = JSON.parse((await readBody(req)) || '{}');
+      if (sub && sub.endpoint) {
+        pushSubscriptions.set(sub.endpoint, sub);
+        return json(res, 200, { ok: true });
+      }
+      return json(res, 400, { error: 'Invalid subscription' });
     }
 
     // Unmatched /api/*

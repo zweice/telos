@@ -1178,6 +1178,35 @@ document.getElementById('chat-tabs').addEventListener('click', e => {
 const notifiedMsgs = {};  // taskId -> last notified message timestamp
 let _swReg = null;
 
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+
+async function subscribeToPush() {
+  if (!_swReg) return;
+  try {
+    const res        = await fetch('/api/push/vapid-public-key', { headers: authHeaders() });
+    const { publicKey } = await res.json();
+    const sub        = await _swReg.pushManager.subscribe({
+      userVisibleOnly:      true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+    await fetch('/api/push/subscribe', {
+      method:  'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body:    JSON.stringify(sub),
+    });
+    console.log('[push] subscribed');
+  } catch (e) {
+    console.warn('[push] subscribe failed:', e);
+  }
+}
+
 async function initNotifications() {
   if (!('Notification' in window)) return;
 
@@ -1199,6 +1228,9 @@ async function initNotifications() {
   }
 
   updateNotifBtn();
+
+  // Subscribe to Web Push if permission already granted
+  if (Notification.permission === 'granted') subscribeToPush();
 }
 
 function updateNotifBtn() {
@@ -1240,8 +1272,12 @@ function showToast(msg, ms = 2500) {
     if (p === 'default') {
       const result = await Notification.requestPermission();
       updateNotifBtn();
-      if (result === 'granted') showToast('Notifications enabled ✓');
-      else showToast('Permission not granted');
+      if (result === 'granted') {
+        await subscribeToPush();
+        showToast('Notifications enabled ✓');
+      } else {
+        showToast('Permission not granted');
+      }
       return;
     }
     // Already granted — fire a test notification to verify the pipeline works

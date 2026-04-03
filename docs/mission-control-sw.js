@@ -3,6 +3,24 @@
 // reliably. This SW receives postMessage() calls and uses the SW registration
 // API to show system-level notifications instead.
 
+self.addEventListener('push', e => {
+  let data = {};
+  try { data = e.data.json(); } catch {}
+  const title  = data.title  || 'Telos';
+  const body   = data.body   || 'New message';
+  const taskId = data.taskId || null;
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon:     '/icons/icon-192.png',
+      badge:    '/icons/icon-192.png',
+      tag:      `mc-${taskId}`,
+      data:     { taskId },
+      renotify: true,
+    })
+  );
+});
+
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 
