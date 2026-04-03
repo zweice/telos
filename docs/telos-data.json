@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-04-02T15:24:07.308Z",
+  "generated_at": "2026-04-03T10:25:35.203Z",
   "tree": [
     {
       "id": 1,
@@ -5310,6 +5310,46 @@
                       "text": "Deadline: June 18, 2026. Deliver Handelsregisterauszug as formal proof of Pyfio UG registration."
                     }
                   ],
+                  "children": []
+                },
+                {
+                  "id": 268,
+                  "title": "Build Pyfio document upload portal (MVP)",
+                  "type": "task",
+                  "owner": "forge",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Upload portal for the Pyfio shadow pilot. Customer uploads PDFs, gets structured Excel back. MVP scope: upload form, processing status, download output. Must work before first pilot. Andreas wants to verify it works himself before showing to prospects.",
+                  "notes": [],
+                  "children": []
+                },
+                {
+                  "id": 269,
+                  "title": "Draft Pyfio AVV (Auftragsverarbeitungsvertrag)",
+                  "type": "task",
+                  "owner": "atlas",
+                  "status": "open",
+                  "value": 0,
+                  "cost_estimate": 0,
+                  "cost_actual": null,
+                  "roi": 0,
+                  "effort_hours_estimate": null,
+                  "effort_hours_actual": null,
+                  "start_date": null,
+                  "end_date": null,
+                  "completed_at": null,
+                  "progress": 0,
+                  "description": "Standard 1-page AVV per Art. 28 DSGVO. Ready before first shadow pilot. Key points: EU servers Germany, 14-day deletion, automated processing only, no human access to document content. Andreas to review and approve before use.",
+                  "notes": [],
                   "children": []
                 }
               ]
