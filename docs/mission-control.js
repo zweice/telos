@@ -155,26 +155,31 @@ function saveLastSeen() {
 }
 
 function markSeen(taskId) {
-  const mode = state.chatMode[taskId] || 'cc';
-  const key  = `${taskId}:${mode}`;
-  const msgs = state.chatMessages[key] || [];
-  if (!msgs.length) return;
-  state.lastSeen[taskId] = msgs[msgs.length - 1].timestamp || new Date().toISOString();
+  // Use the newest timestamp across all loaded modes
+  let maxTs = null;
+  for (const mode of ['cc', 'relay']) {
+    const msgs = state.chatMessages[`${taskId}:${mode}`] || [];
+    if (!msgs.length) continue;
+    const ts = msgs[msgs.length - 1].timestamp;
+    if (ts && (!maxTs || new Date(ts) > new Date(maxTs))) maxTs = ts;
+  }
+  if (!maxTs) return;
+  state.lastSeen[taskId] = maxTs;
   saveLastSeen();
 }
 
 function hasUnread(taskId) {
   if (taskId === state.activeTaskId) return false;
-  // Check both modes for any unread message
-  const relayMsgs = state.chatMessages[`${taskId}:relay`] || [];
-  const ccMsgs    = state.chatMessages[`${taskId}:cc`]    || [];
-  const msgs      = relayMsgs.length >= ccMsgs.length ? relayMsgs : ccMsgs;
-  if (!msgs.length) return false;
   const lastSeenTs = state.lastSeen[taskId];
-  if (!lastSeenTs) return msgs.length > 0;
-  const lastMsg = msgs[msgs.length - 1];
-  if (!lastMsg.timestamp) return false;
-  return new Date(lastMsg.timestamp) > new Date(lastSeenTs);
+  const modes = ['cc', 'relay'];
+  return modes.some(mode => {
+    const msgs = state.chatMessages[`${taskId}:${mode}`] || [];
+    if (!msgs.length) return false;
+    const lastMsg = msgs[msgs.length - 1];
+    if (!lastMsg.timestamp) return false;
+    if (!lastSeenTs) return true;
+    return new Date(lastMsg.timestamp) > new Date(lastSeenTs);
+  });
 }
 
 // ── Status Bar ────────────────────────────────────────────────────────────────
@@ -236,8 +241,10 @@ function lastChatTs(taskId) {
   const cc    = state.chatMessages[`${taskId}:cc`]    || [];
   const msgs  = [...relay, ...cc];
   if (!msgs.length) return 0;
-  const ts = msgs[msgs.length - 1].timestamp || msgs[msgs.length - 1].ts;
-  return ts ? new Date(ts).getTime() : 0;
+  return Math.max(...msgs.map(m => {
+    const ts = m.timestamp || m.ts;
+    return ts ? new Date(ts).getTime() : 0;
+  }));
 }
 
 const SORT_OPTIONS = [
@@ -289,9 +296,9 @@ function sortedTasks(tasks) {
         diff = (b.started_at || lastTs(b) || b.created_at || 0) * 1000
              - (a.started_at || lastTs(a) || a.created_at || 0) * 1000;
         break;
-      default: { // activity: in-memory chat (freshest) → last_chat_at (server) → started_at → created_at
-        const chatA = lastChatTs(a.id) || (a.last_chat_at ? new Date(a.last_chat_at).getTime() : 0);
-        const chatB = lastChatTs(b.id) || (b.last_chat_at ? new Date(b.last_chat_at).getTime() : 0);
+      default: { // activity: max(in-memory, server last_chat_at) → started_at → created_at
+        const chatA = Math.max(lastChatTs(a.id), a.last_chat_at ? new Date(a.last_chat_at).getTime() : 0);
+        const chatB = Math.max(lastChatTs(b.id), b.last_chat_at ? new Date(b.last_chat_at).getTime() : 0);
         const ta = chatA || (a.started_at || a.created_at || 0) * 1000;
         const tb = chatB || (b.started_at || b.created_at || 0) * 1000;
         diff = tb - ta;
@@ -361,6 +368,7 @@ function updateTaskItemUnread(taskId) {
   const show = hasUnread(taskId);
   if (show && !dot) {
     item.querySelector('.task-item-bottom')?.appendChild(el('span', 'unread-dot'));
+    maybeNotify(taskId);
   } else if (!show && dot) {
     dot.remove();
   }
@@ -1159,8 +1167,70 @@ document.getElementById('chat-tabs').addEventListener('click', e => {
   startChatPoll(taskId);
 });
 
+// ── Notifications ─────────────────────────────────────────────────────────────
+
+const notifiedMsgs = {};  // taskId -> last notified message timestamp
+
+function initNotifications() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') return;
+  if (Notification.permission === 'denied') return;
+  // Show bell prompt button in status bar
+  const btn = document.createElement('button');
+  btn.id        = 'notif-enable-btn';
+  btn.className = 'notif-enable-btn';
+  btn.title     = 'Enable push notifications';
+  btn.textContent = '🔔 Enable notifications';
+  btn.onclick = async () => {
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted' || perm === 'denied') btn.remove();
+  };
+  document.getElementById('status-bar').after(btn);
+}
+
+function maybeNotify(taskId) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  // Don't notify if the page is visible and this is the active task
+  if (document.visibilityState === 'visible' && taskId === state.activeTaskId) return;
+
+  let bestTs = null;
+  let bestText = null;
+  let bestRole = null;
+
+  for (const mode of ['cc', 'relay']) {
+    const msgs = state.chatMessages[`${taskId}:${mode}`] || [];
+    if (!msgs.length) continue;
+    const last = msgs[msgs.length - 1];
+    if (!last.timestamp) continue;
+    if (!bestTs || new Date(last.timestamp) > new Date(bestTs)) {
+      bestTs   = last.timestamp;
+      bestText = last.text;
+      bestRole = last.role;
+    }
+  }
+
+  if (!bestTs) return;
+  if (bestRole === 'user') return;  // don't notify for own messages
+  const prev = notifiedMsgs[taskId];
+  if (prev && new Date(bestTs) <= new Date(prev)) return;
+
+  notifiedMsgs[taskId] = bestTs;
+
+  const task  = state.tasks.find(t => t.id === taskId);
+  const title = task ? `#${taskId} ${task.title || 'Task'}` : `Task #${taskId}`;
+  const body  = bestText ? bestText.slice(0, 120) : 'New message';
+
+  const n = new Notification(title, { body, icon: '/favicon.ico', tag: `mc-${taskId}` });
+  n.onclick = () => {
+    window.focus();
+    openChat(taskId);
+    n.close();
+  };
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 
 renderSortBar();
+initNotifications();
 refresh();
 setInterval(refresh, REFRESH_INTERVAL);
