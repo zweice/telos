@@ -146,6 +146,7 @@ const state = {
   chatPollTimer: null,
   logPollTimer:  null,
   lastSeen:      JSON.parse(localStorage.getItem(LAST_SEEN_KEY) || '{}'),
+  sortBy:        localStorage.getItem('mc_sort') || 'activity',
 };
 
 function saveLastSeen() {
@@ -229,17 +230,57 @@ function lastPreview(node) {
 
 // ── Task List ─────────────────────────────────────────────────────────────────
 
+function lastChatTs(taskId) {
+  const relay = state.chatMessages[`${taskId}:relay`] || [];
+  const cc    = state.chatMessages[`${taskId}:cc`]    || [];
+  const msgs  = [...relay, ...cc];
+  if (!msgs.length) return 0;
+  const ts = msgs[msgs.length - 1].timestamp || msgs[msgs.length - 1].ts;
+  return ts ? new Date(ts).getTime() : 0;
+}
+
+const SORT_OPTIONS = [
+  { key: 'activity', label: 'Activity' },
+  { key: 'id',       label: '#'        },
+  { key: 'created',  label: 'Created'  },
+  { key: 'updated',  label: 'Updated'  },
+];
+
+function renderSortBar() {
+  const bar = document.getElementById('sort-bar');
+  if (!bar) return;
+  bar.innerHTML = SORT_OPTIONS.map(o =>
+    `<button class="sort-btn${state.sortBy === o.key ? ' active' : ''}" data-sort="${o.key}">${o.label}</button>`
+  ).join('');
+  bar.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.sortBy = btn.dataset.sort;
+      localStorage.setItem('mc_sort', state.sortBy);
+      renderSortBar();
+      renderTaskList();
+    });
+  });
+}
+
+function sortedTasks(tasks) {
+  return [...tasks].sort((a, b) => {
+    switch (state.sortBy) {
+      case 'id':      return b.id - a.id;
+      case 'created': return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      case 'updated': return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+      default: { // activity: last chat msg, fall back to lastTs (note)
+        const ta = lastChatTs(a.id) || lastTs(a) || 0;
+        const tb = lastChatTs(b.id) || lastTs(b) || 0;
+        return tb - ta;
+      }
+    }
+  });
+}
+
 function renderTaskList() {
   const container = document.getElementById('task-list');
 
-  // Leaf tasks only (no parent containers), sorted by most recent activity
-  const tasks = state.tasks
-    .filter(n => !n.children?.length)
-    .sort((a, b) => {
-      const ta = lastTs(a) || 0;
-      const tb = lastTs(b) || 0;
-      return tb - ta;
-    });
+  const tasks = sortedTasks(state.tasks.filter(n => !n.children?.length));
 
   if (!tasks.length) {
     container.innerHTML = '<div class="loading">No tasks found</div>';
@@ -1091,5 +1132,6 @@ document.getElementById('chat-tabs').addEventListener('click', e => {
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 
+renderSortBar();
 refresh();
 setInterval(refresh, REFRESH_INTERVAL);

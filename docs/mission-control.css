@@ -157,6 +157,33 @@ body.chat-open #chat-area { transform: translateX(0); }
 }
 .icon-link:hover, .icon-btn:hover { background: var(--bg-input); color: var(--text); }
 
+/* ── Sort Bar ───────────────────────────────────────────────────────────────── */
+#sort-bar {
+  display: flex;
+  gap: 4px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+  flex-shrink: 0;
+}
+.sort-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.sort-btn:hover { background: var(--bg-input); color: var(--text); }
+.sort-btn.active {
+  background: var(--bg-input);
+  border-color: var(--border);
+  color: var(--accent);
+  font-weight: 600;
+}
+
 /* ── Task List ──────────────────────────────────────────────────────────────── */
 #task-list {
   flex: 1;

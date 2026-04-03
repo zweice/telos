@@ -389,8 +389,8 @@ async function _runCC(taskId, sessionId, message, tryResume) {
     // 5 minute timeout
     setTimeout(() => {
       proc.kill('SIGTERM');
-      reject(new Error('CC timeout (5 min)'));
-    }, 300_000);
+      reject(new Error('CC timeout (30 min)'));
+    }, 1_800_000);
   });
 }
 
