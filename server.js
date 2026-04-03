@@ -358,17 +358,35 @@ ${childList}${notes}
 `;
 }
 
+const ccLocks = {}; // per-task lock to prevent concurrent CC calls
+
 async function sendToCC(taskId, message) {
   const sessionId = getSessionId(taskId);
   const existed = !!ccSessions[taskId];
   ccSessions[taskId] = { sessionId, lastActive: Date.now(), _existed: existed };
+
+  // Queue: if CC is already running for this task, wait for it to finish
+  if (ccLocks[taskId]) {
+    console.log('[CC] Task #' + taskId + ' — queued (CC already running)');
+    await ccLocks[taskId];
+  }
+
+  const promise = (async () => {
 
   // First message gets full context, subsequent messages are just the user message
   const isNew = !ccSessions[taskId]._existed;
   const prompt = isNew
     ? buildTaskContext(taskId) + '\n\n---\n\nUser message:\n' + message
     : message;
-  return _runCC(taskId, sessionId, prompt);
+    return _runCC(taskId, sessionId, prompt);
+  })();
+
+  ccLocks[taskId] = promise;
+  try {
+    return await promise;
+  } finally {
+    if (ccLocks[taskId] === promise) delete ccLocks[taskId];
+  }
 }
 
 async function _runCC(taskId, sessionId, message) {
