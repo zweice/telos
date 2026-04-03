@@ -1187,8 +1187,8 @@ function initNotifications() {
 
 function maybeNotify(taskId) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  // Don't notify if the page is visible and this is the active task
-  if (document.visibilityState === 'visible' && taskId === state.activeTaskId) return;
+  // Don't notify if the page is visible, focused, and this is the active task
+  if (document.visibilityState === 'visible' && document.hasFocus() && taskId === state.activeTaskId) return;
 
   let bestTs = null;
   let bestText = null;
