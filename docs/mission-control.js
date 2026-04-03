@@ -1184,17 +1184,46 @@ async function initNotifications() {
   // Register service worker for Android Chrome compatibility
   if ('serviceWorker' in navigator) {
     try {
-      _swReg = await navigator.serviceWorker.register('/mission-control-sw.js', { scope: '/' });
+      await navigator.serviceWorker.register('/mission-control-sw.js', { scope: '/' });
+      _swReg = await navigator.serviceWorker.ready;  // wait until SW is active
     } catch (e) {
       console.warn('SW registration failed:', e);
     }
+
+    // Handle messages from SW (e.g. notification tap → open chat)
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data && e.data.type === 'OPEN_CHAT' && e.data.taskId) {
+        openChat(e.data.taskId);
+      }
+    });
   }
 
-  if (Notification.permission === 'granted') return;
-  if (Notification.permission === 'denied') return;
-  // Auto-prompt on load
-  Notification.requestPermission();
+  updateNotifBtn();
 }
+
+function updateNotifBtn() {
+  const btn = document.getElementById('notif-btn');
+  if (!btn) return;
+  if (!('Notification' in window)) { btn.style.display = 'none'; return; }
+  const p = Notification.permission;
+  btn.textContent = p === 'denied' ? '🔕' : '🔔';
+  btn.title       = p === 'granted' ? 'Notifications on'
+                  : p === 'denied'  ? 'Notifications blocked — enable in browser settings'
+                  :                   'Enable notifications';
+  btn.style.opacity = p === 'granted' ? '1' : '0.55';
+}
+
+document.getElementById('notif-btn')?.addEventListener('click', async () => {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'denied') {
+    alert('Notifications are blocked. Please enable them in your browser settings for this site.');
+    return;
+  }
+  if (Notification.permission === 'default') {
+    await Notification.requestPermission();
+    updateNotifBtn();
+  }
+});
 
 function maybeNotify(taskId) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
@@ -1235,12 +1264,12 @@ function maybeNotify(taskId) {
       type: 'SHOW_NOTIFICATION',
       title,
       body,
-      icon: '/favicon.ico',
+      icon: '/icons/icon-192.png',
       tag: `mc-${taskId}`,
       taskId,
     });
   } else {
-    const n = new Notification(title, { body, icon: '/favicon.ico', tag: `mc-${taskId}` });
+    const n = new Notification(title, { body, icon: '/icons/icon-192.png', tag: `mc-${taskId}` });
     n.onclick = () => { window.focus(); openChat(taskId); n.close(); };
   }
 }
