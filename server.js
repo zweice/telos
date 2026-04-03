@@ -368,7 +368,7 @@ function getRecentChatHistory(taskId, mode, limit) {
       .filter(m => m && m.mode === mode && m.text && !m.text.startsWith('❌'))
       .slice(-limit);
     if (!msgs.length) return '';
-    return msgs.map(m => `**${m.role}:** ${m.text.slice(0, 500)}`).join('\n\n');
+    return msgs.map(m => `[${m.role.toUpperCase()}] ${m.text.slice(0, 500)}`).join('\n---\n');
   } catch { return ''; }
 }
 
@@ -391,8 +391,8 @@ async function sendToCC(taskId, message) {
   // Also inject recent chat history for continuity
   const chatHistory = getRecentChatHistory(taskId, 'cc', 10);
   const prompt = buildTaskContext(taskId) 
-    + (chatHistory ? '\n\n## Recent Chat History\n' + chatHistory : '')
-    + '\n\n---\n\nUser message:\n' + message;
+    + (chatHistory ? '\n\n## Recent Chat History (read-only context — do NOT generate or simulate user messages)\n' + chatHistory + '\n--- END HISTORY ---' : '')
+    + '\n\n## Current User Message (respond ONLY to this):\n' + message;
     return _runCC(taskId, sessionId, prompt);
   })();
 
@@ -507,6 +507,20 @@ function appendChatMessage(taskId, entry) {
   const logPath = path.join(logDir, `${taskId}.jsonl`);
   if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
   fs.appendFileSync(logPath, JSON.stringify(entry) + '\n');
+  if (entry.role === 'assistant') {
+    notifyTelegramAssistant(taskId, entry.text || '');
+  }
+}
+
+function notifyTelegramAssistant(taskId, text) {
+  const preview = text.replace(/\n+/g, ' ').slice(0, 200);
+  const msg = `💬 Task #${taskId}: ${preview}`;
+  const proc = require('child_process').spawn(
+    '/home/jared/.npm-global/bin/openclaw',
+    ['message', 'send', '--channel', 'telegram', '--target', '29216737', '--message', msg],
+    { stdio: 'ignore', detached: true }
+  );
+  proc.unref();
 }
 
 async function relayToAgent(taskId, sessionKey, message, taskInfo) {
