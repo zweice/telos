@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "generated_at": "2026-04-03T11:45:13.233Z",
+  "generated_at": "2026-04-03T11:49:15.858Z",
   "tree": [
     {
       "id": 1,
@@ -5346,13 +5346,17 @@
                   "effort_hours_actual": null,
                   "start_date": null,
                   "end_date": null,
-                  "completed_at": 1775216695,
+                  "completed_at": 1775216955,
                   "progress": 0,
                   "description": "Standard 1-page AVV per Art. 28 DSGVO. Ready before first shadow pilot. Key points: EU servers Germany, 14-day deletion, automated processing only, no human access to document content. Andreas to review and approve before use.",
                   "notes": [
                     {
                       "ts": 1775216695,
                       "text": "AVV draft written at ~/.openclaw/agents/atlas/sales/pyfio-avv-draft.md — covers Art. 28 DSGVO, 14-day deletion, EU servers, no employee access, TOM annex. Pending Andreas review before use."
+                    },
+                    {
+                      "ts": 1775216955,
+                      "text": "AVV draft completed 2026-04-03. File: ~/.openclaw/agents/atlas/sales/pyfio-avv-draft.md — committed 9be27f25. Andreas to review before use with prospects."
                     }
                   ],
                   "children": []
