@@ -4,3 +4,4 @@ telos.db-wal
 node_modules/
 *.log
 .DS_Store
+node_modules/better-sqlite3/build/

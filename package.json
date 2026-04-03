@@ -11,8 +11,7 @@
     "start": "node server.js",
     "serve": "node src/server.js",
     "api": "node api-server.js",
-    "test": "node src/cli.js list",
-    "postinstall": "cd node_modules/better-sqlite3 && PATH=/home/linuxbrew/.linuxbrew/bin:$PATH node-gyp rebuild 2>/dev/null || true"
+    "test": "node src/cli.js list"
   },
   "keywords": [
     "goal",
