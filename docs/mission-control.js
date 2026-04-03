@@ -146,7 +146,8 @@ const state = {
   chatPollTimer: null,
   logPollTimer:  null,
   lastSeen:      JSON.parse(localStorage.getItem(LAST_SEEN_KEY) || '{}'),
-  sortBy:        localStorage.getItem('mc_sort') || 'activity',
+  sortBy:        localStorage.getItem('mc_sort')     || 'activity',
+  sortDir:       localStorage.getItem('mc_sort_dir') || 'desc',
 };
 
 function saveLastSeen() {
@@ -249,13 +250,22 @@ const SORT_OPTIONS = [
 function renderSortBar() {
   const bar = document.getElementById('sort-bar');
   if (!bar) return;
-  bar.innerHTML = SORT_OPTIONS.map(o =>
-    `<button class="sort-btn${state.sortBy === o.key ? ' active' : ''}" data-sort="${o.key}">${o.label}</button>`
-  ).join('');
+  const dir = state.sortDir;
+  bar.innerHTML = SORT_OPTIONS.map(o => {
+    const active = state.sortBy === o.key;
+    const arrow  = active ? (dir === 'asc' ? ' ↑' : ' ↓') : '';
+    return `<button class="sort-btn${active ? ' active' : ''}" data-sort="${o.key}">${o.label}${arrow}</button>`;
+  }).join('');
   bar.querySelectorAll('.sort-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      state.sortBy = btn.dataset.sort;
-      localStorage.setItem('mc_sort', state.sortBy);
+      if (btn.dataset.sort === state.sortBy) {
+        state.sortDir = state.sortDir === 'desc' ? 'asc' : 'desc';
+      } else {
+        state.sortBy  = btn.dataset.sort;
+        state.sortDir = 'desc';
+      }
+      localStorage.setItem('mc_sort',     state.sortBy);
+      localStorage.setItem('mc_sort_dir', state.sortDir);
       renderSortBar();
       renderTaskList();
     });
@@ -263,21 +273,27 @@ function renderSortBar() {
 }
 
 function sortedTasks(tasks) {
+  const sign = state.sortDir === 'asc' ? -1 : 1;
   return [...tasks].sort((a, b) => {
+    let diff;
     switch (state.sortBy) {
-      case 'id':      return b.id - a.id;
-      case 'created': return (b.created_at || 0) - (a.created_at || 0);
-      case 'updated': {
-        const ta = lastChatTs(a.id) || lastTs(a) || 0;
-        const tb = lastChatTs(b.id) || lastTs(b) || 0;
-        return tb - ta;
-      }
-      default: { // activity: chat messages only
-        const ta = lastChatTs(a.id) || 0;
-        const tb = lastChatTs(b.id) || 0;
-        return tb - ta;
+      case 'id':
+        diff = b.id - a.id;
+        break;
+      case 'created':
+        diff = new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        break;
+      case 'updated':
+        diff = new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+        break;
+      default: { // activity: last chat msg, fall back to updated_at then created_at
+        const ta = lastChatTs(a.id) || new Date(a.updated_at || a.created_at || 0).getTime();
+        const tb = lastChatTs(b.id) || new Date(b.updated_at || b.created_at || 0).getTime();
+        diff = tb - ta;
+        break;
       }
     }
+    return diff * sign;
   });
 }
 

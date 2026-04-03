@@ -1,2 +1,4 @@
 {"role":"user","text":"Hi there","timestamp":"2026-04-02T23:09:48.722Z","source":"web","mode":"cc"}
 {"role":"assistant","text":"Hi Andreas! How can I help you today?","timestamp":"2026-04-02T23:09:54.511Z","source":"cc","mode":"cc"}
+{"role":"user","text":"Say hello in one sentence","timestamp":"2026-04-03T08:22:39.831Z","source":"web","mode":"cc"}
+{"role":"assistant","text":"Hello, Andreas! Hope you're having a great day.","timestamp":"2026-04-03T08:22:44.744Z","source":"cc","mode":"cc"}

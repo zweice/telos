@@ -128,3 +128,4 @@
 {"role":"user","text":"Ok. Telosboard should have sorting. Default should be by activity (more recent chat activity on top). Other: #number, creation date, task update date, etc","timestamp":"2026-04-02T23:14:32.806Z","source":"web","mode":"cc"}
 {"role":"assistant","text":"Invalid API key · Fix external API key","timestamp":"2026-04-02T23:14:34.376Z","source":"cc","mode":"cc"}
 {"role":"user","text":"Telosboard should have sorting. Default should be by activity (more recent chat activity on top). Other: #number, creation date, task update date, etc","timestamp":"2026-04-02T23:22:12.602Z","source":"web","mode":"cc"}
+{"role":"user","text":"You implemented. I see.\n\nActivity seems to order by #number/id. It should order by last updated but give preference to last chat activity. Chat being this very chat.\n\nAlso, clicking a second time on the sort button should invert the order","timestamp":"2026-04-03T08:02:33.522Z","source":"web","mode":"cc"}
