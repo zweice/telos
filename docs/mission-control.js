@@ -1176,13 +1176,23 @@ document.getElementById('chat-tabs').addEventListener('click', e => {
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 const notifiedMsgs = {};  // taskId -> last notified message timestamp
+let _swReg = null;
 
-function initNotifications() {
+async function initNotifications() {
   if (!('Notification' in window)) return;
+
+  // Register service worker for Android Chrome compatibility
+  if ('serviceWorker' in navigator) {
+    try {
+      _swReg = await navigator.serviceWorker.register('/mission-control-sw.js', { scope: '/' });
+    } catch (e) {
+      console.warn('SW registration failed:', e);
+    }
+  }
+
   if (Notification.permission === 'granted') return;
   if (Notification.permission === 'denied') return;
-  // Auto-prompt on load (browser requires a user gesture on some platforms,
-  // but requestPermission() is safe to call speculatively here)
+  // Auto-prompt on load
   Notification.requestPermission();
 }
 
@@ -1218,12 +1228,21 @@ function maybeNotify(taskId) {
   const title = task ? `#${taskId} ${task.title || 'Task'}` : `Task #${taskId}`;
   const body  = bestText ? bestText.slice(0, 120) : 'New message';
 
-  const n = new Notification(title, { body, icon: '/favicon.ico', tag: `mc-${taskId}` });
-  n.onclick = () => {
-    window.focus();
-    openChat(taskId);
-    n.close();
-  };
+  // Use SW-based notification (works on Android Chrome); fall back to direct
+  const swReg = _swReg || (navigator.serviceWorker && navigator.serviceWorker.controller && navigator.serviceWorker.ready);
+  if (_swReg && _swReg.active) {
+    _swReg.active.postMessage({
+      type: 'SHOW_NOTIFICATION',
+      title,
+      body,
+      icon: '/favicon.ico',
+      tag: `mc-${taskId}`,
+      taskId,
+    });
+  } else {
+    const n = new Notification(title, { body, icon: '/favicon.ico', tag: `mc-${taskId}` });
+    n.onclick = () => { window.focus(); openChat(taskId); n.close(); };
+  }
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
