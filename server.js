@@ -358,6 +358,20 @@ ${childList}${notes}
 `;
 }
 
+function getRecentChatHistory(taskId, mode, limit) {
+  try {
+    const logPath = path.join(ROOT, 'chat-logs', taskId + '.jsonl');
+    if (!fs.existsSync(logPath)) return '';
+    const lines = fs.readFileSync(logPath, 'utf8').trim().split('\n');
+    const msgs = lines
+      .map(l => { try { return JSON.parse(l); } catch { return null; } })
+      .filter(m => m && m.mode === mode && m.text && !m.text.startsWith('❌'))
+      .slice(-limit);
+    if (!msgs.length) return '';
+    return msgs.map(m => `**${m.role}:** ${m.text.slice(0, 500)}`).join('\n\n');
+  } catch { return ''; }
+}
+
 const ccLocks = {}; // per-task lock to prevent concurrent CC calls
 
 async function sendToCC(taskId, message) {
@@ -373,15 +387,12 @@ async function sendToCC(taskId, message) {
 
   const promise = (async () => {
 
-  // Check if CC session file exists on disk (survives dashboard restarts)
-  const ccSessionFile = require('path').join(
-    require('os').homedir(), '.claude', 'projects', 
-    '-home-jared-code-macrohard-telos', sessionId + '.jsonl'
-  );
-  const isNew = !require('fs').existsSync(ccSessionFile);
-  const prompt = isNew
-    ? buildTaskContext(taskId) + '\n\n---\n\nUser message:\n' + message
-    : message;
+  // Always inject task context (sessions are ephemeral in --print mode)
+  // Also inject recent chat history for continuity
+  const chatHistory = getRecentChatHistory(taskId, 'cc', 10);
+  const prompt = buildTaskContext(taskId) 
+    + (chatHistory ? '\n\n## Recent Chat History\n' + chatHistory : '')
+    + '\n\n---\n\nUser message:\n' + message;
     return _runCC(taskId, sessionId, prompt);
   })();
 
