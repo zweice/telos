@@ -389,7 +389,7 @@ async function sendToCC(taskId, message) {
 
   // Always inject task context (sessions are ephemeral in --print mode)
   // Also inject recent chat history for continuity
-  const chatHistory = getRecentChatHistory(taskId, 'cc', 10);
+  const chatHistory = getRecentChatHistory(taskId, 'cc', 30);
   const prompt = buildTaskContext(taskId) 
     + (chatHistory ? '\n\n## Recent Chat History (read-only context — do NOT generate or simulate user messages)\n' + chatHistory + '\n--- END HISTORY ---' : '')
     + '\n\n## Current User Message (respond ONLY to this):\n' + message;
