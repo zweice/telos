@@ -628,6 +628,7 @@ async function pollChat(taskId) {
 
       state.chatMessages[key] = serverMsgs;
       if (taskId === state.activeTaskId) {
+        maybeNotify(taskId);
         renderMessages(taskId);
         markSeen(taskId);
       } else {
