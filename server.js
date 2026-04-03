@@ -360,21 +360,20 @@ ${childList}${notes}
 
 async function sendToCC(taskId, message) {
   const sessionId = getSessionId(taskId);
-  ccSessions[taskId] = { sessionId, lastActive: Date.now() };
+  const existed = !!ccSessions[taskId];
+  ccSessions[taskId] = { sessionId, lastActive: Date.now(), _existed: existed };
 
-  // Always try --resume first (survives dashboard restarts).
-  // If resume fails (no existing session), retry with --session-id + context.
-  return _runCC(taskId, sessionId, message, true);
+  // First message gets full context, subsequent messages are just the user message
+  const isNew = !ccSessions[taskId]._existed;
+  const prompt = isNew
+    ? buildTaskContext(taskId) + '\n\n---\n\nUser message:\n' + message
+    : message;
+  return _runCC(taskId, sessionId, prompt);
 }
 
-async function _runCC(taskId, sessionId, message, tryResume) {
-  const prompt = tryResume
-    ? message
-    : buildTaskContext(taskId) + '\n\n---\n\nUser message:\n' + message;
-
-  const args = tryResume
-    ? ['--print', '--permission-mode', 'bypassPermissions', '--resume', sessionId, '-p', prompt]
-    : ['--print', '--permission-mode', 'bypassPermissions', '--session-id', sessionId, '-p', prompt];
+async function _runCC(taskId, sessionId, message) {
+  // --session-id works for both new and existing sessions (--resume is broken with --print)
+  const args = ['--print', '--permission-mode', 'bypassPermissions', '--session-id', sessionId, '-p', message];
 
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -394,11 +393,6 @@ async function _runCC(taskId, sessionId, message, tryResume) {
 
     proc.on('close', code => {
       const output = Buffer.concat(chunks).toString().trim();
-      // If resume failed (session not found), retry with new session + context
-      if (tryResume && (output.includes('not found') || output.includes('No session found') || output.includes('No conversation found'))) {
-        _runCC(taskId, sessionId, message, false).then(resolve).catch(reject);
-        return;
-      }
       if (code === 0 && output) {
         resolve(output);
       } else if (output) {
