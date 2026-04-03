@@ -296,12 +296,17 @@ function sortedTasks(tasks) {
         diff = (b.started_at || lastTs(b) || b.created_at || 0) * 1000
              - (a.started_at || lastTs(a) || a.created_at || 0) * 1000;
         break;
-      default: { // activity: max(in-memory, server last_chat_at) → started_at → created_at
+      default: { // activity: chat tasks above no-chat; within tier sort by timestamp
         const chatA = Math.max(lastChatTs(a.id), a.last_chat_at ? new Date(a.last_chat_at).getTime() : 0);
         const chatB = Math.max(lastChatTs(b.id), b.last_chat_at ? new Date(b.last_chat_at).getTime() : 0);
-        const ta = chatA || (a.started_at || a.created_at || 0) * 1000;
-        const tb = chatB || (b.started_at || b.created_at || 0) * 1000;
-        diff = tb - ta;
+        if (chatA > 0 || chatB > 0) {
+          // At least one has chat — compare by chat ts (0 for no-chat pushes it below)
+          diff = chatB - chatA;
+        } else {
+          // Neither has chat — fall back to started_at / created_at
+          diff = (b.started_at || b.created_at || 0) * 1000
+               - (a.started_at || a.created_at || 0) * 1000;
+        }
         break;
       }
     }
