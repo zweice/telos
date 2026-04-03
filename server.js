@@ -393,10 +393,23 @@ async function _runCC(taskId, sessionId, message) {
 
     proc.on('close', code => {
       const output = Buffer.concat(chunks).toString().trim();
-      if (code === 0 && output) {
+
+      // Known CC error patterns that should NOT be passed as valid responses
+      const CC_ERROR_PATTERNS = [
+        'Invalid API key',
+        'Authentication error',
+        'Connection error',
+        'ECONNREFUSED',
+      ];
+      const isKnownError = code !== 0 && CC_ERROR_PATTERNS.some(p => output.includes(p));
+
+      if (isKnownError) {
+        console.error(`[CC] Task #${taskId} auth/connection error (exit ${code}): ${output.slice(0, 200)}`);
+        reject(new Error(output.slice(0, 200)));
+      } else if (code === 0 && output) {
         resolve(output);
       } else if (output) {
-        resolve(output); // Still return output even on non-zero exit
+        resolve(output); // Non-zero exit but not a known error pattern
       } else {
         reject(new Error(`CC exited with code ${code}, no output`));
       }
@@ -686,10 +699,15 @@ const server = http.createServer(async (req, res) => {
               });
             })
             .catch(err => {
-              console.error(`[CC] Task #${id} error:`, err.message);
+              const errMsg = err.message || String(err);
+              const isAuthError = errMsg.includes('Invalid API key') || errMsg.includes('Authentication');
+              const userMessage = isAuthError
+                ? '⚠️ Claude Code authentication error. The session API key may need refreshing — try sending the message again.'
+                : `❌ CC error: ${errMsg}`;
+              console.error(`[CC] Task #${id} error:`, errMsg);
               appendChatMessage(id, {
                 role: 'assistant',
-                text: `❌ CC error: ${err.message}`,
+                text: userMessage,
                 timestamp: new Date().toISOString(),
                 source: 'cc',
                 mode: 'cc',
