@@ -282,8 +282,8 @@ function getLoopStatus() {
 const ccSessions = {}; // taskId -> { sessionId, lastActive }
 
 function getSessionId(taskId) {
-  const hash = crypto.createHash('md5').update('telos-cc-' + taskId).digest('hex');
-  return [hash.slice(0,8), hash.slice(8,12), hash.slice(12,16), hash.slice(16,20), hash.slice(20,32)].join('-');
+  // Each CC --print invocation needs a fresh session ID (--session-id is single-use)
+  return crypto.randomUUID();
 }
 
 function buildTaskContext(taskId) {
