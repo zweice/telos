@@ -105,6 +105,7 @@ function buildTree(nodes) {
       start_date:            n.start_date   || null,
       end_date:              n.end_date     || null,
       completed_at:          n.completed_at || null,
+      created_at:            n.created_at   || null,
       progress:              n.progress     || 0,
       description:           n.description  || null,
       notes: (() => { try { return JSON.parse(n.metadata || '{}').notes || []; } catch { return []; } })(),

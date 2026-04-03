@@ -241,9 +241,9 @@ function lastChatTs(taskId) {
 
 const SORT_OPTIONS = [
   { key: 'activity', label: 'Activity' },
-  { key: 'id',       label: '#'        },
-  { key: 'created',  label: 'Created'  },
   { key: 'updated',  label: 'Updated'  },
+  { key: 'created',  label: 'Created'  },
+  { key: 'id',       label: '#'        },
 ];
 
 function renderSortBar() {
@@ -266,11 +266,15 @@ function sortedTasks(tasks) {
   return [...tasks].sort((a, b) => {
     switch (state.sortBy) {
       case 'id':      return b.id - a.id;
-      case 'created': return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-      case 'updated': return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
-      default: { // activity: last chat msg, fall back to lastTs (note)
+      case 'created': return (b.created_at || 0) - (a.created_at || 0);
+      case 'updated': {
         const ta = lastChatTs(a.id) || lastTs(a) || 0;
         const tb = lastChatTs(b.id) || lastTs(b) || 0;
+        return tb - ta;
+      }
+      default: { // activity: chat messages only
+        const ta = lastChatTs(a.id) || 0;
+        const tb = lastChatTs(b.id) || 0;
         return tb - ta;
       }
     }
