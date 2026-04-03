@@ -373,8 +373,12 @@ async function sendToCC(taskId, message) {
 
   const promise = (async () => {
 
-  // First message gets full context, subsequent messages are just the user message
-  const isNew = !ccSessions[taskId]._existed;
+  // Check if CC session file exists on disk (survives dashboard restarts)
+  const ccSessionFile = require('path').join(
+    require('os').homedir(), '.claude', 'projects', 
+    '-home-jared-code-macrohard-telos', sessionId + '.jsonl'
+  );
+  const isNew = !require('fs').existsSync(ccSessionFile);
   const prompt = isNew
     ? buildTaskContext(taskId) + '\n\n---\n\nUser message:\n' + message
     : message;
@@ -412,9 +416,10 @@ async function _runCC(taskId, sessionId, message) {
     proc.on('close', code => {
       const output = Buffer.concat(chunks).toString().trim();
 
-      // "already in use" = stale session-env or duplicate project entry. Clean up and retry once.
-      if (output.includes('already in use') && !message.__retried) {
-        console.log('[CC] Task #' + taskId + ' session conflict — cleaning and retrying');
+      // "already in use" = stale session-env or duplicate project entry. 
+      // Don't retry — just report the error. The session will work on next attempt.
+      if (output.includes('already in use')) {
+        console.log('[CC] Task #' + taskId + ' session in use — cleaning up for next attempt');
         try {
           const os = require('os'), fs = require('fs');
           const envDir = require('path').join(os.homedir(), '.claude', 'session-env', sessionId);
@@ -428,8 +433,7 @@ async function _runCC(taskId, sessionId, message) {
             }
           });
         } catch (e) { console.error('[CC] cleanup error:', e.message); }
-        message = typeof message === 'string' ? { text: message, __retried: true } : Object.assign(message, { __retried: true });
-        _runCC(taskId, sessionId, typeof message === 'object' ? message.text || message : message).then(resolve).catch(reject);
+        reject(new Error('Session conflict — cleaned up. Please try again.'));
         return;
       }
 
