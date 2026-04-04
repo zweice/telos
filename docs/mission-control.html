@@ -9,11 +9,6 @@
 </head>
 <body>
 
-  <!-- Thin agent status bar (pinned top) -->
-  <div id="status-bar">
-    <span class="status-bar-label">Agents</span>
-  </div>
-
   <!-- App shell: sidebar + chat -->
   <div id="app">
 
@@ -28,6 +23,7 @@
           <a href="index.html" class="icon-link" title="Goal Tree">🌳</a>
         </div>
       </div>
+      <div id="search-bar"><input id="task-search" type="search" placeholder="Search…" autocomplete="off" spellcheck="false"></div>
       <div id="sort-bar"></div>
       <div id="task-list">
         <div class="loading"><span class="spinner"></span> Loading…</div>
@@ -82,7 +78,6 @@
   <div id="task-menu" class="dropdown hidden">
     <button data-action="program">📋 Program Editor</button>
     <button data-action="results">📊 Open Results</button>
-    <button data-action="copy-id">🔗 Copy Task ID</button>
     <button data-action="log">📜 View Log</button>
   </div>
 

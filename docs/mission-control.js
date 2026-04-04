@@ -317,7 +317,14 @@ function sortedTasks(tasks) {
 function renderTaskList() {
   const container = document.getElementById('task-list');
 
-  const tasks = sortedTasks(state.tasks.filter(n => !n.children?.length));
+  const q = (document.getElementById('task-search')?.value || '').trim().toLowerCase();
+  const tasks = sortedTasks(state.tasks.filter(n => {
+    if (n.children?.length) return false;
+    if (!q) return true;
+    return String(n.id).includes(q) ||
+           (n.title       || '').toLowerCase().includes(q) ||
+           (n.description || '').toLowerCase().includes(q);
+  }));
 
   if (!tasks.length) {
     container.innerHTML = '<div class="loading">No tasks found</div>';
@@ -397,30 +404,14 @@ function openChat(taskId) {
   // Populate header
   const task = state.tasks.find(t => t.id === taskId);
   if (task) {
-    document.getElementById('chat-title').textContent = `${task.title} #${task.id}`;
-    renderChatHeader(task);
-  }
-
-  // Enable input
-  // Show description
-  let descEl = document.getElementById('chat-description');
-  if (!descEl) {
-    descEl = document.createElement('div');
-    descEl.id = 'chat-description';
-    descEl.style.cssText = 'font-size:0.7rem;color:#8b949e;margin-top:2px;max-height:2.8em;overflow:hidden;cursor:pointer;line-height:1.4;';
-    descEl.title = 'Click to expand';
-    descEl.addEventListener('click', () => {
-      descEl.style.maxHeight = descEl.style.maxHeight === 'none' ? '2.8em' : 'none';
+    const titleEl = document.getElementById('chat-title');
+    titleEl.innerHTML = `<span class="chat-task-id" title="Copy #${task.id}">#${task.id}</span>${escapeHtml(task.title)}`;
+    titleEl.querySelector('.chat-task-id').addEventListener('click', e => {
+      e.stopPropagation();
+      navigator.clipboard?.writeText(`#${task.id}`).catch(() => {});
+      showToast(`Copied #${task.id}`);
     });
-    document.getElementById('chat-header-info').appendChild(descEl);
-  }
-  if (task.description) {
-    // First line only for compact display
-    const firstLine = task.description.split('\n')[0].slice(0, 120);
-    descEl.textContent = firstLine + (task.description.length > 120 ? '…' : '');
-    descEl.style.display = '';
-  } else {
-    descEl.style.display = 'none';
+    renderChatHeader(task);
   }
 
   document.getElementById('chat-input-area').classList.remove('disabled');
@@ -1006,7 +997,6 @@ async function refresh() {
     state.agentStatus = agentStatus  || {};
     state.loopStatus  = loopStatus   || {};
 
-    renderStatusBar();
     renderTaskList();
 
     if (state.activeTaskId) {
@@ -1113,10 +1103,6 @@ document.getElementById('task-menu').addEventListener('click', e => {
     });
   }
   if (action === 'log') openLogPanel();
-  if (action === 'copy-id') {
-    const id = state.activeTaskId;
-    if (id) navigator.clipboard?.writeText(String(id)).catch(() => {});
-  }
 });
 
 document.addEventListener('click', e => {
@@ -1340,6 +1326,8 @@ function maybeNotify(taskId) {
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
+
+document.getElementById('task-search').addEventListener('input', renderTaskList);
 
 renderSortBar();
 initNotifications();

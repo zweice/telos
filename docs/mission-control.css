@@ -15,7 +15,6 @@
   --red:             #f85149;
   --font-sans:       -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono:       'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
-  --status-h:        34px;
   --sidebar-w:       300px;
   --ease:            280ms cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -33,58 +32,11 @@ body {
 a    { color: var(--accent); text-decoration: none; }
 button { cursor: pointer; border: none; background: none; color: inherit; font: inherit; }
 
-/* ── Status Bar ─────────────────────────────────────────────────────────────── */
-#status-bar {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: var(--status-h);
-  background: #0a0e14;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 12px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  z-index: 100;
-  white-space: nowrap;
-}
-#status-bar::-webkit-scrollbar { display: none; }
-
-.status-bar-label {
-  font-size: 10px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  flex-shrink: 0;
-}
-
-.agent-pill {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  flex-shrink: 0;
-  transition: border-color 0.2s;
-}
-.agent-pill .pill-status-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--text-muted);
-}
-.agent-pill.active .pill-status-dot { background: var(--green); box-shadow: 0 0 5px var(--green); }
-.agent-pill.idle   .pill-status-dot { background: var(--yellow); }
-.agent-pill.stale  .pill-status-dot { background: var(--red); }
-.pill-time { color: var(--text-muted); font-size: 10px; }
 
 /* ── App Shell ──────────────────────────────────────────────────────────────── */
 #app {
   position: fixed;
-  top: var(--status-h);
+  top: 0;
   left: 0; right: 0; bottom: 0;
   display: flex;
   overflow: hidden;
@@ -156,6 +108,26 @@ body.chat-open #chat-area { transform: translateX(0); }
   flex-shrink: 0;
 }
 .icon-link:hover, .icon-btn:hover { background: var(--bg-input); color: var(--text); }
+
+/* ── Search Bar ─────────────────────────────────────────────────────────────── */
+#search-bar {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+  flex-shrink: 0;
+}
+#task-search {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  padding: 5px 10px;
+  outline: none;
+}
+#task-search::placeholder { color: var(--text-muted); }
+#task-search:focus { border-color: var(--accent); }
 
 /* ── Sort Bar ───────────────────────────────────────────────────────────────── */
 #sort-bar {
@@ -307,6 +279,13 @@ body.chat-open #chat-area { transform: translateX(0); }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.chat-task-id {
+  color: var(--text-muted);
+  font-size: 0.8em;
+  font-weight: 500;
+  cursor: pointer;
+  margin-right: 4px;
 }
 #chat-kpis {
   display: flex;
@@ -521,7 +500,7 @@ body.chat-open #chat-area { transform: translateX(0); }
 /* ── Task Details Panel ─────────────────────────────────────────────────────── */
 #task-details-panel {
   position: fixed;
-  top: var(--status-h);
+  top: 0;
   right: 0; bottom: 0;
   width: min(420px, 100%);
   background: var(--bg-card);
@@ -635,7 +614,7 @@ body.chat-open #chat-area { transform: translateX(0); }
 /* ── Program Panel ──────────────────────────────────────────────────────────── */
 #program-panel {
   position: fixed;
-  top: var(--status-h);
+  top: 0;
   right: 0; bottom: 0;
   width: min(500px, 100%);
   background: var(--bg-card);
