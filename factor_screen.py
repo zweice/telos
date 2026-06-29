@@ -282,13 +282,19 @@ def make_demo(counts: Dict[str, int], seed: int = 42, missing: float = 0.10) -> 
 
 
 def load_csv(path: str) -> pd.DataFrame:
-    """Load a user CSV. Required: ticker, name, region. Any subset of the
-    optional metric columns is used; unknown columns are ignored."""
-    df = pd.read_csv(path)
-    df.columns = [c.strip() for c in df.columns]
+    """Load a user table (CSV or Excel). Required columns: ticker, name, region.
+    Any subset of the optional metric columns is used; unknown columns are
+    ignored. The format is chosen by extension (.xlsx/.xls/.xlsm -> Excel,
+    everything else -> CSV)."""
+    ext = os.path.splitext(path)[1].lower()
+    if ext in (".xlsx", ".xls", ".xlsm"):
+        df = pd.read_excel(path)
+    else:
+        df = pd.read_csv(path)
+    df.columns = [str(c).strip() for c in df.columns]
     for required in ("ticker", "name", "region"):
         if required not in df.columns:
-            raise ValueError(f"CSV missing required column: {required}")
+            raise ValueError(f"input missing required column: {required}")
     keep = ["ticker", "name", "region"] + [c for c in ALL_METRIC_COLUMNS if c in df.columns]
     return df[keep].copy()
 

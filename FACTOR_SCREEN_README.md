@@ -28,8 +28,9 @@ paths.
 python factor_screen.py --source demo --counts US=5000,DE=500,CN=300,IN=500 \
     --out screen.xlsx
 
-# Score your own CSV
+# Score your own universe (CSV or Excel — format chosen by extension)
 python factor_screen.py --source csv --csv my_universe.csv --out screen.xlsx
+python factor_screen.py --source csv --csv examples/sample_universe.xlsx --out screen.xlsx
 
 # Live prices + fundamentals (local only, slow & rate-limited)
 python factor_screen.py --source yfinance --tickers-file tickers.txt --out screen.xlsx
@@ -87,6 +88,11 @@ the engine derives `earnings_yield = 1/PE` etc. with safe handling (only
 positive, finite values survive; everything else becomes blank). A supplied
 derived column always wins over its primitive. Factors with no usable column are
 left blank and reduce Coverage.
+
+The same schema works as an **Excel** file — `load_csv` picks CSV vs. Excel by
+extension (`.xlsx`/`.xls`/`.xlsm` → Excel). A ready-made example with a mix of
+regions, vendor primitives and deliberate blanks ships at
+[`examples/sample_universe.xlsx`](examples/sample_universe.xlsx).
 
 Example minimal CSV:
 

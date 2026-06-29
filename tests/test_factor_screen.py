@@ -180,6 +180,31 @@ def test_csv_subset_scores_only_present_factors(tmp_path):
     assert (out["Coverage"] == 2).all()
 
 
+def test_load_excel_input(tmp_path):
+    # The loader accepts an .xlsx input too (format chosen by extension).
+    xlsx = tmp_path / "u.xlsx"
+    pd.DataFrame([
+        {"ticker": "A", "name": "Aco", "region": "US", "pe": 10.0, "roe": 0.20},
+        {"ticker": "B", "name": "Bco", "region": "US", "pe": 25.0, "roe": 0.05},
+    ]).to_excel(xlsx, index=False)
+    df = fs.load_csv(str(xlsx))
+    assert list(df["ticker"]) == ["A", "B"]
+    out = fs.score_universe(df, scale=10, rank_scope="global").set_index("ticker")
+    assert out.loc["A", "Value"] == 10
+
+
+def test_committed_sample_workbook_scores():
+    # The example input shipped in examples/ must load and score cleanly.
+    sample = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                          "examples", "sample_universe.xlsx")
+    if not os.path.exists(sample):
+        pytest.skip("sample workbook not present")
+    df = fs.load_csv(sample)
+    out = fs.score_universe(df, scale=10, rank_scope="region")
+    assert len(out) == 13
+    assert out["Coverage"].max() == 5
+
+
 # --------------------------------------------------------------------------- #
 # 5. Weights change Weighted but not Total
 # --------------------------------------------------------------------------- #
