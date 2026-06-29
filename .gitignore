@@ -5,3 +5,10 @@ node_modules/
 *.log
 .DS_Store
 node_modules/better-sqlite3/build/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.yf_cache/
+factor_screen.xlsx
