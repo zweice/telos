@@ -36,6 +36,44 @@ python factor_screen.py --source csv --csv examples/sample_universe.xlsx --out s
 python factor_screen.py --source yfinance --tickers-file tickers.txt --out screen.xlsx
 ```
 
+## A real, ranked screen (committed)
+
+`build_real_screen.py` builds a screen from **real, public S&P 500 data** and
+writes the results to `data/`:
+
+| File | What |
+|------|------|
+| `data/real_sp500_input.csv`  | the pulled + derived real metrics (audit trail) |
+| `data/real_sp500_scores.csv` | the ranked screen output |
+| `data/real_sp500_scores.xlsx`| the styled workbook |
+
+```bash
+python build_real_screen.py
+```
+
+Sources (no paid APIs; live finance APIs like Yahoo/Stooq are blocked in this
+environment, so data is pulled from public GitHub mirrors):
+
+- **Fundamentals** — `datasets/s-and-p-500-companies-financials` → real
+  Price/Earnings, Price/Book, EPS, Price for ~500 S&P 500 names.
+- **Prices** — `plotly/datasets/all_stocks_5yr.csv` → real daily OHLCV,
+  2013-02-08 … **2018-02-07** (the Kaggle "S&P 500 stock data" snapshot).
+
+Real factor coverage (362 names with both prices and fundamentals):
+
+| Factor | Real metric used |
+|--------|------------------|
+| Value     | earnings_yield (1/PE), book_to_price (1/PB) |
+| Momentum  | mom_12_1 from real daily prices |
+| Quality   | roe = EPS·PB/Price (real ROE proxy) |
+| Low Vol   | vol_annual from real daily returns |
+| Skin in Game | no free real source → left blank (**Coverage 4/5**) |
+
+> The two snapshots are contemporaneous (~early 2018), so the cross-section is
+> coherent — but momentum/volatility are **as of 2018-02-07**, real yet
+> historical, not live. To screen *today*, supply a current CSV (or use
+> `--source yfinance` where market APIs are reachable).
+
 ## The five factors
 
 | Factor        | Raw metric(s) → direction                                                    |

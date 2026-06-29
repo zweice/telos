@@ -1,0 +1,363 @@
+Rank,ticker,name,region,Value,Momentum,Quality,Low Vol,Skin in Game,Coverage,Total,Total (cov-adj),Weighted
+1,PGR,Progressive Corporation,US,7,10,9.0,9,,4,35.0,43.75,35.0
+2,ACN,Accenture,US,8,8,8.0,10,,4,34.0,42.5,34.0
+3,ALL,Allstate,US,9,7,9.0,9,,4,34.0,42.5,34.0
+4,FIS,Fidelity National Information Services,US,10,7,6.0,10,,4,33.0,41.25,33.0
+5,AVY,Avery Dennison,US,6,10,8.0,9,,4,33.0,41.25,33.0
+6,TROW,T. Rowe Price,US,9,10,7.0,6,,4,32.0,40.0,32.0
+7,ZTS,Zoetis,US,6,8,10.0,8,,4,32.0,40.0,32.0
+8,AFL,Aflac,US,8,8,6.0,10,,4,32.0,40.0,32.0
+9,NOC,Northrop Grumman,US,7,8,8.0,9,,4,32.0,40.0,32.0
+10,V,Visa Inc.,US,3,9,10.0,10,,4,32.0,40.0,32.0
+11,STZ,Constellation Brands,US,7,9,7.0,8,,4,31.0,38.75,31.0
+12,LMT,Lockheed Martin,US,4,7,10.0,10,,4,31.0,38.75,31.0
+13,HON,Honeywell,US,6,7,8.0,10,,4,31.0,38.75,31.0
+14,MA,Mastercard,US,2,10,10.0,9,,4,31.0,38.75,31.0
+15,CTSH,Cognizant,US,10,8,5.0,8,,4,31.0,38.75,31.0
+16,TEL,TE Connectivity,US,6,8,7.0,9,,4,30.0,37.5,30.0
+17,PYPL,PayPal,US,9,10,8.0,3,,4,30.0,37.5,30.0
+18,PHM,PulteGroup,US,9,10,6.0,5,,4,30.0,37.5,30.0
+19,IT,Gartner,US,5,8,10.0,7,,4,30.0,37.5,30.0
+20,AMP,Ameriprise Financial,US,7,9,10.0,4,,4,30.0,37.5,30.0
+21,MSFT,Microsoft,US,5,9,8.0,8,,4,30.0,37.5,30.0
+22,HD,Home Depot (The),US,3,9,10.0,8,,4,30.0,37.5,30.0
+23,ITW,Illinois Tool Works,US,3,8,10.0,9,,4,30.0,37.5,30.0
+24,HIG,Hartford (The),US,9,5,7.0,9,,4,30.0,37.5,30.0
+25,AON,Aon,US,5,6,9.0,10,,4,30.0,37.5,30.0
+26,CI,Cigna,US,9,9,5.0,6,,4,29.0,36.25,29.0
+27,MMM,3M,US,2,8,10.0,9,,4,29.0,36.25,29.0
+28,CRM,Salesforce,US,6,8,7.0,8,,4,29.0,36.25,29.0
+29,CBOE,Cboe Global Markets,US,5,10,7.0,7,,4,29.0,36.25,29.0
+30,AOS,A. O. Smith,US,6,7,8.0,8,,4,29.0,36.25,29.0
+31,AMT,American Tower,US,3,9,10.0,7,,4,29.0,36.25,29.0
+32,TRV,Travelers Companies (The),US,9,4,7.0,9,,4,29.0,36.25,29.0
+33,AXP,American Express,US,5,7,8.0,9,,4,29.0,36.25,29.0
+34,INTU,Intuit,US,7,9,7.0,6,,4,29.0,36.25,29.0
+35,MCO,Moody's Corporation,US,2,9,10.0,8,,4,29.0,36.25,29.0
+36,SHW,Sherwin-Williams,US,2,9,10.0,8,,4,29.0,36.25,29.0
+37,ADBE,Adobe Inc.,US,6,10,10.0,3,,4,29.0,36.25,29.0
+38,GOOGL,Alphabet Inc. (Class A),US,4,8,9.0,7,,4,28.0,35.0,28.0
+39,DHI,D. R. Horton,US,8,10,5.0,5,,4,28.0,35.0,28.0
+40,CME,CME Group,US,7,7,6.0,8,,4,28.0,35.0,28.0
+41,JNJ,Johnson & Johnson,US,3,7,8.0,10,,4,28.0,35.0,28.0
+42,UPS,United Parcel Service,US,6,6,8.0,8,,4,28.0,35.0,28.0
+43,FDX,FedEx,US,7,9,5.0,7,,4,28.0,35.0,28.0
+44,GOOG,Alphabet Inc. (Class C),US,4,8,9.0,7,,4,28.0,35.0,28.0
+45,WM,Waste Management,US,3,7,8.0,10,,4,28.0,35.0,28.0
+46,APH,Amphenol,US,2,8,8.0,10,,4,28.0,35.0,28.0
+47,MHK,Mohawk Industries,US,9,8,2.0,9,,4,28.0,35.0,28.0
+48,LKQ,LKQ Corporation,US,10,8,3.0,7,,4,28.0,35.0,28.0
+49,PSX,Phillips 66,US,8,7,5.0,8,,4,28.0,35.0,28.0
+50,ROP,Roper Technologies,US,7,9,3.0,9,,4,28.0,35.0,28.0
+51,CCL,Carnival,US,8,5,8.0,7,,4,28.0,35.0,28.0
+52,PAYX,Paychex,US,5,5,9.0,8,,4,27.0,33.75,27.0
+53,A,Agilent Technologies,US,4,9,7.0,7,,4,27.0,33.75,27.0
+54,VLO,Valero Energy,US,6,9,6.0,6,,4,27.0,33.75,27.0
+55,PEG,Public Service Enterprise Group,US,7,5,5.0,10,,4,27.0,33.75,27.0
+56,PEP,PepsiCo,US,4,4,9.0,10,,4,27.0,33.75,27.0
+57,BK,BNY Mellon,US,8,6,5.0,8,,4,27.0,33.75,27.0
+58,KO,Coca-Cola Company (The),US,4,4,9.0,10,,4,27.0,33.75,27.0
+59,CB,Chubb Limited,US,9,4,5.0,9,,4,27.0,33.75,27.0
+60,BAX,Baxter International,US,8,9,1.0,9,,4,27.0,33.75,27.0
+61,SPGI,S&P Global,US,5,9,6.0,7,,4,27.0,33.75,27.0
+62,BLK,BlackRock,US,6,9,4.0,8,,4,27.0,33.75,27.0
+63,JPM,JPMorgan Chase,US,7,7,6.0,7,,4,27.0,33.75,27.0
+64,NEE,NextEra Energy,US,6,6,5.0,10,,4,27.0,33.75,27.0
+65,USB,U.S. Bancorp,US,9,3,5.0,9,,4,26.0,32.5,26.0
+66,VRSK,Verisk Analytics,US,3,5,10.0,8,,4,26.0,32.5,26.0
+67,AME,Ametek,US,3,9,5.0,9,,4,26.0,32.5,26.0
+68,PFE,Pfizer,US,8,5,3.0,10,,4,26.0,32.5,26.0
+69,CTAS,Cintas,US,2,9,9.0,6,,4,26.0,32.5,26.0
+70,ABT,Abbott Laboratories,US,5,8,4.0,9,,4,26.0,32.5,26.0
+71,STT,State Street Corporation,US,8,7,4.0,7,,4,26.0,32.5,26.0
+72,BBY,Best Buy,US,6,10,9.0,1,,4,26.0,32.5,26.0
+73,BMY,Bristol Myers Squibb,US,6,6,9.0,5,,4,26.0,32.5,26.0
+74,DLTR,Dollar Tree,US,5,9,9.0,3,,4,26.0,32.5,26.0
+75,DRI,Darden Restaurants,US,4,9,9.0,4,,4,26.0,32.5,26.0
+76,L,Loews Corporation,US,9,4,3.0,10,,4,26.0,32.5,26.0
+77,NDAQ,"Nasdaq, Inc.",US,5,5,6.0,10,,4,26.0,32.5,26.0
+78,CINF,Cincinnati Financial,US,9,3,6.0,8,,4,26.0,32.5,26.0
+79,PH,Parker Hannifin,US,3,9,8.0,6,,4,26.0,32.5,26.0
+80,EXPD,Expeditors International,US,4,6,9.0,7,,4,26.0,32.5,26.0
+81,PG,Procter & Gamble,US,5,3,8.0,10,,4,26.0,32.5,26.0
+82,PPG,PPG Industries,US,7,5,7.0,7,,4,26.0,32.5,26.0
+83,PNC,PNC Financial Services,US,9,6,4.0,7,,4,26.0,32.5,26.0
+84,ES,Eversource Energy,US,9,4,4.0,9,,4,26.0,32.5,26.0
+85,CHTR,Charter Communications,US,10,4,8.0,3,,4,25.0,31.25,25.0
+86,ED,Consolidated Edison,US,8,4,3.0,10,,4,25.0,31.25,25.0
+87,CL,Colgate-Palmolive,US,2,5,10.0,8,,4,25.0,31.25,25.0
+88,BAC,Bank of America,US,9,8,4.0,4,,4,25.0,31.25,25.0
+89,C,Citigroup,US,9,8,2.0,6,,4,25.0,31.25,25.0
+90,RJF,Raymond James Financial,US,8,6,6.0,5,,4,25.0,31.25,25.0
+91,PFG,Principal Financial Group,US,8,6,5.0,6,,4,25.0,31.25,25.0
+92,ADP,Automatic Data Processing,US,4,6,10.0,5,,4,25.0,31.25,25.0
+93,TMO,Thermo Fisher Scientific,US,5,8,5.0,7,,4,25.0,31.25,25.0
+94,XYL,Xylem Inc.,US,5,10,3.0,7,,4,25.0,31.25,25.0
+95,SWK,Stanley Black & Decker,US,6,9,1.0,9,,4,25.0,31.25,25.0
+96,SYY,Sysco,US,4,5,10.0,6,,4,25.0,31.25,25.0
+97,RSG,Republic Services,US,4,5,6.0,10,,4,25.0,31.25,25.0
+98,MKC,McCormick & Company,US,9,3,7.0,6,,4,25.0,31.25,25.0
+99,MCD,McDonald's,US,6,9,,10,,3,25.0,41.666666666666664,25.0
+100,DE,Deere & Company,US,3,10,6.0,6,,4,25.0,31.25,25.0
+101,EMN,Eastman Chemical Company,US,8,7,2.0,8,,4,25.0,31.25,25.0
+102,IFF,International Flavors & Fragrances,US,8,8,2.0,7,,4,25.0,31.25,25.0
+103,IQV,IQVIA,US,5,7,7.0,6,,4,25.0,31.25,25.0
+104,NTAP,NetApp,US,3,10,10.0,2,,4,25.0,31.25,25.0
+105,MSI,Motorola Solutions,US,2,6,10.0,7,,4,25.0,31.25,25.0
+106,GIS,General Mills,US,8,2,9.0,6,,4,25.0,31.25,25.0
+107,WMT,Walmart,US,2,10,8.0,5,,4,25.0,31.25,25.0
+108,UNP,Union Pacific Corporation,US,4,7,9.0,5,,4,25.0,31.25,25.0
+109,VZ,Verizon,US,9,4,6.0,6,,4,25.0,31.25,25.0
+110,UNH,UnitedHealth Group,US,4,9,4.0,8,,4,25.0,31.25,25.0
+111,AAPL,Apple Inc.,US,2,8,10.0,5,,4,25.0,31.25,25.0
+112,AWK,American Water Works,US,7,6,3.0,9,,4,25.0,31.25,25.0
+113,AEP,American Electric Power,US,7,4,4.0,10,,4,25.0,31.25,25.0
+114,ALLE,Allegion,US,5,6,8.0,6,,4,25.0,31.25,25.0
+115,AEE,Ameren,US,7,4,4.0,10,,4,25.0,31.25,25.0
+116,APD,Air Products,US,4,6,5.0,9,,4,24.0,30.0,24.0
+117,LNT,Alliant Energy,US,6,4,4.0,10,,4,24.0,30.0,24.0
+118,ARE,Alexandria Real Estate Equities,US,10,4,1.0,9,,4,24.0,30.0,24.0
+119,XEL,Xcel Energy,US,7,4,3.0,10,,4,24.0,30.0,24.0
+120,GD,General Dynamics,US,6,4,6.0,8,,4,24.0,30.0,24.0
+121,WEC,WEC Energy Group,US,6,4,4.0,10,,4,24.0,30.0,24.0
+122,D,Dominion Energy,US,7,3,4.0,10,,4,24.0,30.0,24.0
+123,KMB,Kimberly-Clark,US,4,2,10.0,8,,4,24.0,30.0,24.0
+124,ECL,Ecolab,US,2,5,7.0,10,,4,24.0,30.0,24.0
+125,DUK,Duke Energy,US,8,3,3.0,10,,4,24.0,30.0,24.0
+126,CAT,Caterpillar Inc.,US,1,10,9.0,4,,4,24.0,30.0,24.0
+127,CSCO,Cisco,US,2,7,8.0,7,,4,24.0,30.0,24.0
+128,PNR,Pentair,US,6,7,6.0,5,,4,24.0,30.0,24.0
+129,CMS,CMS Energy,US,6,4,4.0,10,,4,24.0,30.0,24.0
+130,CMCSA,Comcast,US,10,3,7.0,4,,4,24.0,30.0,24.0
+131,NVDA,Nvidia,US,3,10,10.0,1,,4,24.0,30.0,24.0
+132,SCHW,Charles Schwab Corporation,US,6,8,7.0,3,,4,24.0,30.0,24.0
+133,PKG,Packaging Corporation of America,US,4,8,6.0,6,,4,24.0,30.0,24.0
+134,ORCL,Oracle Corporation,US,4,6,9.0,5,,4,24.0,30.0,24.0
+135,MU,Micron Technology,US,3,10,10.0,1,,4,24.0,30.0,24.0
+136,NFLX,Netflix,US,4,10,9.0,1,,4,24.0,30.0,24.0
+137,MPC,Marathon Petroleum,US,6,9,8.0,1,,4,24.0,30.0,24.0
+138,LEN,Lennar,US,9,10,2.0,3,,4,24.0,30.0,24.0
+139,PNW,Pinnacle West,US,8,3,3.0,10,,4,24.0,30.0,24.0
+140,PRU,Prudential Financial,US,10,4,4.0,6,,4,24.0,30.0,24.0
+141,T,AT&T,US,10,1,7.0,6,,4,24.0,30.0,24.0
+142,TXT,Textron,US,8,6,4.0,6,,4,24.0,30.0,24.0
+143,RCL,Royal Caribbean Group,US,5,7,9.0,3,,4,24.0,30.0,24.0
+144,SYK,Stryker Corporation,US,3,8,5.0,8,,4,24.0,30.0,24.0
+145,ROK,Rockwell Automation,US,2,8,8.0,5,,4,23.0,28.75,23.0
+146,LLY,Lilly (Eli),US,1,4,10.0,8,,4,23.0,28.75,23.0
+147,BA,Boeing,US,1,10,8.0,4,,4,23.0,28.75,23.0
+148,BDX,Becton Dickinson,US,7,7,2.0,7,,4,23.0,28.75,23.0
+149,TXN,Texas Instruments,US,2,9,8.0,4,,4,23.0,28.75,23.0
+150,CF,CF Industries,US,8,6,8.0,1,,4,23.0,28.75,23.0
+151,QCOM,Qualcomm,US,5,7,9.0,2,,4,23.0,28.75,23.0
+152,RL,Ralph Lauren Corporation,US,4,9,8.0,2,,4,23.0,28.75,23.0
+153,NTRS,Northern Trust,US,7,6,5.0,5,,4,23.0,28.75,23.0
+154,MNST,Monster Beverage,US,2,10,7.0,4,,4,23.0,28.75,23.0
+155,GPN,Global Payments,US,8,8,1.0,6,,4,23.0,28.75,23.0
+156,DG,Dollar General,US,7,7,6.0,3,,4,23.0,28.75,23.0
+157,CMI,Cummins,US,3,7,7.0,6,,4,23.0,28.75,23.0
+158,ETR,Entergy,US,5,5,4.0,9,,4,23.0,28.75,23.0
+159,FTV,Fortive,US,4,8,3.0,8,,4,23.0,28.75,23.0
+160,FMC,FMC Corporation,US,10,10,1.0,2,,4,23.0,28.75,23.0
+161,GRMN,Garmin,US,4,6,7.0,6,,4,23.0,28.75,23.0
+162,HPQ,HP Inc.,US,10,9,,4,,3,23.0,38.333333333333336,23.0
+163,LH,LabCorp,US,6,7,4.0,6,,4,23.0,28.75,23.0
+164,EOG,EOG Resources,US,8,5,6.0,4,,4,23.0,28.75,23.0
+165,DTE,DTE Energy,US,6,3,4.0,10,,4,23.0,28.75,23.0
+166,AMZN,Amazon,US,4,10,6.0,3,,4,23.0,28.75,23.0
+167,HSY,Hershey Company (The),US,3,3,7.0,9,,4,22.0,27.5,22.0
+168,EIX,Edison International,US,10,1,7.0,4,,4,22.0,27.5,22.0
+169,UDR,"UDR, Inc.",US,5,3,5.0,9,,4,22.0,27.5,22.0
+170,DIS,Walt Disney Company (The),US,9,2,3.0,8,,4,22.0,27.5,22.0
+171,NI,NiSource,US,6,4,3.0,9,,4,22.0,27.5,22.0
+172,MDT,Medtronic,US,7,4,3.0,8,,4,22.0,27.5,22.0
+173,DOV,Dover Corporation,US,4,8,5.0,5,,4,22.0,27.5,22.0
+174,EXC,Exelon,US,8,3,3.0,8,,4,22.0,27.5,22.0
+175,DAL,Delta Air Lines,US,8,5,7.0,2,,4,22.0,27.5,22.0
+176,XOM,ExxonMobil,US,7,3,3.0,9,,4,22.0,27.5,22.0
+177,WFC,Wells Fargo,US,9,4,4.0,5,,4,22.0,27.5,22.0
+178,WAT,Waters Corporation,US,4,9,2.0,7,,4,22.0,27.5,22.0
+179,VRSN,Verisign,US,4,9,,9,,3,22.0,36.666666666666664,22.0
+180,AES,AES Corporation,US,9,2,8.0,3,,4,22.0,27.5,22.0
+181,AMGN,Amgen,US,3,3,10.0,6,,4,22.0,27.5,22.0
+182,UHS,Universal Health Services,US,10,2,7.0,3,,4,22.0,27.5,22.0
+183,IP,International Paper,US,10,5,1.0,6,,4,22.0,27.5,22.0
+184,ICE,Intercontinental Exchange,US,7,6,5.0,4,,4,22.0,27.5,22.0
+185,IVZ,Invesco,US,10,6,1.0,5,,4,22.0,27.5,22.0
+186,ISRG,Intuitive Surgical,US,2,10,6.0,4,,4,22.0,27.5,22.0
+187,VRTX,Vertex Pharmaceuticals,US,4,10,7.0,1,,4,22.0,27.5,22.0
+188,SBAC,SBA Communications,US,7,10,,5,,3,22.0,36.666666666666664,22.0
+189,CDNS,Cadence Design Systems,US,1,10,6.0,5,,4,22.0,27.5,22.0
+190,CHRW,C.H. Robinson,US,2,6,9.0,5,,4,22.0,27.5,22.0
+191,DGX,Quest Diagnostics,US,6,3,5.0,8,,4,22.0,27.5,22.0
+192,RF,Regions Financial Corporation,US,9,6,4.0,3,,4,22.0,27.5,22.0
+193,SYF,Synchrony Financial,US,9,4,7.0,2,,4,22.0,27.5,22.0
+194,SO,Southern Company,US,6,2,4.0,10,,4,22.0,27.5,22.0
+195,CNC,Centene Corporation,US,9,10,1.0,2,,4,22.0,27.5,22.0
+196,CHD,Church & Dwight,US,4,3,6.0,9,,4,22.0,27.5,22.0
+197,RMD,ResMed,US,6,7,7.0,2,,4,22.0,27.5,22.0
+198,AVB,AvalonBay Communities,US,7,2,3.0,10,,4,22.0,27.5,22.0
+199,LRCX,Lam Research,US,1,10,10.0,1,,4,22.0,27.5,22.0
+200,YUM,Yum! Brands,US,5,7,,9,,3,21.0,35.0,21.0
+201,CNP,CenterPoint Energy,US,5,3,3.0,10,,4,21.0,26.25,21.0
+202,ROST,Ross Stores,US,3,6,9.0,3,,4,21.0,26.25,21.0
+203,ADSK,Autodesk,US,3,8,9.0,1,,4,21.0,26.25,21.0
+204,FOX,Fox Corporation (Class B),US,9,5,5.0,2,,4,21.0,26.25,21.0
+205,AMAT,Applied Materials,US,1,10,9.0,1,,4,21.0,26.25,21.0
+206,ETN,Eaton Corporation,US,2,5,7.0,7,,4,21.0,26.25,21.0
+207,FOXA,Fox Corporation (Class A),US,9,5,5.0,2,,4,21.0,26.25,21.0
+208,AJG,Arthur J. Gallagher & Co.,US,5,5,2.0,9,,4,21.0,26.25,21.0
+209,MTB,M&T Bank,US,9,3,3.0,6,,4,21.0,26.25,21.0
+210,MAS,Masco,US,7,8,,6,,3,21.0,35.0,21.0
+211,MS,Morgan Stanley,US,6,5,6.0,4,,4,21.0,26.25,21.0
+212,NEM,Newmont,US,8,2,8.0,3,,4,21.0,26.25,21.0
+213,NCLH,Norwegian Cruise Line Holdings,US,6,5,8.0,2,,4,21.0,26.25,21.0
+214,CLX,Clorox,US,8,5,,8,,3,21.0,35.0,21.0
+215,SNPS,Synopsys,US,3,9,1.0,8,,4,21.0,26.25,21.0
+216,PPL,PPL Corporation,US,7,1,3.0,10,,4,21.0,26.25,21.0
+217,PLD,Prologis,US,5,7,2.0,7,,4,21.0,26.25,21.0
+218,NWSA,News Corp (Class A),US,6,9,2.0,4,,4,21.0,26.25,21.0
+219,EBAY,eBay,US,4,6,9.0,2,,4,21.0,26.25,21.0
+220,EQR,Equity Residential,US,6,2,3.0,10,,4,21.0,26.25,21.0
+221,ALB,Albemarle Corporation,US,8,10,1.0,2,,4,21.0,26.25,21.0
+222,URI,United Rentals,US,3,8,8.0,2,,4,21.0,26.25,21.0
+223,EL,Estée Lauder Companies (The),US,3,10,1.0,6,,4,20.0,25.0,20.0
+224,HST,Host Hotels & Resorts,US,7,4,5.0,4,,4,20.0,25.0,20.0
+225,KLAC,KLA Corporation,US,1,7,10.0,2,,4,20.0,25.0,20.0
+226,HII,Huntington Ingalls Industries,US,8,5,4.0,3,,4,20.0,25.0,20.0
+227,HBAN,Huntington Bancshares,US,9,4,3.0,4,,4,20.0,25.0,20.0
+228,IBM,IBM,US,4,1,8.0,7,,4,20.0,25.0,20.0
+229,IDXX,Idexx Laboratories,US,1,5,10.0,4,,4,20.0,25.0,20.0
+230,AIG,American International Group,US,10,1,2.0,7,,4,20.0,25.0,20.0
+231,FITB,Fifth Third Bancorp,US,8,5,3.0,4,,4,20.0,25.0,20.0
+232,ESS,Essex Property Trust,US,4,3,4.0,9,,4,20.0,25.0,20.0
+233,EMR,Emerson Electric,US,4,5,4.0,7,,4,20.0,25.0,20.0
+234,GILD,Gilead Sciences,US,6,2,9.0,3,,4,20.0,25.0,20.0
+235,TSCO,Tractor Supply,US,6,3,9.0,2,,4,20.0,25.0,20.0
+236,TJX,TJX Companies,US,3,2,9.0,6,,4,20.0,25.0,20.0
+237,SRE,Sempra,US,6,3,2.0,9,,4,20.0,25.0,20.0
+238,SPG,Simon Property Group,US,5,1,10.0,4,,4,20.0,25.0,20.0
+239,SNA,Snap-on,US,6,3,6.0,5,,4,20.0,25.0,20.0
+240,DHR,Danaher Corporation,US,4,5,2.0,9,,4,20.0,25.0,20.0
+241,CVX,Chevron Corporation,US,6,5,2.0,7,,4,20.0,25.0,20.0
+242,AIZ,Assurant,US,8,2,6.0,4,,4,20.0,25.0,20.0
+243,NSC,Norfolk Southern Railway,US,5,7,6.0,2,,4,20.0,25.0,20.0
+244,GS,Goldman Sachs,US,7,3,6.0,4,,4,20.0,25.0,20.0
+245,CSX,CSX Corporation,US,4,6,7.0,3,,4,20.0,25.0,20.0
+246,CFG,Citizens Financial Group,US,9,6,2.0,3,,4,20.0,25.0,20.0
+247,CAG,Conagra Brands,US,10,2,1.0,7,,4,20.0,25.0,20.0
+248,NKE,"Nike, Inc.",US,5,6,6.0,3,,4,20.0,25.0,20.0
+249,LYB,LyondellBasell,US,9,6,1.0,4,,4,20.0,25.0,20.0
+250,BSX,Boston Scientific,US,7,2,5.0,5,,4,19.0,23.75,19.0
+251,OKE,ONEOK,US,7,3,6.0,3,,4,19.0,23.75,19.0
+252,GLW,Corning Inc.,US,1,7,6.0,5,,4,19.0,23.75,19.0
+253,TAP,Molson Coors Beverage Company,US,10,1,1.0,7,,4,19.0,23.75,19.0
+254,MTD,Mettler Toledo,US,4,8,,7,,3,19.0,31.666666666666668,19.0
+255,HUM,Humana,US,4,8,2.0,5,,4,19.0,23.75,19.0
+256,BEN,Franklin Resources,US,7,4,2.0,6,,4,19.0,23.75,19.0
+257,GM,General Motors,US,7,7,1.0,4,,4,19.0,23.75,19.0
+258,APA,APA Corporation,US,9,1,8.0,1,,4,19.0,23.75,19.0
+259,KHC,Kraft Heinz,US,10,1,1.0,7,,4,19.0,23.75,19.0
+260,PSA,Public Storage,US,3,1,9.0,6,,4,19.0,23.75,19.0
+261,AVGO,Broadcom,US,1,8,8.0,2,,4,19.0,23.75,19.0
+262,NWS,News Corp (Class B),US,5,8,2.0,4,,4,19.0,23.75,19.0
+263,COST,Costco,US,1,4,9.0,5,,4,19.0,23.75,19.0
+264,CPB,Campbell Soup Company,US,9,1,6.0,3,,4,19.0,23.75,19.0
+265,BIIB,Biogen,US,7,7,2.0,3,,4,19.0,23.75,19.0
+266,TPR,"Tapestry, Inc.",US,1,6,10.0,2,,4,19.0,23.75,19.0
+267,ALGN,Align Technology,US,5,10,3.0,1,,4,19.0,23.75,19.0
+268,TSN,Tyson Foods,US,6,7,1.0,5,,4,19.0,23.75,19.0
+269,KEY,KeyCorp,US,9,4,3.0,3,,4,19.0,23.75,19.0
+270,JBHT,J.B. Hunt,US,2,6,6.0,5,,4,19.0,23.75,19.0
+271,FRT,Federal Realty Investment Trust,US,6,1,6.0,6,,4,19.0,23.75,19.0
+272,WMB,Williams Companies,US,3,5,7.0,4,,4,19.0,23.75,19.0
+273,COP,ConocoPhillips,US,8,5,4.0,1,,4,18.0,22.5,18.0
+274,MAR,Marriott International,US,2,10,,6,,3,18.0,30.0,18.0
+275,ZBH,Zimmer Biomet,US,8,3,2.0,5,,4,18.0,22.5,18.0
+276,EXPE,Expedia Group,US,3,3,10.0,2,,4,18.0,22.5,18.0
+277,UAL,United Airlines Holdings,US,8,2,7.0,1,,4,18.0,22.5,18.0
+278,EA,Electronic Arts,US,2,9,5.0,2,,4,18.0,22.5,18.0
+279,WY,Weyerhaeuser,US,5,4,1.0,8,,4,18.0,22.5,18.0
+280,F,Ford Motor Company,US,9,3,1.0,5,,4,18.0,22.5,18.0
+281,CCI,Crown Castle,US,3,7,,8,,3,18.0,30.0,18.0
+282,BWA,BorgWarner,US,4,9,2.0,3,,4,18.0,22.5,18.0
+283,FCX,Freeport-McMoRan,US,4,7,5.0,1,,4,17.0,21.25,17.0
+284,EXR,Extra Space Storage,US,5,5,2.0,5,,4,17.0,21.25,17.0
+285,FAST,Fastenal,US,2,4,8.0,3,,4,17.0,21.25,17.0
+286,INCY,Incyte,US,7,1,8.0,1,,4,17.0,21.25,17.0
+287,EW,Edwards Lifesciences,US,3,7,4.0,3,,4,17.0,21.25,17.0
+288,EQT,EQT Corporation,US,10,1,5.0,1,,4,17.0,21.25,17.0
+289,EQIX,Equinix,US,2,6,3.0,6,,4,17.0,21.25,17.0
+290,DVN,Devon Energy,US,9,2,5.0,1,,4,17.0,21.25,17.0
+291,MO,Altria,US,9,2,,6,,3,17.0,28.333333333333332,17.0
+292,MDLZ,Mondelez International,US,5,2,3.0,7,,4,17.0,21.25,17.0
+293,MET,MetLife,US,8,2,4.0,3,,4,17.0,21.25,17.0
+294,LOW,Lowe's,US,7,7,,3,,3,17.0,28.333333333333332,17.0
+295,MAA,Mid-America Apartment Communities,US,4,2,2.0,9,,4,17.0,21.25,17.0
+296,LUV,Southwest Airlines,US,4,6,4.0,3,,4,17.0,21.25,17.0
+297,HLT,Hilton Worldwide,US,1,9,,7,,3,17.0,28.333333333333332,17.0
+298,KMI,Kinder Morgan,US,7,1,4.0,5,,4,17.0,21.25,17.0
+299,TGT,Target Corporation,US,6,3,7.0,1,,4,17.0,21.25,17.0
+300,BXP,"BXP, Inc.",US,5,2,2.0,8,,4,17.0,21.25,17.0
+301,REGN,Regeneron Pharmaceuticals,US,8,3,5.0,1,,4,17.0,21.25,17.0
+302,NUE,Nucor,US,6,5,4.0,2,,4,17.0,21.25,17.0
+303,PCAR,Paccar,US,5,4,4.0,4,,4,17.0,21.25,17.0
+304,PCG,PG&E Corporation,US,10,1,3.0,2,,4,16.0,20.0,16.0
+305,COO,Cooper Companies (The),US,5,6,1.0,4,,4,16.0,20.0,16.0
+306,REG,Regency Centers,US,6,2,3.0,5,,4,16.0,20.0,16.0
+307,ULTA,Ulta Beauty,US,5,1,9.0,1,,4,16.0,20.0,16.0
+308,ADI,Analog Devices,US,3,6,3.0,4,,4,16.0,20.0,16.0
+309,HAL,Halliburton,US,7,2,5.0,2,,4,16.0,20.0,16.0
+310,FE,FirstEnergy,US,6,2,3.0,5,,4,16.0,20.0,16.0
+311,SLB,Schlumberger,US,6,1,5.0,4,,4,16.0,20.0,16.0
+312,HCA,HCA Healthcare,US,9,3,,4,,3,16.0,26.666666666666668,16.0
+313,COF,Capital One,US,6,5,1.0,4,,4,16.0,20.0,16.0
+314,PM,Philip Morris International,US,5,2,,8,,3,15.0,25.0,15.0
+315,INTC,Intel,US,4,6,1.0,4,,4,15.0,18.75,15.0
+316,NRG,NRG Energy,US,2,10,2.0,1,,4,15.0,18.75,15.0
+317,OXY,Occidental Petroleum,US,5,4,1.0,5,,4,15.0,18.75,15.0
+318,WYNN,Wynn Resorts,US,4,10,,1,,3,15.0,25.0,15.0
+319,IR,Ingersoll Rand,US,3,4,2.0,6,,4,15.0,18.75,15.0
+320,HRL,Hormel Foods,US,6,2,2.0,5,,4,15.0,18.75,15.0
+321,FFIV,"F5, Inc.",US,3,2,7.0,3,,4,15.0,18.75,15.0
+322,WDC,Western Digital,US,2,2,10.0,1,,4,15.0,18.75,15.0
+323,CMG,Chipotle Mexican Grill,US,3,1,10.0,1,,4,15.0,18.75,15.0
+324,ADM,Archer Daniels Midland,US,6,1,2.0,5,,4,14.0,17.5,14.0
+325,GE,GE Aerospace,US,1,1,9.0,3,,4,14.0,17.5,14.0
+326,VMC,Vulcan Materials Company,US,3,4,5.0,2,,4,14.0,17.5,14.0
+327,MCK,McKesson Corporation,US,7,5,,2,,3,14.0,23.333333333333332,14.0
+328,ABBV,AbbVie,US,1,10,,3,,3,14.0,23.333333333333332,14.0
+329,SWKS,Skyworks Solutions,US,6,4,2.0,2,,4,14.0,17.5,14.0
+330,OMC,Omnicom Group,US,7,1,1.0,5,,4,14.0,17.5,14.0
+331,STX,Seagate Technology,US,1,2,10.0,1,,4,14.0,17.5,14.0
+332,O,Realty Income,US,5,1,1.0,7,,4,14.0,17.5,14.0
+333,QRVO,Qorvo,US,6,3,3.0,1,,4,13.0,16.25,13.0
+334,KMX,CarMax,US,7,3,1.0,2,,4,13.0,16.25,13.0
+335,MRK,Merck & Co.,US,3,1,7.0,2,,4,13.0,16.25,13.0
+336,MCHP,Microchip Technology,US,2,8,1.0,2,,4,13.0,16.25,13.0
+337,HSIC,Henry Schein,US,5,1,4.0,3,,4,13.0,16.25,13.0
+338,SJM,J.M. Smucker Company (The),US,7,1,1.0,4,,4,13.0,16.25,13.0
+339,GWW,W. W. Grainger,US,2,1,9.0,1,,4,13.0,16.25,13.0
+340,JCI,Johnson Controls,US,3,1,5.0,4,,4,13.0,16.25,13.0
+341,DLR,Digital Realty,US,4,3,2.0,4,,4,13.0,16.25,13.0
+342,DVA,DaVita,US,7,5,,1,,3,13.0,21.666666666666668,13.0
+343,VTR,Ventas,US,3,1,1.0,8,,4,13.0,16.25,13.0
+344,EFX,Equifax,US,4,2,5.0,1,,4,12.0,15.0,12.0
+345,MGM,MGM Resorts,US,3,5,2.0,2,,4,12.0,15.0,12.0
+346,KIM,Kimco Realty,US,6,1,2.0,2,,4,11.0,13.75,11.0
+347,AZO,AutoZone,US,6,3,,2,,3,11.0,18.333333333333332,11.0
+348,SBUX,Starbucks,US,1,3,,7,,3,11.0,18.333333333333332,11.0
+349,MLM,Martin Marietta Materials,US,4,2,3.0,2,,4,11.0,13.75,11.0
+350,PWR,Quanta Services,US,1,3,4.0,3,,4,11.0,13.75,11.0
+351,GPC,Genuine Parts Company,US,3,2,1.0,5,,4,11.0,13.75,11.0
+352,KR,Kroger,US,3,1,6.0,1,,4,11.0,13.75,11.0
+353,CVS,CVS Health,US,5,2,1.0,3,,4,11.0,13.75,11.0
+354,AKAM,Akamai Technologies,US,4,1,3.0,1,,4,9.0,11.25,9.0
+355,TDG,TransDigm Group,US,2,4,,3,,3,9.0,15.0,9.0
+356,MOS,Mosaic Company (The),US,6,1,1.0,1,,4,9.0,11.25,9.0
+357,HPE,Hewlett Packard Enterprise,US,5,1,2.0,1,,4,9.0,11.25,9.0
+358,IRM,Iron Mountain,US,1,2,,5,,3,8.0,13.333333333333334,8.0
+359,ORLY,O'Reilly Auto Parts,US,4,2,,1,,3,7.0,11.666666666666666,7.0
+360,HAS,Hasbro,US,1,2,1.0,2,,4,6.0,7.5,6.0
+361,AMD,Advanced Micro Devices,US,1,1,2.0,1,,4,5.0,6.25,5.0
+362,CAH,Cardinal Health,US,2,1,,2,,3,5.0,8.333333333333334,5.0
